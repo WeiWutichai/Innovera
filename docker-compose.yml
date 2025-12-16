@@ -1,0 +1,51 @@
+services:
+  database:
+    image: postgres:15-alpine
+    container_name: innovera-db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: innovera
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - innovera-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: innovera-backend
+    ports:
+      - "5000:3000"
+    environment:
+      - DATABASE_URL=postgresql://user:password@database:5432/innovera
+      - PORT=3000
+    depends_on:
+      - database
+    networks:
+      - innovera-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: innovera-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_JS_BACKEND_URL=http://backend:3000
+      - PORT=3000
+    depends_on:
+      - backend
+    networks:
+      - innovera-network
+
+volumes:
+  postgres_data:
+
+networks:
+  innovera-network:
+    driver: bridge
