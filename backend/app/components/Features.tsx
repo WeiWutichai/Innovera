@@ -3,7 +3,7 @@ export default function Features() {
     return (
         <>
             {/* Cards Section */}
-            <section id="cards" className="mt-4 md:mt-8">
+            <section id="platforms" className="mt-4 md:mt-8 scroll-mt-24">
                 <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                     {/* Card 1 */}
                     <article className="group relative rounded-3xl overflow-hidden bg-stone-900 h-80 shadow-xl border border-white/10">

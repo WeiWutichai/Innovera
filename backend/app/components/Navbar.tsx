@@ -15,11 +15,12 @@ export default async function Navbar() {
                     </Link>
 
                     {/* Nav */}
-                    <nav className="hidden md:flex items-center gap-6 text-sm text-white/70">
-                        <Link href="#features" className="hover:text-white transition-colors font-nunito">Features</Link>
-                        <Link href="#cards" className="hover:text-white transition-colors font-nunito">Workflows</Link>
-                        <Link href="#insights" className="hover:text-white transition-colors font-nunito">Insights</Link>
-                        <Link href="#customers" className="hover:text-white transition-colors font-nunito">Customers</Link>
+                    <nav className="hidden md:flex items-center gap-6 text-sm text-white/70 ml-auto mr-6">
+                        <Link href="#service" className="hover:text-white transition-colors font-nunito">Service</Link>
+                        <Link href="#platforms" className="hover:text-white transition-colors font-nunito">Platforms</Link>
+                        <Link href="#site-reference" className="hover:text-white transition-colors font-nunito">Site Reference</Link>
+                        <Link href="#blog" className="hover:text-white transition-colors font-nunito">Blog</Link>
+                        <Link href="#contact" className="hover:text-white transition-colors font-nunito">Contact Us</Link>
                     </nav>
 
                     {/* Actions */}

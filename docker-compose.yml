@@ -24,7 +24,7 @@ services:
       dockerfile: Dockerfile
     container_name: innovera-backend
     ports:
-      - "5000:3000"
+      - "5001:3000"
     environment:
       - DATABASE_URL=postgresql://user:password@database:5432/innovera
       - PORT=3000
