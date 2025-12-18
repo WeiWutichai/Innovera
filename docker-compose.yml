@@ -10,6 +10,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d innovera"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - innovera-network
 
@@ -24,7 +29,8 @@ services:
       - DATABASE_URL=postgresql://user:password@database:5432/innovera
       - PORT=3000
     depends_on:
-      - database
+      database:
+        condition: service_healthy
     networks:
       - innovera-network
 
