@@ -88,6 +88,82 @@ export const dictionary = {
                 }
             }
         },
+        siteReference: {
+            title: "Site Reference",
+            subtitle: "Curated collection of design and development resources",
+            items: [
+                {
+                    title: "Maxtech Elevator & Service Co.,Ltd.",
+                    desc: "Leading provider of elevator solutions and services, delivering safety and reliability across the region.",
+                    image: "/assets/maxtech-logo.png",
+                    url: "#"
+                },
+                {
+                    title: "P.C. Tuna Siam",
+                    desc: "Premier manufacturer and exporter of canned tuna and seafood products, committed to quality and sustainability.",
+                    image: "/assets/pc-tuna-siam.png",
+                    url: "#"
+                },
+                {
+                    title: "Almendra",
+                    desc: "Natural sugar reduction solutions derived from Stevia, enabling healthier food and beverage products.",
+                    image: "/assets/almendra-logo.png",
+                    url: "#"
+                },
+                {
+                    title: "DURO",
+                    desc: "High-quality road safety and traffic control products, ensuring safer roads for everyone.",
+                    image: "/assets/duro-logo.png",
+                    url: "#"
+                }
+            ]
+        },
+        blog: {
+            title: "Latest updates",
+            subtitle: "News, insights, and stories from our team",
+            items: [
+                {
+                    title: "The Future of Web Development",
+                    desc: "Exploring the latest trends in React, Next.js, and modern frontend architecture.",
+                    image: "/assets/maxtech-logo.png",
+                    date: "Dec 24, 2024",
+                    readTime: "5 min read",
+                    url: "#"
+                },
+                {
+                    title: "Building Scalable Systems",
+                    desc: "Best practices for designing robust and scalable backend systems for enterprise.",
+                    image: "/assets/pc-tuna-siam.png",
+                    date: "Dec 20, 2024",
+                    readTime: "4 min read",
+                    url: "#"
+                },
+                {
+                    title: "Design Systems 101",
+                    desc: "How to create and maintain a consistent design language across your products.",
+                    image: "/assets/almendra-logo.png",
+                    date: "Dec 18, 2024",
+                    readTime: "6 min read",
+                    url: "#"
+                }
+            ]
+        },
+        contact: {
+            title: "Get in touch",
+            subtitle: "We'd love to hear from you. Fill out the form or reach out directly.",
+            form: {
+                name: "Name",
+                email: "Email",
+                subject: "Subject",
+                message: "Message",
+                submit: "Send Message"
+            },
+            info: {
+                email: "hello@innovera.io",
+                phone: "+1 (555) 123-4567",
+                address: "123 Innovation Dr, Tech City, TC 94043"
+            }
+        },
         pricing: {
             testimonials: {
                 quote: "\"Innovera cut our cycle time by 35% in a month.\"",
@@ -280,6 +356,83 @@ export const dictionary = {
                     title: "การวิเคราะห์แบบเรียลไทม์",
                     desc: "มองเห็นปัญหาคอขวดได้ทันทีด้วยข้อมูล cycle time และ throughput"
                 }
+            }
+        },
+        siteReference: {
+            title: "อ้างอิงเว็บไซต์",
+            subtitle: "แหล่งรวบรวมทรัพยากรการออกแบบและพัฒนาที่คัดสรรมาแล้ว",
+            items: [
+                {
+                    title: "บริษัท แม็กซ์เทค เอเลเวเตอร์ แอนด์ เซอร์วิส จำกัด",
+                    desc: "ผู้ให้บริการชั้นนำด้านลิฟต์และบริการที่เกี่ยวข้อง ส่งมอบความปลอดภัยและความน่าเชื่อถือทั่วทั้งภูมิภาค",
+                    image: "/assets/maxtech-logo.png",
+                    url: "#"
+                },
+                {
+                    title: "บริษัท พี.ซี. ทูน่า สยาม จำกัด",
+                    desc: "ผู้ผลิตและส่งออกทูน่าบรรจุกระป๋องและอาหารทะเลชั้นนำ มุ่งมั่นในคุณภาพและความยั่งยืน",
+                    image: "/assets/pc-tuna-siam.png",
+                    url: "#"
+                },
+                {
+                    title: "Almendra",
+                    desc: "โซลูชันลดน้ำตาลจากธรรมชาติที่สกัดจากหญ้าหวาน ช่วยสร้างสรรค์ผลิตภัณฑ์อาหารและเครื่องดื่มเพื่อสุขภาพ",
+                    image: "/assets/almendra-logo.png",
+                    url: "#"
+                },
+                {
+                    title: "DURO",
+                    desc: "ผลิตภัณฑ์ความปลอดภัยบนท้องถนนและอุปกรณ์ควบคุมจราจรคุณภาพสูง เพื่อถนนที่ปลอดภัยยิ่งขึ้นสำหรับทุกคน",
+                    image: "/assets/duro-logo.png",
+                    url: "#"
+                }
+            ]
+        },
+        blog: {
+            title: "อัปเดตล่าสุด",
+            subtitle: "ข่าวสาร ข้อมูลเชิงลึก และเรื่องราวจากทีมงานของเรา",
+            items: [
+                {
+                    title: "อนาคตของการพัฒนาเว็บไซต์",
+                    desc: "สำรวจแนวโน้มล่าสุดใน React, Next.js และสถาปัตยกรรม frontend สมัยใหม่",
+                    image: "/assets/maxtech-logo.png",
+                    date: "24 ธ.ค. 2024",
+                    readTime: "อ่าน 5 นาที",
+                    url: "#"
+                },
+                {
+                    title: "การสร้างระบบที่รองรับการขยายตัว",
+                    desc: "แนวปฏิบัติที่ดีที่สุดสำหรับการออกแบบระบบ backend ที่แข็งแกร่งสำหรับองค์กร",
+                    image: "/assets/pc-tuna-siam.png",
+                    date: "20 ธ.ค. 2024",
+                    readTime: "อ่าน 4 นาที",
+                    url: "#"
+                },
+                {
+                    title: "ระบบการออกแบบ 101",
+                    desc: "วิธีการสร้างและรักษาระบบการออกแบบที่สอดคล้องกันทั่วทั้งผลิตภัณฑ์ของคุณ",
+                    image: "/assets/almendra-logo.png",
+                    date: "18 ธ.ค. 2024",
+                    readTime: "อ่าน 6 นาที",
+                    url: "#"
+                }
+            ]
+        },
+
+        contact: {
+            title: "ติดต่อเรา",
+            subtitle: "เรายินดีที่จะได้รับฟังจากคุณ กรอกแบบฟอร์มหรือติดต่อเราโดยตรง",
+            form: {
+                name: "ชื่อ",
+                email: "อีเมล",
+                subject: "หัวข้อ",
+                message: "ข้อความ",
+                submit: "ส่งข้อความ"
+            },
+            info: {
+                email: "hello@innovera.io",
+                phone: "+1 (555) 123-4567",
+                address: "123 Innovation Dr, Tech City, TC 94043"
             }
         },
         pricing: {

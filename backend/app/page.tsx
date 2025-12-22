@@ -2,9 +2,12 @@
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import Features from "./components/Features";
+import SiteReference from "./components/SiteReference";
+import Blog from "./components/Blog";
 import Stats from "./components/Stats";
 import Pricing from "./components/Pricing";
 import FAQ from "./components/FAQ";
+import Contact from "./components/Contact";
 import Footer from "./components/Footer";
 
 import ScrollToTop from "./components/ScrollToTop";
@@ -23,9 +26,12 @@ export default function Home() {
         <Navbar />
         <Hero />
         <Features />
+        <SiteReference />
+        <Blog />
         <Stats />
         <Pricing />
         <FAQ />
+        <Contact />
         <Footer />
         <ScrollToTop />
       </div>
