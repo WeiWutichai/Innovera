@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useLanguage } from '../context/LanguageContext';
 
 type User = {
     name?: string | null;
@@ -20,6 +21,7 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
+    const { t } = useLanguage();
 
     const handleSignOut = async () => {
         await signOut({ redirect: false });
@@ -93,14 +95,14 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
                             </div>
                         </div>
                         <div>
-                            <div className="text-base font-semibold text-white/90">Hi, {user.name || "User"}!</div>
+                            <div className="text-base font-semibold text-white/90">{t.profileMenu.hi}, {user.name || "User"}!</div>
                             <div className="text-sm text-gray-400">{user.email}</div>
                         </div>
                         <Link
                             href="/profile"
                             className="mt-1 px-5 py-2 rounded-full border border-gray-600 text-sm font-medium text-blue-300 hover:bg-white/5 transition-colors"
                         >
-                            Manage your Innovera Account
+                            {t.profileMenu.manage}
                         </Link>
                     </div>
 
@@ -114,13 +116,13 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
                             <polyline points="16 17 21 12 16 7"></polyline>
                             <line x1="21" y1="12" x2="9" y2="12"></line>
                         </svg>
-                        Sign out
+                        {t.profileMenu.signOut}
                     </button>
 
                     <div className="flex items-center justify-center gap-2 mt-3 text-xs text-gray-500">
-                        <Link href="#" className="hover:text-gray-300">Privacy Policy</Link>
+                        <Link href="#" className="hover:text-gray-300">{t.profileMenu.privacy}</Link>
                         <span>•</span>
-                        <Link href="#" className="hover:text-gray-300">Terms of Service</Link>
+                        <Link href="#" className="hover:text-gray-300">{t.profileMenu.terms}</Link>
                     </div>
                 </div>
             )}

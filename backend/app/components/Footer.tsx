@@ -1,7 +1,11 @@
-
+"use client";
+import React from 'react';
 import Link from 'next/link';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Footer() {
+    const { t } = useLanguage();
+
     return (
         <section className="border-t border-white/10 bg-stone-950">
             <div className="max-w-7xl mx-auto px-6 py-12 md:py-16">
@@ -11,7 +15,7 @@ export default function Footer() {
                             <span className="text-lg font-medium tracking-tight font-nunito text-white">Innovera</span>
                         </Link>
                         <p className="text-sm text-white/60 mb-6 font-nunito max-w-xs">
-                            The improving workflow for modern product teams. Plan, ship, and measure without the chaos.
+                            {t.footer.tagline}
                         </p>
                         <div className="flex items-center gap-4">
                             {/* Social placeholders */}
@@ -27,43 +31,41 @@ export default function Footer() {
                     </div>
 
                     <div>
-                        <h3 className="text-sm font-semibold text-white tracking-wider uppercase mb-4 font-nunito">Product</h3>
+                        <h3 className="text-sm font-semibold text-white tracking-wider uppercase mb-4 font-nunito">{t.footer.product.title}</h3>
                         <ul className="space-y-3">
-                            <li><Link href="#" className="text-sm text-white/60 hover:text-white transition font-nunito">Features</Link></li>
-                            <li><Link href="#" className="text-sm text-white/60 hover:text-white transition font-nunito">Workflows</Link></li>
-                            <li><Link href="#" className="text-sm text-white/60 hover:text-white transition font-nunito">Insights</Link></li>
-                            <li><Link href="#" className="text-sm text-white/60 hover:text-white transition font-nunito">Changelog</Link></li>
+                            {t.footer.product.links.map((link, i) => (
+                                <li key={i}><Link href="#" className="text-sm text-white/60 hover:text-white transition font-nunito">{link}</Link></li>
+                            ))}
                         </ul>
                     </div>
 
                     <div>
-                        <h3 className="text-sm font-semibold text-white tracking-wider uppercase mb-4 font-nunito">Company</h3>
+                        <h3 className="text-sm font-semibold text-white tracking-wider uppercase mb-4 font-nunito">{t.footer.company.title}</h3>
                         <ul className="space-y-3">
-                            <li><Link href="#" className="text-sm text-white/60 hover:text-white transition font-nunito">About</Link></li>
-                            <li><Link href="#" className="text-sm text-white/60 hover:text-white transition font-nunito">Blog</Link></li>
-                            <li><Link href="#" className="text-sm text-white/60 hover:text-white transition font-nunito">Careers</Link></li>
-                            <li><Link href="#" className="text-sm text-white/60 hover:text-white transition font-nunito">Customers</Link></li>
+                            {t.footer.company.links.map((link, i) => (
+                                <li key={i}><Link href="#" className="text-sm text-white/60 hover:text-white transition font-nunito">{link}</Link></li>
+                            ))}
                         </ul>
                     </div>
 
                     <div>
-                        <h3 className="text-sm font-semibold text-white tracking-wider uppercase mb-4 font-nunito">Legal</h3>
+                        <h3 className="text-sm font-semibold text-white tracking-wider uppercase mb-4 font-nunito">{t.footer.legal.title}</h3>
                         <ul className="space-y-3">
-                            <li><Link href="#" className="text-sm text-white/60 hover:text-white transition font-nunito">Privacy</Link></li>
-                            <li><Link href="#" className="text-sm text-white/60 hover:text-white transition font-nunito">Terms</Link></li>
-                            <li><Link href="#" className="text-sm text-white/60 hover:text-white transition font-nunito">Security</Link></li>
+                            {t.footer.legal.links.map((link, i) => (
+                                <li key={i}><Link href="#" className="text-sm text-white/60 hover:text-white transition font-nunito">{link}</Link></li>
+                            ))}
                         </ul>
                     </div>
                 </div>
 
                 <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
                     <p className="text-xs text-white/40 font-nunito">
-                        © 2024 Innovera Inc. All rights reserved.
+                        {t.footer.copyright}
                     </p>
                     <div className="flex items-center gap-6">
                         <span className="flex items-center gap-2 text-xs text-white/40 font-nunito">
                             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                            All systems operational
+                            {t.footer.status}
                         </span>
                     </div>
                 </div>

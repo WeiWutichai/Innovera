@@ -1,5 +1,10 @@
+"use client";
+import React from 'react';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Features() {
+    const { t } = useLanguage();
+
     return (
         <>
             {/* Cards Section */}
@@ -10,9 +15,9 @@ export default function Features() {
                         <div className="absolute inset-0 bg-[url(https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/61b8e1b5-22b1-4280-8ced-ed3ee0678a32_1600w.jpg)] bg-cover"></div>
                         <div className="absolute bottom-0 left-0 right-0 pt-6 pr-6 pb-6 pl-6">
                             <h3 className="text-white text-xl md:text-2xl leading-snug tracking-tight mb-1 font-nunito font-semibold">
-                                Purpose-built for product development
+                                {t.features.cards.purpose.title}
                             </h3>
-                            <p className="text-white/70 text-sm mb-3 font-nunito">Issues, docs, and sprints in one focused surface.</p>
+                            <p className="text-white/70 text-sm mb-3 font-nunito">{t.features.cards.purpose.desc}</p>
                             <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/5 border border-white/15 text-white/90 transition group-hover:bg-white/10">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                                     <path d="M12 5v14"></path>
@@ -27,9 +32,9 @@ export default function Features() {
                         <div className="absolute inset-0 bg-[url(https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/78877756-9e45-410e-b630-78c3dfb8e94c_1600w.jpg)] bg-cover"></div>
                         <div className="absolute bottom-0 left-0 right-0 p-6">
                             <h3 className="text-white text-xl md:text-2xl leading-snug tracking-tight mb-1 font-nunito font-semibold">
-                                Designed to move fast
+                                {t.features.cards.speed.title}
                             </h3>
-                            <p className="text-white/70 text-sm mb-3 font-nunito">Keyboard-first, zero-friction navigation and editing.</p>
+                            <p className="text-white/70 text-sm mb-3 font-nunito">{t.features.cards.speed.desc}</p>
                             <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/5 border border-white/15 text-white/90 transition group-hover:bg-white/10">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                                     <path d="M5 12h14"></path>
@@ -44,9 +49,9 @@ export default function Features() {
                         <div className="absolute inset-0 bg-[url(https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/4f29f67f-c043-4d68-9a80-d6f2dc0770fd_800w.jpg)] bg-cover"></div>
                         <div className="absolute bottom-0 left-0 right-0 p-6">
                             <h3 className="text-white text-xl md:text-2xl leading-snug tracking-tight mb-1 font-nunito font-semibold">
-                                Crafted with care
+                                {t.features.cards.craft.title}
                             </h3>
-                            <p className="text-white/70 text-sm mb-3 font-nunito">Polished UI, predictable workflows, fewer surprises.</p>
+                            <p className="text-white/70 text-sm mb-3 font-nunito">{t.features.cards.craft.desc}</p>
                             <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/5 border border-white/15 text-white/90 transition group-hover:bg-white/10">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                                     <path d="M12 5v14"></path>
@@ -70,8 +75,8 @@ export default function Features() {
                                 </svg>
                             </span>
                             <div>
-                                <h4 className="text-base font-semibold tracking-tight font-nunito text-white">Sprint planning</h4>
-                                <p className="text-sm text-white/70 font-nunito">Capacity-aware estimates, drag-and-drop scopes, carryover prevention.</p>
+                                <h4 className="text-base font-semibold tracking-tight font-nunito text-white">{t.features.highlights.sprint.title}</h4>
+                                <p className="text-sm text-white/70 font-nunito">{t.features.highlights.sprint.desc}</p>
                             </div>
                         </div>
                         <div className="flex items-start gap-3">
@@ -83,8 +88,8 @@ export default function Features() {
                                 </svg>
                             </span>
                             <div>
-                                <h4 className="text-base font-semibold tracking-tight font-nunito text-white">Keyboard-first</h4>
-                                <p className="text-sm text-white/70 font-nunito">Every action in reach: create, assign, move, and merge in seconds.</p>
+                                <h4 className="text-base font-semibold tracking-tight font-nunito text-white">{t.features.highlights.keyboard.title}</h4>
+                                <p className="text-sm text-white/70 font-nunito">{t.features.highlights.keyboard.desc}</p>
                             </div>
                         </div>
                         <div className="flex items-start gap-3">
@@ -98,8 +103,8 @@ export default function Features() {
                                 </svg>
                             </span>
                             <div>
-                                <h4 className="text-base font-semibold tracking-tight font-nunito text-white">Git automations</h4>
-                                <p className="text-sm text-white/70 font-nunito">Branch naming, PR linking, and state changes that just happen.</p>
+                                <h4 className="text-base font-semibold tracking-tight font-nunito text-white">{t.features.highlights.git.title}</h4>
+                                <p className="text-sm text-white/70 font-nunito">{t.features.highlights.git.desc}</p>
                             </div>
                         </div>
                         <div className="flex items-start gap-3">
@@ -110,8 +115,8 @@ export default function Features() {
                                 </svg>
                             </span>
                             <div>
-                                <h4 className="text-base font-semibold tracking-tight font-nunito text-white">Outcome roadmaps</h4>
-                                <p className="text-sm text-white/70 font-nunito">Tie initiatives to measurable impact, not just dates.</p>
+                                <h4 className="text-base font-semibold tracking-tight font-nunito text-white">{t.features.highlights.roadmap.title}</h4>
+                                <p className="text-sm text-white/70 font-nunito">{t.features.highlights.roadmap.desc}</p>
                             </div>
                         </div>
                         <div className="flex items-start gap-3">
@@ -122,8 +127,8 @@ export default function Features() {
                                 </svg>
                             </span>
                             <div>
-                                <h4 className="text-base font-semibold tracking-tight font-nunito text-white">Custom fields</h4>
-                                <p className="text-sm text-white/70 font-nunito">Track effort, risk, and dependencies with clarity.</p>
+                                <h4 className="text-base font-semibold tracking-tight font-nunito text-white">{t.features.highlights.customFields.title}</h4>
+                                <p className="text-sm text-white/70 font-nunito">{t.features.highlights.customFields.desc}</p>
                             </div>
                         </div>
                         <div className="flex items-start gap-3">
@@ -135,8 +140,8 @@ export default function Features() {
                                 </svg>
                             </span>
                             <div>
-                                <h4 className="text-base font-semibold tracking-tight font-nunito text-white">Real-time analytics</h4>
-                                <p className="text-sm text-white/70 font-nunito">Spot blockers early with cycle time and throughput insights.</p>
+                                <h4 className="text-base font-semibold tracking-tight font-nunito text-white">{t.features.highlights.analytics.title}</h4>
+                                <p className="text-sm text-white/70 font-nunito">{t.features.highlights.analytics.desc}</p>
                             </div>
                         </div>
                     </div>
