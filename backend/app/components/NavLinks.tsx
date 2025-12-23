@@ -17,6 +17,7 @@ export default function NavLinks({ mobile }: NavLinksProps) {
                 <Link href="#platforms" className="text-white/70 hover:text-white transition-colors font-nunito text-lg py-2 block">{t.nav.platforms}</Link>
                 <Link href="#site-reference" className="text-white/70 hover:text-white transition-colors font-nunito text-lg py-2 block">{t.nav.siteReference}</Link>
                 <Link href="#blog" className="text-white/70 hover:text-white transition-colors font-nunito text-lg py-2 block">{t.nav.blog}</Link>
+                <Link href="#customers" className="text-white/70 hover:text-white transition-colors font-nunito text-lg py-2 block">{t.nav.pricing}</Link>
                 <Link href="#contact" className="text-white/70 hover:text-white transition-colors font-nunito text-lg py-2 block">{t.nav.contact}</Link>
 
                 <div className="pt-4 border-t border-white/10 flex items-center justify-between">
@@ -33,12 +34,13 @@ export default function NavLinks({ mobile }: NavLinksProps) {
     }
 
     return (
-        <nav className="hidden md:flex items-center gap-6 text-sm text-white/70 ml-auto mr-6">
-            <Link href="#insights" className="hover:text-white transition-colors font-nunito">{t.nav.service}</Link>
-            <Link href="#platforms" className="hover:text-white transition-colors font-nunito">{t.nav.platforms}</Link>
-            <Link href="#site-reference" className="hover:text-white transition-colors font-nunito">{t.nav.siteReference}</Link>
-            <Link href="#blog" className="hover:text-white transition-colors font-nunito">{t.nav.blog}</Link>
-            <Link href="#contact" className="hover:text-white transition-colors font-nunito">{t.nav.contact}</Link>
+        <nav className="hidden md:flex items-center gap-6 text-sm text-white ml-auto mr-6">
+            <Link href="#platforms" className="hover:text-white/80 transition-colors font-nunito">{t.nav.platforms}</Link>
+            <Link href="#insights" className="hover:text-white/80 transition-colors font-nunito">{t.nav.service}</Link>
+            <Link href="#site-reference" className="hover:text-white/80 transition-colors font-nunito">{t.nav.siteReference}</Link>
+            <Link href="#blog" className="hover:text-white/80 transition-colors font-nunito">{t.nav.blog}</Link>
+            <Link href="#customers" className="hover:text-white/80 transition-colors font-nunito">{t.nav.pricing}</Link>
+            <Link href="#contact" className="hover:text-white/80 transition-colors font-nunito">{t.nav.contact}</Link>
 
             <button
                 onClick={toggleLanguage}

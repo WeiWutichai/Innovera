@@ -13,13 +13,7 @@ export default function Pricing() {
                     <div>
                         <p className="text-sm text-white/70 font-nunito">{t.pricing.testimonials.label}</p>
                         <p className="text-lg font-semibold tracking-tight mt-1 font-nunito text-white">{t.pricing.testimonials.quote}</p>
-                        <div className="flex items-center gap-2 mt-3">
-                            <img src="https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/46c1c487-d923-41a3-b3e4-6c293d89f0fe_320w.jpg" alt="Customer" className="h-8 w-8 rounded-full object-cover" />
-                            <div className="text-xs">
-                                <p className="text-white/90 font-nunito">{t.pricing.testimonials.author}</p>
-                                <p className="text-white/50 font-nunito">{t.pricing.testimonials.role}</p>
-                            </div>
-                        </div>
+
                     </div>
                     <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-6">
                         <div className="h-16 rounded-xl border border-white/10 bg-white/[0.02] flex items-center justify-center">

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import NavLinks from './NavLinks';
 import ProfileMenu from './ProfileMenu';
+import Logo from './Logo';
 
 interface NavbarContentProps {
     user: any; // Using any for simplicity with the auth session type, or proper type if available
@@ -37,8 +38,9 @@ export default function NavbarContent({ user }: NavbarContentProps) {
             <div className="max-w-7xl mx-auto px-6">
                 <div className="flex items-center justify-between h-16">
                     {/* Logo */}
-                    <Link href="/" className="inline-flex items-center gap-2">
-                        <span className="text-sm sm:text-base font-medium tracking-tight font-nunito text-white">Innovera</span>
+                    <Link href="/" className="inline-flex items-center gap-3 group">
+                        <Logo className="w-8 h-8 text-white group-hover:scale-110 transition-transform duration-300" />
+                        <span className="text-lg font-bold tracking-tight font-nunito text-white">Innovera</span>
                     </Link>
 
                     {/* Desktop Nav */}

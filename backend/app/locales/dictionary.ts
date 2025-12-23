@@ -6,6 +6,7 @@ export const dictionary = {
             siteReference: "Site Reference",
             blog: "Blog",
             contact: "Contact Us",
+            pricing: "Pricing",
             signIn: "Sign in",
             startFree: "Start free"
         },
@@ -277,6 +278,7 @@ export const dictionary = {
             siteReference: "อ้างอิง",
             blog: "บล็อก",
             contact: "ติดต่อเรา",
+            pricing: "ราคา",
             signIn: "เข้าสู่ระบบ",
             startFree: "เริ่มต้นใช้งานฟรี"
         },
