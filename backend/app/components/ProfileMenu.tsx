@@ -11,6 +11,7 @@ type User = {
     name?: string | null;
     email?: string | null;
     image?: string | null;
+    role?: string | any;
 };
 
 interface ProfileMenuProps {
@@ -104,6 +105,14 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
                         >
                             {t.profileMenu.manage}
                         </Link>
+                        {user.role === 'ADMIN' && (
+                            <Link
+                                href="/admin/users"
+                                className="mt-1 px-5 py-2 rounded-full border border-gray-600 text-sm font-medium text-blue-300 hover:bg-white/5 transition-colors"
+                            >
+                                Manage your admin portal
+                            </Link>
+                        )}
                     </div>
 
                     {/* Actions */}

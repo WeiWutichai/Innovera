@@ -160,9 +160,9 @@ export const dictionary = {
                 submit: "Send Message"
             },
             info: {
-                email: "hello@innovera.io",
-                phone: "+1 (555) 123-4567",
-                address: "123 Innovation Dr, Tech City, TC 94043"
+                email: "info@innovera.co.th",
+                phone: "0953597497",
+                address: "44/137 Moo 16 Bueng Kham Phroi Sub-district Lam Luk Ka District, Pathum Thani 12150"
             }
         },
         pricing: {
@@ -432,9 +432,9 @@ export const dictionary = {
                 submit: "ส่งข้อความ"
             },
             info: {
-                email: "hello@innovera.io",
-                phone: "+1 (555) 123-4567",
-                address: "123 Innovation Dr, Tech City, TC 94043"
+                email: "info@innovera.co.th",
+                phone: "0953597497",
+                address: "44/137 หมู่ 16 ตำบล บึงคำพล้อย อำเภอ ลำลูกกา จังหวัด ปทุมทานี 12150"
             }
         },
         pricing: {
