@@ -3,7 +3,6 @@ import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import Features from "./components/Features";
 import SiteReference from "./components/SiteReference";
-import Blog from "./components/Blog";
 import Stats from "./components/Stats";
 import Pricing from "./components/Pricing";
 import FAQ from "./components/FAQ";
@@ -28,7 +27,7 @@ export default function Home() {
         <Features />
         <Stats />
         <SiteReference />
-        <Blog />
+        <SiteReference />
 
         <Pricing />
         <FAQ />

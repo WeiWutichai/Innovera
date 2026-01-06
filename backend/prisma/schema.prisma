@@ -18,6 +18,7 @@ model User {
   updatedAt     DateTime  @updatedAt
   accounts      Account[]
   role          Role      @default(USER)
+  posts         Post[]
 }
 
 enum Role {
@@ -42,4 +43,27 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  title     String
+  slug      String   @unique
+  content   String
+  excerpt   String
+  image     String?
+  title_th   String?
+  content_th String?
+  excerpt_th String?
+  published Boolean  @default(false)
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  metaTitle       String?
+  metaDescription String?
+  metaKeywords    String?
+  metaTitle_th    String?
+  metaDescription_th String?
+  metaKeywords_th String?
 }

@@ -2,10 +2,9 @@
 "use server";
 
 import { auth } from "@/auth";
-import { PrismaClient, Role } from "@prisma/client";
+import { Role } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-
-const prisma = new PrismaClient();
 
 export async function updateUserRole(userId: number, newRole: Role) {
     const session = await auth();

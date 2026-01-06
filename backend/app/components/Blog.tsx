@@ -23,11 +23,11 @@ export default function Blog() {
                     {t.blog.items.map((item: any, index: number) => (
                         <a
                             key={index}
-                            href={item.url}
-                            className="group flex flex-col bg-stone-950/40 backdrop-blur-sm rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300 overflow-hidden hover:-translate-y-1 h-full"
+                            href={item.url.startsWith('http') ? item.url : `/blog/${item.url.replace(/^\/|\/$/g, '')}`}
+                            className="group flex flex-col bg-[#1A1D21] rounded-3xl overflow-hidden hover:-translate-y-1 transition-all duration-300 border border-white/5 shadow-2xl"
                         >
                             {/* Image Container */}
-                            <div className="h-48 w-full bg-white p-6 flex items-center justify-center overflow-hidden relative">
+                            <div className="h-48 w-full bg-white p-8 flex items-center justify-center relative">
                                 <img
                                     src={item.image}
                                     alt={item.title}
@@ -36,19 +36,19 @@ export default function Blog() {
                             </div>
 
                             {/* Content */}
-                            <div className="p-6 flex flex-col flex-grow">
-                                <div className="flex items-center gap-3 text-xs font-semibold text-pink-400 mb-3 font-nunito uppercase tracking-wider">
+                            <div className="p-8 flex flex-col flex-grow bg-gradient-to-b from-[#1A1D21] to-[#0d0f12]">
+                                <div className="flex items-center gap-3 text-xs font-bold text-pink-500 mb-4 font-nunito uppercase tracking-widest">
                                     <span>{item.date}</span>
-                                    <span className="w-1 h-1 rounded-full bg-white/20"></span>
+                                    <span className="w-1 h-1 rounded-full bg-pink-500"></span>
                                     <span>{item.readTime}</span>
                                 </div>
-                                <h3 className="text-xl font-bold text-white mb-3 font-nunito leading-tight group-hover:text-pink-400 transition-colors">
+                                <h3 className="text-2xl font-bold text-white mb-3 font-nunito leading-tight">
                                     {item.title}
                                 </h3>
-                                <p className="text-white/60 text-sm leading-relaxed font-nunito mb-6 line-clamp-3 flex-grow">
+                                <p className="text-gray-400 text-sm leading-relaxed font-nunito mb-8 line-clamp-3">
                                     {item.desc}
                                 </p>
-                                <div className="flex items-center text-sm font-semibold text-white group-hover:text-pink-400 transition-colors font-nunito mt-auto">
+                                <div className="flex items-center text-sm font-bold text-white group-hover:text-pink-400 transition-colors font-nunito mt-auto tracking-wide">
                                     Read more
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-2 group-hover:translate-x-1 transition-transform">
                                         <path d="M5 12h14"></path>

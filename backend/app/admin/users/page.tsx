@@ -1,8 +1,6 @@
 
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import UserList from "./UserList";
-
-const prisma = new PrismaClient();
 
 export const dynamic = "force-dynamic";
 

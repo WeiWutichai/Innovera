@@ -129,7 +129,7 @@ export const dictionary = {
                     image: "/assets/maxtech-logo.png",
                     date: "Dec 24, 2024",
                     readTime: "5 min read",
-                    url: "#"
+                    url: "future-web-development"
                 },
                 {
                     title: "Building Scalable Systems",
@@ -137,7 +137,7 @@ export const dictionary = {
                     image: "/assets/pc-tuna-siam.png",
                     date: "Dec 20, 2024",
                     readTime: "4 min read",
-                    url: "#"
+                    url: "building-scalable-systems"
                 },
                 {
                     title: "Design Systems 101",
@@ -145,7 +145,7 @@ export const dictionary = {
                     image: "/assets/almendra-logo.png",
                     date: "Dec 18, 2024",
                     readTime: "6 min read",
-                    url: "#"
+                    url: "design-systems-101"
                 }
             ]
         },
@@ -400,7 +400,7 @@ export const dictionary = {
                     image: "/assets/maxtech-logo.png",
                     date: "24 ธ.ค. 2024",
                     readTime: "อ่าน 5 นาที",
-                    url: "#"
+                    url: "future-web-development"
                 },
                 {
                     title: "การสร้างระบบที่รองรับการขยายตัว",
@@ -408,7 +408,7 @@ export const dictionary = {
                     image: "/assets/pc-tuna-siam.png",
                     date: "20 ธ.ค. 2024",
                     readTime: "อ่าน 4 นาที",
-                    url: "#"
+                    url: "building-scalable-systems"
                 },
                 {
                     title: "ระบบการออกแบบ 101",
@@ -416,7 +416,7 @@ export const dictionary = {
                     image: "/assets/almendra-logo.png",
                     date: "18 ธ.ค. 2024",
                     readTime: "อ่าน 6 นาที",
-                    url: "#"
+                    url: "design-systems-101"
                 }
             ]
         },
