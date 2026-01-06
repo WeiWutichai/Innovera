@@ -108,7 +108,7 @@ export default function BlogPostContent({ post, otherPosts }: BlogPostContentPro
                     )}
 
                     {/* Content */}
-                    <div className="prose prose-invert prose-lg max-w-none prose-headings:font-bold prose-headings:text-white prose-p:text-gray-300 prose-a:text-pink-400 prose-a:no-underline hover:prose-a:underline prose-strong:text-white prose-code:text-pink-300 prose-pre:bg-white/5 prose-pre:border prose-pre:border-white/10">
+                    <div className="prose prose-invert prose-lg max-w-none prose-headings:font-bold prose-headings:text-white prose-p:text-white prose-li:text-white prose-a:text-pink-400 prose-a:no-underline hover:prose-a:underline prose-strong:text-white prose-code:text-pink-300 prose-pre:bg-white/5 prose-pre:border prose-pre:border-white/10 [&>div>p]:text-white [&>div>ul>li]:text-white [&>div>ol>li]:text-white [&_strong]:text-white [&_span]:text-white">
                         <div dangerouslySetInnerHTML={{ __html: content }} />
                     </div>
                 </article>

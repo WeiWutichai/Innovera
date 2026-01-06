@@ -27,7 +27,7 @@ export default function Home() {
         <Features />
         <Stats />
         <SiteReference />
-        <SiteReference />
+
 
         <Pricing />
         <FAQ />
