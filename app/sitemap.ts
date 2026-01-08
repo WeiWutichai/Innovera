@@ -1,6 +1,8 @@
 import { MetadataRoute } from 'next';
 import { prisma } from '@/lib/prisma'; // Make sure this path is correct based on your project
 
+export const dynamic = 'force-dynamic'
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const baseUrl = 'https://innovera.co.th'; // Replace with your actual domain
 
