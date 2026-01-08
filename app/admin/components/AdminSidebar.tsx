@@ -63,7 +63,7 @@ export default function AdminSidebar() {
             {/* Header */}
             <div className="h-16 flex items-center px-6 border-b border-white/10">
                 <Link href="/admin/users" className="flex items-center gap-2">
-                    <Logo className="w-8 h-8 text-indigo-500" />
+                    <Logo className="text-xl text-indigo-500" />
                     <span className="text-lg font-bold text-white tracking-tight">
                         Admin Portal
                     </span>

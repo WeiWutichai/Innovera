@@ -8,6 +8,7 @@ import Pricing from "./components/Pricing";
 import FAQ from "./components/FAQ";
 import Contact from "./components/Contact";
 import Footer from "./components/Footer";
+import FeatureHighlights from "./components/FeatureHighlights";
 
 import ScrollToTop from "./components/ScrollToTop";
 
@@ -26,8 +27,8 @@ export default function Home() {
         <Hero />
         <Features />
         <Stats />
+        <FeatureHighlights />
         <SiteReference />
-
 
         <Pricing />
         <FAQ />

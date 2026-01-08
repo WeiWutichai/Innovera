@@ -50,16 +50,28 @@ export const dictionary = {
         features: {
             cards: {
                 purpose: {
-                    title: "Purpose-built for product development",
+                    title: "INNO ONE",
                     desc: "Issues, docs, and sprints in one focused surface."
                 },
                 speed: {
-                    title: "Designed to move fast",
+                    title: "LAWFIRM",
                     desc: "Keyboard-first, zero-friction navigation and editing."
                 },
                 craft: {
-                    title: "Crafted with care",
+                    title: "PHYSICAL THERAPY",
                     desc: "Polished UI, predictable workflows, fewer surprises."
+                },
+                collaboration: {
+                    title: "DORMITORY",
+                    desc: "Real-time updates, comments, and collaborative editing."
+                },
+                integration: {
+                    title: "Human Resource (HR)",
+                    desc: "Streamline employee data, payroll, and performance tracking."
+                },
+                security: {
+                    title: "Enterprise-grade security",
+                    desc: "SOC2 Type II certified, keeping your data safe and compliant."
                 }
             },
             highlights: {
@@ -321,16 +333,28 @@ export const dictionary = {
         features: {
             cards: {
                 purpose: {
-                    title: "สร้างมาเพื่อการพัฒนาผลิตภัณฑ์",
+                    title: "INNO ONE",
                     desc: "จัดการปัญหา เอกสาร และสปรินต์ในที่เดียวอย่างมีประสิทธิภาพ"
                 },
                 speed: {
-                    title: "ออกแบบมาเพื่อความเร็ว",
+                    title: "LAWFIRM",
                     desc: "ใช้งานคีย์บอร์ดเป็นหลัก นำทางและแก้ไขได้อย่างลื่นไหล ไม่มีสะดุด"
                 },
                 craft: {
-                    title: "สร้างสรรค์ด้วยความใส่ใจ",
+                    title: "PHYSICAL THERAPY",
                     desc: "UI ที่สวยงาม workflow ที่คาดเดาได้ และลดเรื่องเซอร์ไพรส์ที่ไม่จำเป็น"
+                },
+                collaboration: {
+                    title: "DORMITORY",
+                    desc: "อัปเดตแบบเรียลไทม์ คอมเมนต์ และแก้ไขร่วมกันได้ทันที"
+                },
+                integration: {
+                    title: "Human Resource (HR)",
+                    desc: "จัดการข้อมูลพนักงาน เงินเดือน และการประเมินผลงานได้อย่างราบรื่น"
+                },
+                security: {
+                    title: "ความปลอดภัยระดับองค์กร",
+                    desc: "ได้รับการรับรอง SOC2 Type II รักษาข้อมูลของคุณให้ปลอดภัยและเป็นไปตามมาตรฐาน"
                 }
             },
             highlights: {

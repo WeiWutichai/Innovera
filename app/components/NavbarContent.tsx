@@ -39,8 +39,7 @@ export default function NavbarContent({ user }: NavbarContentProps) {
                 <div className="flex items-center justify-between h-16">
                     {/* Logo */}
                     <Link href="/" className="inline-flex items-center gap-3 group">
-                        <Logo className="w-8 h-8 text-white group-hover:scale-110 transition-transform duration-300" />
-                        <span className="text-lg font-bold tracking-tight font-nunito text-white">Innovera</span>
+                        <Logo className="text-2xl text-white group-hover:scale-105 transition-transform duration-300" />
                     </Link>
 
                     {/* Desktop Nav */}
