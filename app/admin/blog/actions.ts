@@ -40,7 +40,6 @@ export async function createPost(formData: FormData) {
             excerpt,
             image,
             title_th,
-            title_th,
             content_th,
             excerpt_th,
             metaTitle,
