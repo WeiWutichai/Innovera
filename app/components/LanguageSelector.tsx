@@ -39,7 +39,7 @@ export default function LanguageSelector() {
     }, []);
 
     const handleSelect = (code: string) => {
-        setLanguage(code);
+        setLanguage(code as any);
         setIsOpen(false);
     };
 
