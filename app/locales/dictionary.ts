@@ -12,7 +12,8 @@ export const dictionary = {
         },
         hero: {
             badge: "Ship faster with fewer meetings",
-            title: "Built for modern product teams",
+            title: "Your Trusted",
+            titleHighlight: "End-to-End Technology Partner",
             description: "Innovera is shaped by the habits of elite builders: tight feedback loops, ruthless prioritization, and a commitment to craft. Plan roadmaps, track sprints, and ship with confidence—without the overhead.",
             createWorkspace: "Create workspace",
             bookDemo: "Book a demo",
@@ -49,29 +50,179 @@ export const dictionary = {
         },
         features: {
             cards: {
-                purpose: {
-                    title: "INNO ONE",
-                    desc: "Issues, docs, and sprints in one focused surface."
+                webDesign: {
+                    title: "Web Design & Development",
+                    desc: "Modern website design and development, supporting all screens (Responsive) with a focus on user-friendly and beautiful UX/UI.",
+                    subtitle: "Comprehensive Website Design and Development Service",
+                    color: "blue",
+                    features: [
+                        {
+                            title: "UX/UI Design",
+                            icon: "monitor",
+                            desc: "Designed with user experience in mind, beautiful and easy to use.",
+                            items: ["Modern Interface", "Corporate Identity (CI)"]
+                        },
+                        {
+                            title: "Development",
+                            icon: "code-2",
+                            desc: "Developed with the latest technology, fast, secure, and scalable.",
+                            items: ["React / Next.js / Vue", "High Performance"]
+                        }
+                    ],
+                    table: {
+                        headers: ["Item", "Landing Page", "Corporate", "E-Commerce"],
+                        rows: [
+                            ["Pages", "1 Page (Long)", "5-10 Pages", "Unlimited"],
+                            ["CMS", "-", "Yes", "Yes"],
+                            ["Duration", "7-14 Days", "30-45 Days", "60+ Days"],
+                            ["Responsive", "Yes", "Yes", "Yes"]
+                        ]
+                    }
                 },
-                speed: {
-                    title: "LAWFIRM",
-                    desc: "Keyboard-first, zero-friction navigation and editing."
+                mobileApp: {
+                    title: "Mobile Application",
+                    desc: "Create mobile applications on both iOS and Android with the latest technology to reach your customers anywhere, anytime.",
+                    subtitle: "iOS and Android Mobile Application Development",
+                    color: "purple",
+                    features: [
+                        {
+                            title: "Cross-Platform",
+                            icon: "layers",
+                            desc: "Develop once, run on both iOS and Android. Save budget and time.",
+                            items: ["Flutter / React Native", "Single Codebase"]
+                        },
+                        {
+                            title: "Native Performance",
+                            icon: "zap",
+                            desc: "Fast and smooth performance, just like a Native App.",
+                            items: ["60 FPS Animation", "Native Features Access"]
+                        }
+                    ],
+                    table: {
+                        headers: ["Item", "Starter App", "Business App", "Enterprise"],
+                        rows: [
+                            ["Platform", "iOS/Android", "iOS/Android", "iOS/Android + Web"],
+                            ["Design", "Template", "Custom Design", "Premium Custom"],
+                            ["Duration", "1-2 Months", "3-4 Months", "5+ Months"],
+                            ["API Integration", "Basic", "Advanced", "Complex"]
+                        ]
+                    }
                 },
-                craft: {
-                    title: "PHYSICAL THERAPY",
-                    desc: "Polished UI, predictable workflows, fewer surprises."
+                digitalMarketing: {
+                    title: "Digital Marketing",
+                    desc: "Comprehensive online marketing planning including SEO, SEM, and Social Media to increase sales and brand awareness.",
+                    subtitle: "Comprehensive Online Marketing",
+                    color: "orange",
+                    features: [
+                        {
+                            title: "SEO & SEM",
+                            icon: "search",
+                            desc: "Boost your website ranking and manage ad budgets for maximum ROI.",
+                            items: ["Keyword Research", "Google Ads Management"]
+                        },
+                        {
+                            title: "Social Media",
+                            icon: "share-2",
+                            desc: "Create content and manage brand image on Facebook, IG, TikTok.",
+                            items: ["Content Planning", "Community Management"]
+                        }
+                    ],
+                    table: {
+                        headers: ["Item", "Starter", "Growth", "Corporate"],
+                        rows: [
+                            ["Social Media Posts", "8 Posts/Month", "15 Posts/Month", "30 Posts/Month"],
+                            ["Ads Budget Manage", "Up to 20k", "Up to 100k", "Unlimited"],
+                            ["SEO Articles", "2 Articles", "5 Articles", "10+ Articles"],
+                            ["Monthly Report", "Yes", "Yes", "Yes"]
+                        ]
+                    }
                 },
-                collaboration: {
-                    title: "DORMITORY",
-                    desc: "Real-time updates, comments, and collaborative editing."
+                graphicDesign: {
+                    title: "Graphic Design",
+                    desc: "Design logos, banners, advertisements, and corporate identity (CI) to be outstanding and memorable.",
+                    subtitle: "Graphic Design and Advertising Media",
+                    color: "pink",
+                    features: [
+                        {
+                            title: "Branding",
+                            icon: "star",
+                            desc: "Create a clear, distinct, and memorable brand identity.",
+                            items: ["Logo Design", "Brand Guidelines"]
+                        },
+                        {
+                            title: "Marketing Materials",
+                            icon: "image",
+                            desc: "Design eye-catching advertising media that stimulates sales.",
+                            items: ["Social Media Banners", "Brochure / Print"]
+                        }
+                    ],
+                    table: {
+                        headers: ["Item", "Logo Only", "Brand Starter", "Full CI"],
+                        rows: [
+                            ["Logo Drafts", "3 Drafts", "5 Drafts", "Unlimited"],
+                            ["Mood & Tone", "Yes", "Yes", "Yes"],
+                            ["CI Manual", "-", "Basic", "Full Book"],
+                            ["Files Included", "Ai, PNG, JPG", "All Formats", "All Formats"]
+                        ]
+                    }
                 },
-                integration: {
-                    title: "Human Resource (HR)",
-                    desc: "Streamline employee data, payroll, and performance tracking."
+                cloudSolutions: {
+                    title: "Cloud Solutions",
+                    desc: "Consulting and installation services for Cloud Server systems with high security and stability.",
+                    subtitle: "Cloud System and Server Services",
+                    color: "teal",
+                    features: [
+                        {
+                            title: "Cloud Migration",
+                            icon: "upload-cloud",
+                            desc: "Migrate from old servers to Cloud smoothly with no data loss.",
+                            items: ["Zero Downtime", "Data Integrity"]
+                        },
+                        {
+                            title: "DevOps & Security",
+                            icon: "shield",
+                            desc: "Implement CI/CD and Firewall security to prevent attacks.",
+                            items: ["Auto Scaling", "DDoS Protection"]
+                        }
+                    ],
+                    table: {
+                        headers: ["Item", "Setup", "Maintenance", "Enterprise"],
+                        rows: [
+                            ["Server Setup", "Yes", "Review", "Custom Architecture"],
+                            ["Monitoring", "Basic", "24/7 Realtime", "24/7 + Alert"],
+                            ["Backup", "Daily", "Hourly", "Realtime Replica"],
+                            ["Support", "Email", "Email/Chat", "Dedicated Team"]
+                        ]
+                    }
                 },
-                security: {
-                    title: "Enterprise-grade security",
-                    desc: "SOC2 Type II certified, keeping your data safe and compliant."
+                itConsultant: {
+                    title: "IT Consultant",
+                    desc: "IT consultancy to help plan strategies and solve technical problems to increase operational efficiency.",
+                    subtitle: "Information Technology Consultant",
+                    color: "indigo",
+                    features: [
+                        {
+                            title: "Digital Strategy",
+                            icon: "compass",
+                            desc: "Plan a long-term roadmap for implementing technology in the organization.",
+                            items: ["Technology Roadmap", "Budget Planning"]
+                        },
+                        {
+                            title: "System Audit",
+                            icon: "file-search",
+                            desc: "Audit existing systems to find weaknesses and improvement guidelines.",
+                            items: ["Performance Audit", "Security Audit"]
+                        }
+                    ],
+                    table: {
+                        headers: ["Item", "Consultation", "Project Manager", "Full Audit"],
+                        rows: [
+                            ["Session", "2 Times/Month", "Weekly", "On-Site"],
+                            ["Deliverables", "Report", "Progress Tracking", "Full Documentation"],
+                            ["Team", "Senior Consultant", "PM + Team", "Specialist Team"],
+                            ["Contract", "Per Time/Month", "3-6 Months", "Project Based"]
+                        ]
+                    }
                 }
             },
             highlights: {
@@ -174,7 +325,9 @@ export const dictionary = {
             info: {
                 email: "info@innovera.co.th",
                 phone: "0953597497",
-                address: "44/137 Moo 16 Bueng Kham Phroi Sub-district Lam Luk Ka District, Pathum Thani 12150"
+                address: "44/137 Moo 16 Bueng Kham Phroi Sub-district Lam Luk Ka District, Pathum Thani 12150",
+                line: "Line Contact",
+                whatsapp: "WhatsApp"
             }
         },
         pricing: {
@@ -296,7 +449,8 @@ export const dictionary = {
         },
         hero: {
             badge: "ส่งงานไว ลดการประชุม",
-            title: "สร้างเพื่อทีมผลิตภัณฑ์ยุคใหม่",
+            title: "พันธมิตรที่คุณวางใจ",
+            titleHighlight: "ด้านเทคโนโลยีแบบครบวงจร",
             description: "Innovera ถูกสร้างขึ้นจากแนวคิดของนักพัฒนามืออาชีพ: เน้นรอบการทำงานที่รวดเร็ว การจัดลำดับความสำคัญที่ชัดเจน และความใส่ใจในรายละเอียด วางแผนแผนงาน ติดตามสปรินต์ และส่งมอบงานอย่างมั่นใจ—โดยไม่ต้องมีภาระส่วนเกิน",
             createWorkspace: "สร้างพื้นที่ทำงาน",
             bookDemo: "จองเวลาสาธิต",
@@ -332,29 +486,179 @@ export const dictionary = {
         },
         features: {
             cards: {
-                purpose: {
-                    title: "INNO ONE",
-                    desc: "จัดการปัญหา เอกสาร และสปรินต์ในที่เดียวอย่างมีประสิทธิภาพ"
+                webDesign: {
+                    title: "Web Design & Development",
+                    desc: "รับออกแบบและพัฒนาเว็บไซต์ที่ทันสมัย รองรับทุกหน้าจอ (Responsive) เน้น UX/UI ที่ใช้งานง่ายและสวยงาม",
+                    subtitle: "บริการออกแบบและพัฒนาเว็บไซต์ครบวงจร",
+                    color: "blue",
+                    features: [
+                        {
+                            title: "UX/UI Design",
+                            icon: "monitor",
+                            desc: "ออกแบบโดยคำนึงถึงประสบการณ์ผู้ใช้งานเป็นหลัก สวยงามและใช้งานง่าย",
+                            items: ["Modern Interface", "Corporate Identity (CI)"]
+                        },
+                        {
+                            title: "Development",
+                            icon: "code-2",
+                            desc: "พัฒนาด้วยเทคโนโลยีล่าสุด รวดเร็ว ปลอดภัย และรองรับการขยายตัว",
+                            items: ["React / Next.js / Vue", "High Performance"]
+                        }
+                    ],
+                    table: {
+                        headers: ["รายการ", "Landing Page", "Corporate", "E-Commerce"],
+                        rows: [
+                            ["จำนวนหน้า", "1 หน้า (ยาว)", "5-10 หน้า", "ไม่จำกัด"],
+                            ["ระบบหลังบ้าน (CMS)", "-", "Yes", "Yes"],
+                            ["ระยะเวลา", "7-14 วัน", "30-45 วัน", "60+ วัน"],
+                            ["Responsive", "Yes", "Yes", "Yes"]
+                        ]
+                    }
                 },
-                speed: {
-                    title: "LAWFIRM",
-                    desc: "ใช้งานคีย์บอร์ดเป็นหลัก นำทางและแก้ไขได้อย่างลื่นไหล ไม่มีสะดุด"
+                mobileApp: {
+                    title: "Mobile Application",
+                    desc: "สร้างแอปพลิเคชันบนมือถือทั้ง iOS และ Android ด้วยเทคโนโลยีล่าสุด เพื่อเข้าถึงลูกค้าของคุณได้ทุกที่ทุกเวลา",
+                    subtitle: "พัฒนาแอปพลิเคชันมือถือ iOS และ Android",
+                    color: "purple",
+                    features: [
+                        {
+                            title: "Cross-Platform",
+                            icon: "layers",
+                            desc: "พัฒนาครั้งเดียวใช้ได้ทั้ง iOS และ Android ประหยัดงบประมาณและเวลา",
+                            items: ["Flutter / React Native", "Single Codebase"]
+                        },
+                        {
+                            title: "Native Performance",
+                            icon: "zap",
+                            desc: "ประสิทธิภาพการทำงานรวดเร็ว ลื่นไหล เหมือน Native App จริงๆ",
+                            items: ["60 FPS Animation", "Native Features Access"]
+                        }
+                    ],
+                    table: {
+                        headers: ["รายการ", "Starter App", "Business App", "Enterprise"],
+                        rows: [
+                            ["Platform", "iOS/Android", "iOS/Android", "iOS/Android + Web"],
+                            ["ดีไซน์", "Template", "Custom Design", "Premium Custom"],
+                            ["ระยะเวลา", "1-2 เดือน", "3-4 เดือน", "5+ เดือน"],
+                            ["API Integration", "Basic", "Advanced", "Complex"]
+                        ]
+                    }
                 },
-                craft: {
-                    title: "PHYSICAL THERAPY",
-                    desc: "UI ที่สวยงาม workflow ที่คาดเดาได้ และลดเรื่องเซอร์ไพรส์ที่ไม่จำเป็น"
+                digitalMarketing: {
+                    title: "Digital Marketing",
+                    desc: "วางแผนการตลาดออนไลน์ครบวงจร SEO, SEM และ Social Media เพื่อเพิ่มยอดขายและการรับรู้แบรนด์",
+                    subtitle: "ทำการตลาดออนไลน์แบบครบวงจร",
+                    color: "orange",
+                    features: [
+                        {
+                            title: "SEO & SEM",
+                            icon: "search",
+                            desc: "ดันเว็บไซต์ให้ติดอันดับการค้นหา และบริหารงบโฆษณาให้คุ้มค่าที่สุด",
+                            items: ["Keyword Research", "Google Ads Management"]
+                        },
+                        {
+                            title: "Social Media",
+                            icon: "share-2",
+                            desc: "สร้างคอนเทนต์และดูแลภาพลักษณ์แบรนด์บน Facebook, IG, TikTok",
+                            items: ["Content Planning", "Community Management"]
+                        }
+                    ],
+                    table: {
+                        headers: ["รายการ", "Starter", "Growth", "Corporate"],
+                        rows: [
+                            ["Social Media Posts", "8 โพสต์/เดือน", "15 โพสต์/เดือน", "30 โพสต์/เดือน"],
+                            ["Ads Budget Manage", "ไม่เกิน 20k", "ไม่เกิน 100k", "ไม่จำกัด"],
+                            ["SEO Articles", "2 บทความ", "5 บทความ", "10+ บทความ"],
+                            ["Monthly Report", "Yes", "Yes", "Yes"]
+                        ]
+                    }
                 },
-                collaboration: {
-                    title: "DORMITORY",
-                    desc: "อัปเดตแบบเรียลไทม์ คอมเมนต์ และแก้ไขร่วมกันได้ทันที"
+                graphicDesign: {
+                    title: "Graphic Design",
+                    desc: "ออกแบบโลโก้ แบนเนอร์ สื่อโฆษณา และอัตลักษณ์องค์กร (CI) ให้โดดเด่นและจดจำง่าย",
+                    subtitle: "ออกแบบกราฟิกและสื่อโฆษณา",
+                    color: "pink",
+                    features: [
+                        {
+                            title: "Branding",
+                            icon: "star",
+                            desc: "สร้างตัวตนของแบรนด์ให้ชัดเจน แตกต่าง และน่าจดจำ",
+                            items: ["Logo Design", "Brand Guidelines"]
+                        },
+                        {
+                            title: "Marketing Materials",
+                            icon: "image",
+                            desc: "ออกแบบสื่อโฆษณาที่ดึงดูดสายตาและกระตุ้นยอดขาย",
+                            items: ["Social Media Banners", "Brochure / Print"]
+                        }
+                    ],
+                    table: {
+                        headers: ["รายการ", "Logo Only", "Brand Starter", "Full CI"],
+                        rows: [
+                            ["Logo Drafts", "3 แบบ", "5 แบบ", "Unlimited"],
+                            ["Mood & Tone", "Yes", "Yes", "Yes"],
+                            ["CI Manual", "-", "Basic", "Full Book"],
+                            ["Files Included", "Ai, PNG, JPG", "All Formats", "All Formats"]
+                        ]
+                    }
                 },
-                integration: {
-                    title: "Human Resource (HR)",
-                    desc: "จัดการข้อมูลพนักงาน เงินเดือน และการประเมินผลงานได้อย่างราบรื่น"
+                cloudSolutions: {
+                    title: "Cloud Solutions",
+                    desc: "บริการให้คำปรึกษาและติดตั้งระบบ Cloud Server ที่มีความปลอดภัยและเสถียรภาพสูง",
+                    subtitle: "บริการระบบคลาวด์และเซิร์ฟเวอร์",
+                    color: "teal",
+                    features: [
+                        {
+                            title: "Cloud Migration",
+                            icon: "upload-cloud",
+                            desc: "ย้ายระบบจาก Server เดิมขึ้นสู่ Cloud อย่างราบรื่น ข้อมูลไม่สูญหาย",
+                            items: ["Zero Downtime", "Data Integrity"]
+                        },
+                        {
+                            title: "DevOps & Security",
+                            icon: "shield",
+                            desc: "วางระบบ CI/CD และระบบความปลอดภัย Firewall ป้องกันการโจมตี",
+                            items: ["Auto Scaling", "DDoS Protection"]
+                        }
+                    ],
+                    table: {
+                        headers: ["รายการ", "Setup", "Maintenance", "Enterprise"],
+                        rows: [
+                            ["Server Setup", "Yes", "Review", "Custom Architecture"],
+                            ["Monitoring", "Basic", "24/7 Realtime", "24/7 + Alert"],
+                            ["Backup", "Daily", "Hourly", "Realtime Replica"],
+                            ["Support", "Email", "Email/Chat", "Dedicated Team"]
+                        ]
+                    }
                 },
-                security: {
-                    title: "ความปลอดภัยระดับองค์กร",
-                    desc: "ได้รับการรับรอง SOC2 Type II รักษาข้อมูลของคุณให้ปลอดภัยและเป็นไปตามมาตรฐาน"
+                itConsultant: {
+                    title: "IT Consultant",
+                    desc: "ที่ปรึกษาด้านไอที ช่วยวางแผนกลยุทธ์และแก้ไขปัญหาทางเทคนิคเพื่อเพิ่มประสิทธิภาพการทำงาน",
+                    subtitle: "ที่ปรึกษาด้านเทคโนโลยีสารสนเทศ",
+                    color: "indigo",
+                    features: [
+                        {
+                            title: "Digital Strategy",
+                            icon: "compass",
+                            desc: "วางแผน Roadmap การนำเทคโนโลยีมาใช้ในองค์กรระยะยาว",
+                            items: ["Technology Roadmap", "Budget Planning"]
+                        },
+                        {
+                            title: "System Audit",
+                            icon: "file-search",
+                            desc: "ตรวจสอบระบบเดิมเพื่อหาจุดอ่อนและแนวทางการปรับปรุง",
+                            items: ["Performance Audit", "Security Audit"]
+                        }
+                    ],
+                    table: {
+                        headers: ["รายการ", "Consultation", "Project Manager", "Full Audit"],
+                        rows: [
+                            ["Session", "2 ครั้ง/เดือน", "Weekly", "On-Site"],
+                            ["Deliverables", "Report", "Progress Tracking", "Full Documentation"],
+                            ["Team", "Senior Consultant", "PM + Team", "Specialist Team"],
+                            ["Contract", "รายครั้ง/รายเดือน", "3-6 เดือน", "Project Based"]
+                        ]
+                    }
                 }
             },
             highlights: {
@@ -458,7 +762,9 @@ export const dictionary = {
             info: {
                 email: "info@innovera.co.th",
                 phone: "0953597497",
-                address: "44/137 หมู่ 16 ตำบล บึงคำพล้อย อำเภอ ลำลูกกา จังหวัด ปทุมทานี 12150"
+                address: "44/137 หมู่ 16 ตำบล บึงคำพล้อย อำเภอ ลำลูกกา จังหวัด ปทุมทานี 12150",
+                line: "Line Contact",
+                whatsapp: "WhatsApp"
             }
         },
         pricing: {

@@ -10,44 +10,31 @@ interface NavLinksProps {
 export default function NavLinks({ mobile }: NavLinksProps) {
     const { t, language, toggleLanguage } = useLanguage();
 
+    const linkClass = "text-gray-600 hover:text-primary transition uppercase font-sans font-semibold text-sm tracking-wide";
+    const mobileLinkClass = "block text-gray-700 font-bold hover:text-primary py-2 uppercase";
+
     if (mobile) {
         return (
-            <nav className="flex flex-col space-y-4">
-                <Link href="/#insights" className="text-white/70 hover:text-white transition-colors font-nunito text-lg py-2 block">{t.nav.service}</Link>
-                <Link href="/#platforms" className="text-white/70 hover:text-white transition-colors font-nunito text-lg py-2 block">{t.nav.platforms}</Link>
-                <Link href="/#site-reference" className="text-white/70 hover:text-white transition-colors font-nunito text-lg py-2 block">{t.nav.siteReference}</Link>
-                <Link href="/blog" className="text-white/70 hover:text-white transition-colors font-nunito text-lg py-2 block">{t.nav.blog}</Link>
-                <Link href="/#customers" className="text-white/70 hover:text-white transition-colors font-nunito text-lg py-2 block">{t.nav.pricing}</Link>
-                <Link href="/#contact" className="text-white/70 hover:text-white transition-colors font-nunito text-lg py-2 block">{t.nav.contact}</Link>
+            <nav className="flex flex-col space-y-2">
+                <Link href="/#services" className={mobileLinkClass}>{t.nav.service}</Link>
+                <Link href="/#platforms" className={mobileLinkClass}>{t.nav.platforms}</Link>
+                <Link href="/#site-reference" className={mobileLinkClass}>{t.nav.siteReference}</Link>
+                <Link href="/blog" className={mobileLinkClass}>{t.nav.blog}</Link>
+                <Link href="/#customers" className={mobileLinkClass}>{t.nav.pricing}</Link>
 
-                <div className="pt-4 border-t border-white/10 flex items-center justify-between">
-                    <span className="text-white/70 font-nunito">{language === 'en' ? 'Language' : 'ภาษา'}</span>
-                    <button
-                        onClick={toggleLanguage}
-                        className="px-3 py-1.5 rounded bg-white/5 border border-white/10 text-xs font-bold text-white hover:bg-white/10 transition-colors uppercase"
-                    >
-                        {language === 'en' ? 'TH' : 'EN'}
-                    </button>
-                </div>
+
             </nav>
         );
     }
 
     return (
-        <nav className="hidden md:flex items-center gap-6 text-sm text-white ml-auto mr-6">
-            <Link href="/#platforms" className="hover:text-white/80 transition-colors font-nunito">{t.nav.platforms}</Link>
-            <Link href="/#insights" className="hover:text-white/80 transition-colors font-nunito">{t.nav.service}</Link>
-            <Link href="/#site-reference" className="hover:text-white/80 transition-colors font-nunito">{t.nav.siteReference}</Link>
-            <Link href="/blog" className="hover:text-white/80 transition-colors font-nunito">{t.nav.blog}</Link>
-            <Link href="/#customers" className="hover:text-white/80 transition-colors font-nunito">{t.nav.pricing}</Link>
-            <Link href="/#contact" className="hover:text-white/80 transition-colors font-nunito">{t.nav.contact}</Link>
+        <nav className="hidden md:flex items-center space-x-8">
+            <Link href="/#services" className={linkClass}>{t.nav.service}</Link>
+            <Link href="/#platforms" className={linkClass}>{t.nav.platforms}</Link>
+            <Link href="/#site-reference" className={linkClass}>{t.nav.siteReference}</Link>
+            <Link href="/blog" className={linkClass}>{t.nav.blog}</Link>
+            <Link href="/#customers" className={linkClass}>{t.nav.pricing}</Link>
 
-            <button
-                onClick={toggleLanguage}
-                className="ml-2 px-2 py-1 rounded bg-white/5 border border-white/10 text-xs font-bold text-white hover:bg-white/10 transition-colors uppercase"
-            >
-                {language === 'en' ? 'TH' : 'EN'}
-            </button>
         </nav>
     );
 }

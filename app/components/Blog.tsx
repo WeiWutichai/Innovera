@@ -3,61 +3,89 @@ import React from 'react';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function Blog() {
-    const { t } = useLanguage();
+    // const { t } = useLanguage();
 
     return (
-        <section id="blog" className="py-24 bg-transparent border-t border-white/5 relative overflow-hidden">
-            <div className="max-w-7xl mx-auto px-6 relative z-10">
-                <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
-                    <div>
-                        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 font-nunito tracking-tight">
-                            {t.blog.title}
-                        </h2>
-                        <p className="text-lg text-white/60 max-w-2xl font-nunito">
-                            {t.blog.subtitle}
-                        </p>
-                    </div>
+        <section id="blog" className="py-24 bg-gray-50">
+            <div className="container mx-auto px-6">
+                <div className="text-center mb-16 reveal">
+                    <h2 className="text-3xl lg:text-4xl font-extrabold text-secondary mb-4 font-sans">Insights & Updates</h2>
+                    <div className="w-20 h-1 bg-primary mx-auto rounded"></div>
+                    <p className="text-gray-600 mt-6 max-w-2xl mx-auto font-thai">ติดตามข่าวสาร เทรนด์เทคโนโลยี และบทความน่าสนใจจากทีมงานผู้เชี่ยวชาญ</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {t.blog.items.map((item: any, index: number) => (
-                        <a
-                            key={index}
-                            href={item.url.startsWith('http') ? item.url : `/blog/${item.url.replace(/^\/|\/$/g, '')}`}
-                            className="group flex flex-col bg-[#1A1D21] rounded-3xl overflow-hidden hover:-translate-y-1 transition-all duration-300 border border-white/5 shadow-2xl"
-                        >
-                            {/* Image Container */}
-                            <div className="h-48 w-full bg-white p-8 flex items-center justify-center relative">
-                                <img
-                                    src={item.image}
-                                    alt={item.title}
-                                    className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
-                                />
+                <div className="grid md:grid-cols-3 gap-8 reveal">
+                    {/* Blog 1 */}
+                    <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-xl transition duration-300 group cursor-pointer">
+                        <div className="relative overflow-hidden h-48">
+                            <img src="https://images.unsplash.com/photo-1677442136019-21780ecad995?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="AI" className="w-full h-full object-cover transform group-hover:scale-110 transition duration-700" />
+                            <div className="absolute top-4 right-4 bg-white/90 backdrop-blur text-xs font-bold px-3 py-1 rounded text-primary font-sans">
+                                TECHNOLOGY
                             </div>
+                        </div>
+                        <div className="p-6">
+                            <div className="flex items-center gap-2 text-gray-400 text-xs mb-3 font-sans">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                                <span>March 15, 2024</span>
+                            </div>
+                            <h3 className="font-bold text-lg mb-3 leading-snug group-hover:text-primary transition font-sans">The Future of AI in Business: Trends to Watch</h3>
+                            <a href="#" className="text-primary text-sm font-bold hover:underline flex items-center gap-1 font-sans">
+                                READ MORE
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M5 12h14"></path>
+                                    <path d="M12 5l7 7-7 7"></path>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
 
-                            {/* Content */}
-                            <div className="p-8 flex flex-col flex-grow bg-gradient-to-b from-[#1A1D21] to-[#0d0f12]">
-                                <div className="flex items-center gap-3 text-xs font-bold text-pink-500 mb-4 font-nunito uppercase tracking-widest">
-                                    <span>{item.date}</span>
-                                    <span className="w-1 h-1 rounded-full bg-pink-500"></span>
-                                    <span>{item.readTime}</span>
-                                </div>
-                                <h3 className="text-2xl font-bold text-white mb-3 font-nunito leading-tight">
-                                    {item.title}
-                                </h3>
-                                <p className="text-gray-400 text-sm leading-relaxed font-nunito mb-8 line-clamp-3">
-                                    {item.desc}
-                                </p>
-                                <div className="flex items-center text-sm font-bold text-white group-hover:text-pink-400 transition-colors font-nunito mt-auto tracking-wide">
-                                    Read more
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-2 group-hover:translate-x-1 transition-transform">
-                                        <path d="M5 12h14"></path>
-                                        <path d="M12 5l7 7-7 7"></path>
-                                    </svg>
-                                </div>
+                    {/* Blog 2 */}
+                    <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-xl transition duration-300 group cursor-pointer">
+                        <div className="relative overflow-hidden h-48">
+                            <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Strategy" className="w-full h-full object-cover transform group-hover:scale-110 transition duration-700" />
+                            <div className="absolute top-4 right-4 bg-white/90 backdrop-blur text-xs font-bold px-3 py-1 rounded text-blue-600 font-sans">
+                                BUSINESS
                             </div>
-                        </a>
-                    ))}
+                        </div>
+                        <div className="p-6">
+                            <div className="flex items-center gap-2 text-gray-400 text-xs mb-3 font-sans">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                                <span>March 10, 2024</span>
+                            </div>
+                            <h3 className="font-bold text-lg mb-3 leading-snug group-hover:text-primary transition font-sans">Digital Transformation Strategy for 2024</h3>
+                            <a href="#" className="text-primary text-sm font-bold hover:underline flex items-center gap-1 font-sans">
+                                READ MORE
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M5 12h14"></path>
+                                    <path d="M12 5l7 7-7 7"></path>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+
+                    {/* Blog 3 */}
+                    <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-xl transition duration-300 group cursor-pointer">
+                        <div className="relative overflow-hidden h-48">
+                            <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Security" className="w-full h-full object-cover transform group-hover:scale-110 transition duration-700" />
+                            <div className="absolute top-4 right-4 bg-white/90 backdrop-blur text-xs font-bold px-3 py-1 rounded text-red-600 font-sans">
+                                SECURITY
+                            </div>
+                        </div>
+                        <div className="p-6">
+                            <div className="flex items-center gap-2 text-gray-400 text-xs mb-3 font-sans">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                                <span>March 5, 2024</span>
+                            </div>
+                            <h3 className="font-bold text-lg mb-3 leading-snug group-hover:text-primary transition font-sans">Cyber Security Trends: Protecting Your Data</h3>
+                            <a href="#" className="text-primary text-sm font-bold hover:underline flex items-center gap-1 font-sans">
+                                READ MORE
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M5 12h14"></path>
+                                    <path d="M12 5l7 7-7 7"></path>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>

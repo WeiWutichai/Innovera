@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Nunito } from "next/font/google"; // Import both fonts
+import { Inter, Kanit } from "next/font/google"; // Import both fonts
 import "./globals.css";
 import { Providers } from "./Providers";
 
@@ -8,10 +8,10 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-const nunito = Nunito({
-  variable: "--font-nunito",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"], // Load necessary weights
+const kanit = Kanit({
+  variable: "--font-kanit",
+  subsets: ["thai", "latin"],
+  weight: ["300", "400", "500", "600"],
 });
 
 export const metadata: Metadata = {
@@ -27,8 +27,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        suppressHydrationWarning
-        className={`${inter.variable} ${nunito.variable} antialiased selection:bg-white/10 selection:text-white bg-neutral-950 font-sans`}
+        suppressHydrationWarning={true}
+        className={`${inter.variable} ${kanit.variable} antialiased selection:bg-white/10 selection:text-white bg-neutral-950 font-sans`}
       >
         <Providers>
           {children}

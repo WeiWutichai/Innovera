@@ -1,122 +1,100 @@
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function SiteReference() {
-    const { t } = useLanguage();
+    const [showAll, setShowAll] = useState(false);
 
-    const scrollRef = React.useRef<HTMLDivElement>(null);
-    const [isPaused, setIsPaused] = React.useState(false);
-
-    // Auto-scroll logic
-    React.useEffect(() => {
-        if (isPaused) return;
-
-        const interval = setInterval(() => {
-            if (scrollRef.current) {
-                const { current } = scrollRef;
-                const maxScroll = current.scrollWidth - current.clientWidth;
-
-                // If we're near the end (within 10px), scroll back to start
-                if (current.scrollLeft >= maxScroll - 10) {
-                    current.scrollTo({ left: 0, behavior: 'smooth' });
-                } else {
-                    // Otherwise scroll right
-                    current.scrollBy({ left: 400, behavior: 'smooth' });
-                }
-            }
-        }, 3000); // Scroll every 3 seconds
-
-        return () => clearInterval(interval);
-    }, [isPaused]);
-
-    const scroll = (direction: 'left' | 'right') => {
-        if (scrollRef.current) {
-            const { current } = scrollRef;
-            const scrollAmount = direction === 'left' ? -400 : 400;
-            current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    const stories = [
+        {
+            id: 1,
+            name: "MaxTech Elevator & Services",
+            logo: "/images/maxtech_logo.png",
+            tag: "ENGINEERING",
+            tagColor: "bg-red-600",
+            desc: "ยกระดับมาตรฐานบริการลิฟต์ด้วยเทคโนโลยี IoT และระบบติดตามการทำงานแบบเรียลไทม์",
+            imgClass: ""
+        },
+        {
+            id: 2,
+            name: "P.C. Tuna Siam",
+            logo: "/images/pctuna_logo.png",
+            tag: "FOOD INDUSTRY",
+            tagColor: "bg-blue-600",
+            desc: "เพิ่มประสิทธิภาพการผลิตอาหารทะเลกระป๋องด้วยระบบอัตโนมัติและการจัดการข้อมูลที่แม่นยำ",
+            imgClass: "p-2"
+        },
+        {
+            id: 3,
+            name: "Almendra",
+            logo: "/images/almendra_logo.png",
+            tag: "FOOD INNOVATION",
+            tagColor: "bg-green-600",
+            desc: "นวัตกรรมการลดน้ำตาลในอาหารเพื่อสุขภาพ ขับเคลื่อนด้วยการวิจัยและเทคโนโลยีทันสมัย",
+            imgClass: ""
+        },
+        {
+            id: 4,
+            name: "Duro",
+            logo: "/images/duro_logo.png",
+            tag: "MANUFACTURING",
+            tagColor: "bg-orange-600",
+            desc: "เพิ่มขีดความสามารถในการผลิตยางและชิ้นส่วนยานยนต์ด้วยโซลูชันการจัดการโรงงานอัจฉริยะ",
+            imgClass: "p-4"
         }
-    };
+    ];
+
+    const visibleStories = showAll ? stories : stories.slice(0, 3);
 
     return (
-        <section id="site-reference" className="py-24 bg-transparent border-t border-white/5 relative overflow-hidden">
-            <div className="max-w-7xl mx-auto px-6 relative z-10">
-                <div className="flex flex-col md:flex-row justify-between items-end mb-12">
-                    <div className="text-center md:text-left mb-6 md:mb-0">
-                        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 font-nunito tracking-tight">
-                            {t.siteReference.title}
-                        </h2>
-                        <p className="text-lg text-white/60 max-w-2xl font-nunito">
-                            {t.siteReference.subtitle}
-                        </p>
+        <section id="site-reference" className="py-24 bg-secondary text-white">
+            <div className="container mx-auto px-6">
+                <div className="flex flex-col md:flex-row justify-between items-end mb-12 reveal">
+                    <div>
+                        <h2 className="text-3xl lg:text-4xl font-extrabold mb-4 font-sans">Customer Success Stories</h2>
+                        <p className="text-gray-400 max-w-xl font-sans">See how leading companies are transforming their business with Innovera.</p>
                     </div>
-                    {/* Navigation Buttons */}
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => scroll('left')}
-                            className="p-3 rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors"
-                        >
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M15 18l-6-6 6-6" />
-                            </svg>
-                        </button>
-                        <button
-                            onClick={() => scroll('right')}
-                            className="p-3 rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors"
-                        >
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M9 18l6-6-6-6" />
-                            </svg>
-                        </button>
-                    </div>
+                    <button
+                        onClick={() => setShowAll(!showAll)}
+                        className="hidden md:inline-block px-6 py-3 border border-gray-600 rounded hover:bg-gray-800 transition text-sm font-bold tracking-wide uppercase font-sans"
+                    >
+                        {showAll ? "SHOW LESS" : "VIEW ALL STORIES"}
+                    </button>
                 </div>
 
-                <div
-                    ref={scrollRef}
-                    className="flex gap-6 overflow-x-auto pb-8 snap-x snap-mandatory scrollbar-hide -mx-6 px-6 md:mx-0 md:px-0"
-                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                    onMouseEnter={() => setIsPaused(true)}
-                    onMouseLeave={() => setIsPaused(false)}
-                >
-                    {t.siteReference.items.map((item: any, index: number) => (
-                        <a
-                            key={index}
-                            href={item.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="group flex-none w-full md:w-[400px] snap-center flex flex-col bg-stone-950/40 backdrop-blur-sm rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300 overflow-hidden hover:-translate-y-1"
-                        >
-                            {/* Image Container */}
-                            <div className="h-48 w-full bg-white p-6 flex items-center justify-center overflow-hidden relative">
-                                {item.image ? (
-                                    <img
-                                        src={item.image}
-                                        alt={item.title}
-                                        className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
-                                    />
-                                ) : (
-                                    <div className="p-3 bg-stone-900 rounded-xl text-white">
-                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-                                        </svg>
-                                    </div>
-                                )}
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 reveal">
+                    {visibleStories.map((story) => (
+                        <div key={story.id} className="bg-white/5 rounded-xl overflow-hidden group cursor-pointer border border-white/10 hover:border-primary transition duration-300">
+                            <div className="relative h-48 p-8 flex items-center justify-center bg-white">
+                                <img
+                                    src={story.logo}
+                                    alt={story.name}
+                                    className={`w-full h-full object-contain group-hover:scale-105 transition duration-300 ${story.imgClass}`}
+                                />
+                                <div className="absolute top-4 left-4">
+                                    <span className={`${story.tagColor} text-white text-[10px] font-bold px-2 py-1 rounded-full font-sans tracking-wide`}>
+                                        {story.tag}
+                                    </span>
+                                </div>
                             </div>
-
-                            <div className="p-6 flex flex-col flex-grow">
-                                <h3 className="text-xl font-semibold text-white mb-2 font-nunito group-hover:text-pink-400 transition-colors">{item.title}</h3>
-                                <p className="text-sm text-white/60 font-nunito leading-relaxed flex-grow">{item.desc}</p>
+                            <div className="p-6">
+                                <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition font-sans text-white">{story.name}</h3>
+                                <p className="text-gray-400 text-sm mb-4 font-thai">{story.desc}</p>
+                                <span className="text-sm font-bold border-b border-primary pb-0.5 group-hover:text-primary transition font-sans text-white">Read Success Story</span>
                             </div>
-                        </a>
+                        </div>
                     ))}
                 </div>
-            </div>
 
-            {/* Background decoration */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl pointer-events-none">
-                <div className="absolute top-1/2 left-1/4 w-96 h-96 bg-purple-500/5 blur-[100px] rounded-full"></div>
-                <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/5 blur-[100px] rounded-full"></div>
+                {/* Mobile View All Button */}
+                <div className="mt-8 text-center md:hidden">
+                    <button
+                        onClick={() => setShowAll(!showAll)}
+                        className="px-6 py-3 border border-gray-600 rounded hover:bg-gray-800 transition text-sm font-bold tracking-wide uppercase font-sans text-white"
+                    >
+                        {showAll ? "SHOW LESS" : "VIEW ALL STORIES"}
+                    </button>
+                </div>
             </div>
         </section>
     );

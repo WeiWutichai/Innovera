@@ -10,7 +10,7 @@ export default async function AdminUsersPage() {
     });
 
     return (
-        <div className="min-h-screen bg-[#050505] p-8 font-nunito">
+        <div className="min-h-screen bg-secondary p-8 font-sans">
             <div className="max-w-6xl mx-auto">
                 <div className="flex items-center justify-between mb-8">
                     <div>
@@ -19,7 +19,7 @@ export default async function AdminUsersPage() {
                             Manage access and roles for all registered users.
                         </p>
                     </div>
-                    <div className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 px-4 py-2 rounded-lg text-sm font-medium">
+                    <div className="bg-primary/10 border border-primary/20 text-primary px-4 py-2 rounded-lg text-sm font-medium">
                         Total Users: {users.length}
                     </div>
                 </div>

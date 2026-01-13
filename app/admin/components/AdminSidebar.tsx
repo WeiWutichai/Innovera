@@ -4,7 +4,6 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
-import Logo from "@/app/components/Logo";
 
 export default function AdminSidebar() {
     const pathname = usePathname();
@@ -59,14 +58,11 @@ export default function AdminSidebar() {
     ];
 
     return (
-        <aside className="fixed left-0 top-0 h-screen w-64 bg-[#050505] border-r border-white/10 flex flex-col font-nunito">
+        <aside className="fixed left-0 top-0 h-screen w-64 bg-secondary border-r border-white/5 flex flex-col font-sans">
             {/* Header */}
-            <div className="h-16 flex items-center px-6 border-b border-white/10">
+            <div className="h-16 flex items-center px-6 border-b border-white/5">
                 <Link href="/admin/users" className="flex items-center gap-2">
-                    <Logo className="text-xl text-indigo-500" />
-                    <span className="text-lg font-bold text-white tracking-tight">
-                        Admin Portal
-                    </span>
+                    <span className="text-xl font-extrabold text-white font-sans uppercase tracking-tight">INNOVERA</span>
                 </Link>
             </div>
 
@@ -79,7 +75,7 @@ export default function AdminSidebar() {
                             key={item.href}
                             href={item.href}
                             className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
-                                ? "bg-indigo-500/10 text-indigo-400"
+                                ? "bg-primary/10 text-primary"
                                 : "text-gray-400 hover:text-white hover:bg-white/5"
                                 }`}
                         >
@@ -91,7 +87,7 @@ export default function AdminSidebar() {
             </nav>
 
             {/* Footer / Logout */}
-            <div className="p-4 border-t border-white/10">
+            <div className="p-4 border-t border-white/5">
                 <button
                     onClick={handleSignOut}
                     className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-sm font-medium text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"

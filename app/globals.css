@@ -3,18 +3,37 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Brand Colors */
+  --primary: #D62E55;
+  /* Muted Crimson/Rose */
+  --primary-hover: #B32042;
+  --secondary: #261447;
+  /* Muted Deep Purple */
+  --dark: #1A0F2E;
+  /* Darker Muted Purple */
+  --light: #FCEBF2;
+  /* Pale Pink */
 }
 
-@theme inline {
+@theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary);
+  --color-dark: var(--dark);
+  --color-light: var(--light);
+
+  --font-sans: var(--font-inter), sans-serif;
+  --font-thai: var(--font-kanit), sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #261447;
+    /* Match secondary/dark theme base */
     --foreground: #ededed;
   }
 }
@@ -58,4 +77,129 @@ body {
 
 .animate-wave {
   animation: wave-move 20s ease-in-out infinite alternate;
+}
+
+/* Reveal Animation */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s ease-out;
+}
+
+.reveal.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Robot Animations */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes eye-blink {
+
+  0%,
+  90%,
+  100% {
+    transform: scaleY(1);
+  }
+
+  95% {
+    transform: scaleY(0.1);
+  }
+}
+
+@keyframes hand-wave {
+
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  50% {
+    transform: rotate(10deg);
+  }
+}
+
+@keyframes glow-pulse {
+
+  0%,
+  100% {
+    filter: drop-shadow(0 0 5px rgba(34, 211, 238, 0.5));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 20px rgba(34, 211, 238, 0.8));
+  }
+}
+
+@keyframes jump-pop {
+  0% {
+    transform: scale(1) translateY(0);
+  }
+
+  50% {
+    transform: scale(1.2) translateY(-30px);
+  }
+
+  100% {
+    transform: scale(1) translateY(0);
+  }
+}
+
+.robot-container {
+  animation: float 6s ease-in-out infinite;
+  cursor: pointer;
+  transition: filter 0.3s;
+}
+
+.robot-container:hover {
+  filter: drop-shadow(0 0 15px rgba(34, 211, 238, 1));
+}
+
+.robot-jump {
+  animation: jump-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.robot-eye {
+  transform-origin: center;
+  animation: eye-blink 4s infinite;
+}
+
+.robot-hand {
+  transform-origin: top left;
+  animation: hand-wave 3s ease-in-out infinite;
+}
+
+.robot-glow {
+  animation: glow-pulse 3s infinite;
+}
+
+.neon-text {
+  text-shadow: 0 0 10px rgba(6, 182, 212, 0.7),
+    0 0 20px rgba(6, 182, 212, 0.5),
+    0 0 30px rgba(6, 182, 212, 0.3);
+}
+
+.chat-bubble {
+  opacity: 0;
+  transform: scale(0.8) translateY(20px);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.chat-bubble.active {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  pointer-events: auto;
+  visibility: visible;
 }

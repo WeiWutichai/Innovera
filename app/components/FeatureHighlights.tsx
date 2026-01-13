@@ -1,90 +1,118 @@
 "use client";
 import React from 'react';
-import { useLanguage } from '../context/LanguageContext';
+import {
+    LayoutDashboard,
+    Scale,
+    Activity,
+    Building,
+    Database,
+    Sparkles,
+    Cloud
+} from 'lucide-react';
 
 export default function FeatureHighlights() {
-    const { t } = useLanguage();
+    // const { t } = useLanguage(); 
+
+    const platforms = [
+        {
+            name: "INNO ONE",
+            icon: <LayoutDashboard className="w-10 h-10" />,
+            color: "text-blue-600",
+            hoverBorder: "hover:border-blue-600",
+            hoverShadow: "hover:shadow-blue-600/20"
+        },
+        {
+            name: "LAWFIRM",
+            icon: <Scale className="w-10 h-10" />,
+            color: "text-slate-700",
+            hoverBorder: "hover:border-slate-700",
+            hoverShadow: "hover:shadow-slate-700/20"
+        },
+        {
+            name: "PHYSICAL THERAPY",
+            icon: <Activity className="w-10 h-10" />,
+            color: "text-rose-500",
+            hoverBorder: "hover:border-rose-500",
+            hoverShadow: "hover:shadow-rose-500/20"
+        },
+        {
+            name: "DORMITORY",
+            icon: <Building className="w-10 h-10" />,
+            color: "text-emerald-600",
+            hoverBorder: "hover:border-emerald-600",
+            hoverShadow: "hover:shadow-emerald-600/20"
+        }
+    ];
+
+    const integrations = [
+        {
+            name: "SAP",
+            icon: <Database className="w-10 h-10" />,
+            color: "text-[#003366]", // SAP Dark Blue
+            // Fallback class if JIT doesn't pick up hex in template literal immediately, 
+            // but we'll use style or specific class. Let's stick to standard palette for safety if hex fails, 
+            // but JIT usually handles it. To be safe, let's use text-blue-900 which is close.
+            // Actually, let's use text-blue-900.
+            hoverBorder: "hover:border-blue-900",
+            hoverShadow: "hover:shadow-blue-900/20"
+        },
+        {
+            name: "Google Gemini",
+            icon: <Sparkles className="w-10 h-10" />,
+            color: "text-sky-500", // Gemini Blue
+            hoverBorder: "hover:border-sky-500",
+            hoverShadow: "hover:shadow-sky-500/20"
+        },
+        {
+            name: "AWS Cloud",
+            icon: <Cloud className="w-10 h-10" />,
+            color: "text-orange-500", // AWS Orange
+            hoverBorder: "hover:border-orange-500",
+            hoverShadow: "hover:shadow-orange-500/20"
+        }
+    ];
 
     return (
-        <section id="features" className="max-w-7xl mx-auto px-6 mt-16">
-            <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 md:p-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="flex items-start gap-3">
-                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 border border-white/10 text-white">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                <rect width="18" height="18" x="3" y="3" rx="2"></rect>
-                                <path d="M3 9h18M9 21V9"></path>
-                            </svg>
-                        </span>
-                        <div>
-                            <h4 className="text-base font-semibold tracking-tight font-nunito text-white">{t.features.highlights.sprint.title}</h4>
-                            <p className="text-sm text-white/70 font-nunito">{t.features.highlights.sprint.desc}</p>
-                        </div>
+        <section id="platforms" className="py-24 bg-white">
+            <div className="container mx-auto px-6">
+                <div className="text-center mb-16 reveal">
+                    <h2 className="text-3xl lg:text-4xl font-extrabold text-secondary mb-4 font-sans">Platforms and Integrate</h2>
+                    <div className="w-20 h-1 bg-primary mx-auto rounded"></div>
+                </div>
+
+                {/* Software Platforms */}
+                <div className="mb-12">
+                    <h3 className="text-xl font-bold text-secondary mb-8 text-center font-sans tracking-wide">SOFTWARE PLATFORMS</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center reveal">
+                        {platforms.map((item, index) => (
+                            <div key={index} className={`p-8 border border-gray-200 rounded-2xl shadow-md transition-all duration-300 group bg-white hover:-translate-y-2 ${item.hoverBorder} ${item.hoverShadow} hover:shadow-2xl relative overflow-hidden`}>
+                                <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-${item.color.replace('text-', '')} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
+                                <div className={`h-16 w-16 mx-auto flex items-center justify-center rounded-full bg-gray-50 mb-6 group-hover:scale-110 transition-transform duration-300 group-hover:bg-white`}>
+                                    <div className={`${item.color} transition-colors duration-300`}>
+                                        {item.icon}
+                                    </div>
+                                </div>
+                                <h3 className="font-bold text-secondary font-sans transition-colors">{item.name}</h3>
+                            </div>
+                        ))}
                     </div>
-                    <div className="flex items-start gap-3">
-                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 border border-white/10 text-white">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M5 12h14"></path>
-                                <path d="m12 5 7 7-7 7"></path>
-                                <path d="M5 5h.01"></path>
-                            </svg>
-                        </span>
-                        <div>
-                            <h4 className="text-base font-semibold tracking-tight font-nunito text-white">{t.features.highlights.keyboard.title}</h4>
-                            <p className="text-sm text-white/70 font-nunito">{t.features.highlights.keyboard.desc}</p>
-                        </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 border border-white/10 text-white">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M11 3 7 8l4 5"></path>
-                                <path d="M17 3l-4 5 4 5"></path>
-                                <circle cx="5" cy="19" r="2"></circle>
-                                <circle cx="12" cy="19" r="2"></circle>
-                                <circle cx="19" cy="19" r="2"></circle>
-                            </svg>
-                        </span>
-                        <div>
-                            <h4 className="text-base font-semibold tracking-tight font-nunito text-white">{t.features.highlights.git.title}</h4>
-                            <p className="text-sm text-white/70 font-nunito">{t.features.highlights.git.desc}</p>
-                        </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 border border-white/10 text-white">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M12 2v20"></path>
-                                <path d="M17 7H7a5 5 0 0 0 10 0Z"></path>
-                            </svg>
-                        </span>
-                        <div>
-                            <h4 className="text-base font-semibold tracking-tight font-nunito text-white">{t.features.highlights.roadmap.title}</h4>
-                            <p className="text-sm text-white/70 font-nunito">{t.features.highlights.roadmap.desc}</p>
-                        </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 border border-white/10 text-white">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M9 9h6v6H9z"></path>
-                                <path d="M3 3h4v4H3zM17 17h4v4h-4zM17 3h4v4h-4zM3 17h4v4H3z"></path>
-                            </svg>
-                        </span>
-                        <div>
-                            <h4 className="text-base font-semibold tracking-tight font-nunito text-white">{t.features.highlights.customFields.title}</h4>
-                            <p className="text-sm text-white/70 font-nunito">{t.features.highlights.customFields.desc}</p>
-                        </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 border border-white/10 text-white">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M12 20V10"></path>
-                                <path d="M18 20V4"></path>
-                                <path d="M6 20v-6"></path>
-                            </svg>
-                        </span>
-                        <div>
-                            <h4 className="text-base font-semibold tracking-tight font-nunito text-white">{t.features.highlights.analytics.title}</h4>
-                            <p className="text-sm text-white/70 font-nunito">{t.features.highlights.analytics.desc}</p>
-                        </div>
+                </div>
+
+                {/* Integrations */}
+                <div>
+                    <h3 className="text-xl font-bold text-secondary mb-8 text-center font-sans tracking-wide">INTEGRATIONS</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center reveal max-w-4xl mx-auto">
+                        {integrations.map((item, index) => (
+                            <div key={index} className={`p-8 border border-gray-200 rounded-2xl shadow-md transition-all duration-300 group bg-white hover:-translate-y-2 ${item.hoverBorder} ${item.hoverShadow} hover:shadow-2xl relative overflow-hidden`}>
+                                <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-${item.color.replace('text-', '')} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
+                                <div className={`h-16 w-16 mx-auto flex items-center justify-center rounded-full bg-gray-50 mb-6 group-hover:scale-110 transition-transform duration-300 group-hover:bg-white`}>
+                                    <div className={`${item.color} transition-colors duration-300`}>
+                                        {item.icon}
+                                    </div>
+                                </div>
+                                <h3 className="font-bold text-secondary font-sans transition-colors">{item.name}</h3>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>

@@ -1,147 +1,132 @@
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 
-import { motion, AnimatePresence } from 'framer-motion';
-
 export default function Pricing() {
-    const { t } = useLanguage();
-    const [selectedProduct, setSelectedProduct] = React.useState('INNO ONE');
-
-    const products = [
-        'INNO ONE',
-        'LAWFIRM',
-        'PHYSICAL THERAPY',
-        'DORMITORY'
-    ];
+    // const { t } = useLanguage();
+    const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
     return (
-        <section id="customers" className="max-w-7xl mx-auto px-6 mt-16">
-            <div className="md:p-8 bg-[url(https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/530253a4-3b35-4eb5-8783-d351361683ca_1600w.jpg)] bg-cover border-white/10 rounded-3xl pt-6 pr-6 pb-6 pl-6">
-                {/* Testimonials */}
-                <div className="grid md:grid-cols-3 gap-6 items-center mb-16">
-                    <div>
-                        <p className="text-sm text-white/70 font-nunito">{t.pricing.testimonials.label}</p>
-                        <p className="text-lg font-semibold tracking-tight mt-1 font-nunito text-white">{t.pricing.testimonials.quote}</p>
+        <section id="pricing" className="py-24 bg-white">
+            <div className="container mx-auto px-6">
+                <div className="text-center mb-16 reveal">
+                    <h2 className="text-3xl lg:text-4xl font-extrabold text-secondary mb-4 font-sans">Simple, Transparent Pricing</h2>
+                    <p className="text-gray-600 max-w-2xl mx-auto font-sans">Choose the perfect plan for your business needs.</p>
 
-                    </div>
-                    <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-6">
-                        {products.map((product) => (
-                            <button
-                                key={product}
-                                onClick={() => setSelectedProduct(product)}
-                                className="relative h-16 rounded-xl flex items-center justify-center text-center px-2 transition-colors duration-200"
-                            >
-                                {selectedProduct === product && (
-                                    <motion.div
-                                        layoutId="activeTab"
-                                        className="absolute inset-0 bg-white rounded-xl shadow-lg"
-                                        initial={false}
-                                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                                    />
-                                )}
-                                <span className={`relative z-10 font-nunito text-xs md:text-sm tracking-tight transition-colors duration-200 ${selectedProduct === product ? 'text-stone-900 font-bold' : 'text-white/80 font-semibold hover:text-white'
-                                    }`}>
-                                    {product}
-                                </span>
-                                {selectedProduct !== product && (
-                                    <div className="absolute inset-0 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-colors duration-200" />
-                                )}
-                            </button>
-                        ))}
+                    {/* Billing Toggle */}
+                    <div className="flex items-center justify-center mt-8 gap-4 font-sans">
+                        <span className={`text-sm font-bold ${billingCycle === 'monthly' ? 'text-secondary' : 'text-gray-400'}`}>Monthly</span>
+                        <button
+                            onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')}
+                            className="w-14 h-8 bg-gray-200 rounded-full relative transition-colors duration-300 focus:outline-none"
+                        >
+                            <div className={`w-6 h-6 bg-primary rounded-full absolute top-1 transition-transform duration-300 shadow-md ${billingCycle === 'monthly' ? 'left-1' : 'translate-x-7'}`}></div>
+                        </button>
+                        <span className={`text-sm font-bold ${billingCycle === 'yearly' ? 'text-secondary' : 'text-gray-400'}`}>
+                            Yearly <span className="text-primary text-xs ml-1">(Save 20%)</span>
+                        </span>
                     </div>
                 </div>
 
-                {/* Pricing */}
-                <div className="mb-16">
-                    <div className="text-center mb-8">
-                        <h3 className="md:text-3xl text-2xl tracking-tight font-nunito font-semibold text-white">
-                            {t.pricing.header.title} <span className="text-emerald-400">{selectedProduct}</span>
-                        </h3>
-                        <p className="text-white/70 mt-2 font-nunito">{t.pricing.header.subtitle}</p>
+                <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto reveal">
+                    {/* Starter Plan */}
+                    <div className="border border-gray-200 rounded-2xl p-8 hover:shadow-xl transition duration-300 relative group">
+                        <h3 className="text-xl font-bold text-secondary mb-2 font-sans">Starter</h3>
+                        <p className="text-gray-500 text-sm mb-6 font-sans">Perfect for small teams and startups.</p>
+                        <div className="mb-6">
+                            <span className="text-4xl font-extrabold text-secondary font-sans">{billingCycle === 'monthly' ? '$0' : '$0'}</span>
+                            <span className="text-gray-400 font-sans">/month</span>
+                        </div>
+                        <a href="#" className="block w-full py-3 border border-secondary text-secondary font-bold text-center rounded hover:bg-secondary hover:text-white transition uppercase text-sm font-sans">
+                            Get Started
+                        </a>
+                        <ul className="mt-8 space-y-4 text-sm text-gray-600 font-sans">
+                            <li className="flex items-center gap-3">
+                                <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                Up to 5 users
+                            </li>
+                            <li className="flex items-center gap-3">
+                                <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                Basic Automation
+                            </li>
+                            <li className="flex items-center gap-3">
+                                <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                Community Support
+                            </li>
+                        </ul>
                     </div>
 
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={selectedProduct}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            transition={{ duration: 0.3, ease: "easeInOut" }}
-                            className="grid md:grid-cols-3 gap-6"
-                        >
-                            {/* Free Plan */}
-                            <div className="border-white/10 border rounded-2xl p-6 transition-all hover:border-white/20">
-                                <h4 className="text-lg font-semibold tracking-tight font-nunito text-white">{t.pricing.plans.free.name}</h4>
-                                <p className="text-white/70 text-sm mt-1 font-nunito">{t.pricing.plans.free.desc}</p>
-                                <div className="mt-4 mb-6">
-                                    <span className="text-3xl tracking-tight font-nunito font-semibold text-white">{t.pricing.plans.free.price}</span>
-                                    <span className="text-white/60 text-sm font-nunito">{t.pricing.plans.free.unit}</span>
-                                </div>
-                                <ul className="space-y-3 text-sm text-white/80">
-                                    {t.pricing.plans.free.features.map((feature, i) => (
-                                        <li key={i} className="flex items-center gap-2 font-nunito">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400">
-                                                <path d="M20 6L9 17l-5-5"></path>
-                                            </svg>
-                                            {feature}
-                                        </li>
-                                    ))}
-                                </ul>
-                                <button className="w-full mt-6 h-10 rounded-lg border border-white/10 text-white/90 hover:bg-white/5 transition text-sm font-nunito">
-                                    {t.pricing.plans.free.button}
-                                </button>
-                            </div>
+                    {/* Professional Plan */}
+                    <div className="border-2 border-primary rounded-2xl p-8 shadow-2xl relative transform md:-translate-y-4 bg-white z-10">
+                        <div className="absolute top-0 right-0 bg-primary text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg font-sans">
+                            POPULAR
+                        </div>
+                        <h3 className="text-xl font-bold text-secondary mb-2 font-sans">Professional</h3>
+                        <p className="text-gray-500 text-sm mb-6 font-sans">For growing businesses needing more power.</p>
+                        <div className="mb-6">
+                            <span className="text-4xl font-extrabold text-secondary font-sans">{billingCycle === 'monthly' ? '$49' : '$39'}</span>
+                            <span className="text-gray-400 font-sans">/month</span>
+                        </div>
+                        <a href="#" className="block w-full py-3 bg-primary text-white font-bold text-center rounded hover:bg-primary-hover shadow-lg transition uppercase text-sm font-sans">
+                            Get Started
+                        </a>
+                        <ul className="mt-8 space-y-4 text-sm text-gray-600 font-sans">
+                            <li className="flex items-center gap-3">
+                                <svg className="w-5 h-5 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                Up to 20 users
+                            </li>
+                            <li className="flex items-center gap-3">
+                                <svg className="w-5 h-5 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                Advanced Workflows
+                            </li>
+                            <li className="flex items-center gap-3">
+                                <svg className="w-5 h-5 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                Analytics Dashboard
+                            </li>
+                            <li className="flex items-center gap-3">
+                                <svg className="w-5 h-5 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                Priority Email Support
+                            </li>
+                            <li className="flex items-center gap-3">
+                                <svg className="w-5 h-5 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                API Access
+                            </li>
+                        </ul>
+                    </div>
 
-                            {/* Pro Plan */}
-                            <div className="rounded-2xl border border-white/15 bg-gradient-to-b from-white/[0.04] to-white/[0.02] p-6 relative transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-purple-500/10">
-                                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                                    <span className="bg-white text-stone-900 text-xs font-medium px-3 py-1 rounded-full font-nunito">{t.pricing.plans.pro.badge}</span>
-                                </div>
-                                <h4 className="text-lg font-semibold tracking-tight font-nunito text-white">{t.pricing.plans.pro.name}</h4>
-                                <p className="text-white/70 text-sm mt-1 font-nunito">{t.pricing.plans.pro.desc}</p>
-                                <div className="mt-4 mb-6">
-                                    <span className="text-3xl tracking-tight font-nunito font-semibold text-white">{t.pricing.plans.pro.price}</span>
-                                    <span className="text-white/60 text-sm font-nunito">{t.pricing.plans.pro.unit}</span>
-                                </div>
-                                <ul className="space-y-3 text-sm text-white/80">
-                                    {t.pricing.plans.pro.features.map((feature, i) => (
-                                        <li key={i} className="flex items-center gap-2 font-nunito">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400">
-                                                <path d="M20 6L9 17l-5-5"></path>
-                                            </svg>
-                                            {feature}
-                                        </li>
-                                    ))}
-                                </ul>
-                                <button className="w-full mt-6 h-10 rounded-lg bg-white text-stone-900 font-medium hover:bg-white/90 transition text-sm font-nunito">
-                                    {t.pricing.plans.pro.button}
-                                </button>
-                            </div>
-
-                            {/* Enterprise Plan */}
-                            <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 transition-all hover:border-white/20">
-                                <h4 className="text-lg font-semibold tracking-tight font-nunito text-white">{t.pricing.plans.enterprise.name}</h4>
-                                <p className="text-white/70 text-sm mt-1 font-nunito">{t.pricing.plans.enterprise.desc}</p>
-                                <div className="mt-4 mb-6">
-                                    <span className="text-2xl tracking-tight font-nunito font-semibold text-white">{t.pricing.plans.enterprise.price}</span>
-                                </div>
-                                <ul className="space-y-3 text-sm text-white/80">
-                                    {t.pricing.plans.enterprise.features.map((feature, i) => (
-                                        <li key={i} className="flex items-center gap-2 font-nunito">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400">
-                                                <path d="M20 6L9 17l-5-5"></path>
-                                            </svg>
-                                            {feature}
-                                        </li>
-                                    ))}
-                                </ul>
-                                <button className="w-full mt-6 h-10 rounded-lg border border-white/10 text-white/90 hover:bg-white/5 transition text-sm font-nunito">
-                                    {t.pricing.plans.enterprise.button}
-                                </button>
-                            </div>
-                        </motion.div>
-                    </AnimatePresence>
+                    {/* Enterprise Plan */}
+                    <div className="border border-gray-200 rounded-2xl p-8 hover:shadow-xl transition duration-300 relative group">
+                        <h3 className="text-xl font-bold text-secondary mb-2 font-sans">Enterprise</h3>
+                        <p className="text-gray-500 text-sm mb-6 font-sans">Custom solutions for large organizations.</p>
+                        <div className="mb-6">
+                            <span className="text-4xl font-extrabold text-secondary font-sans">Custom</span>
+                        </div>
+                        <a href="#contact" className="block w-full py-3 border border-secondary text-secondary font-bold text-center rounded hover:bg-secondary hover:text-white transition uppercase text-sm font-sans">
+                            Contact Sales
+                        </a>
+                        <ul className="mt-8 space-y-4 text-sm text-gray-600 font-sans">
+                            <li className="flex items-center gap-3">
+                                <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                Unlimited users
+                            </li>
+                            <li className="flex items-center gap-3">
+                                <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                Custom Integrations
+                            </li>
+                            <li className="flex items-center gap-3">
+                                <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                Dedicated Success Manager
+                            </li>
+                            <li className="flex items-center gap-3">
+                                <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                24/7 Phone Support
+                            </li>
+                            <li className="flex items-center gap-3">
+                                <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                SLA 99.9% Uptime
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </section>

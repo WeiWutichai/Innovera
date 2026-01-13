@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import NavLinks from './NavLinks';
 import ProfileMenu from './ProfileMenu';
-import Logo from './Logo';
+import LanguageSelector from './LanguageSelector';
 
 interface NavbarContentProps {
     user: any; // Using any for simplicity with the auth session type, or proper type if available
@@ -30,44 +30,45 @@ export default function NavbarContent({ user }: NavbarContentProps) {
 
     return (
         <header
-            className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled || isMenuOpen
-                ? "backdrop-blur-md bg-[#050505]/95 border-b border-white/10 shadow-lg"
-                : "bg-transparent border-b border-transparent"
-                }`}
+            className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 bg-white shadow-md ${scrolled ? "py-2" : "py-4"}`}
         >
-            <div className="max-w-7xl mx-auto px-6">
-                <div className="flex items-center justify-between h-16">
+            <div className="container mx-auto px-6">
+                <div className="flex items-center justify-between">
                     {/* Logo */}
-                    <Link href="/" className="inline-flex items-center gap-3 group">
-                        <Logo className="text-2xl text-white group-hover:scale-105 transition-transform duration-300" />
+                    <Link href="/" className="text-2xl font-extrabold text-secondary flex items-center gap-2 tracking-tight group hover:scale-105 transition-transform duration-300">
+                        <span className="font-sans uppercase hover:drop-shadow-[2px_2px_0px_rgba(0,0,0,1)] transition-all duration-300">INNOVERA</span>
                     </Link>
 
                     {/* Desktop Nav */}
-                    <NavLinks />
+                    <div className="hidden md:flex items-center gap-8">
+                        <NavLinks />
 
-                    {/* Actions */}
-                    <div className="hidden md:flex items-center gap-2">
-                        {user ? (
-                            <ProfileMenu user={user} />
-                        ) : (
-                            <>
-                                <Link href="/login" className="hidden sm:inline-flex items-center h-9 px-3 rounded-lg border border-white/10 text-sm text-white/80 hover:text-white hover:border-white/20 transition-colors font-nunito">
-                                    Sign in
-                                </Link>
-                                <Link href="/register" className="inline-flex items-center h-9 px-3 rounded-lg bg-white text-stone-900 text-sm font-medium hover:bg-white/90 transition-colors font-nunito">
-                                    Start free
-                                    <svg width="18" height="18" viewBox="0 0 24 24" className="ml-1" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                        <path d="M5 12h14"></path>
-                                        <path d="M12 5l7 7-7 7"></path>
-                                    </svg>
-                                </Link>
-                            </>
-                        )}
+                        {/* Actions */}
+                        <div className="flex items-center gap-4 ml-4">
+                            {user ? (
+                                <ProfileMenu user={user} />
+                            ) : (
+                                <>
+
+                                    <Link
+                                        href="#contact"
+                                        className="bg-primary text-white px-6 py-3 rounded hover:bg-primary-hover transition font-bold shadow-md text-sm font-sans uppercase tracking-wide"
+                                    >
+                                        Contact Us
+                                    </Link>
+                                </>
+                            )}
+
+                            {/* Language Selector (Far Right) */}
+                            <div className="border-l border-gray-200 pl-4 ml-2">
+                                <LanguageSelector />
+                            </div>
+                        </div>
                     </div>
 
                     {/* Mobile Menu Toggle */}
                     <button
-                        className="md:hidden p-2 text-white/80 hover:text-white"
+                        className="md:hidden text-secondary focus:outline-none text-2xl"
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
                     >
                         {isMenuOpen ? (
@@ -81,26 +82,31 @@ export default function NavbarContent({ user }: NavbarContentProps) {
 
             {/* Mobile Nav */}
             {isMenuOpen && (
-                <div className="md:hidden border-t border-white/10 bg-[#050505] px-6 py-4 h-screen">
+                <div className="md:hidden mt-4 pb-4 border-t border-gray-100 bg-white px-6 py-4 shadow-xl">
                     <NavLinks mobile />
                     <div className="mt-6 flex flex-col gap-3">
                         {user ? (
-                            <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10">
-                                <span className="text-sm text-white">{user.name || user.email}</span>
+                            <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-200">
+                                <span className="text-sm text-secondary font-bold">{user.name || user.email}</span>
                             </div>
+
                         ) : (
                             <>
-                                <Link href="/login" className="flex items-center justify-center h-10 px-4 rounded-lg border border-white/10 text-sm text-white/80 hover:text-white hover:border-white/20 transition-colors font-nunito w-full">
-                                    Sign in
-                                </Link>
-                                <Link href="/register" className="flex items-center justify-center h-10 px-4 rounded-lg bg-white text-stone-900 text-sm font-medium hover:bg-white/90 transition-colors font-nunito w-full">
-                                    Start free
+
+                                <Link href="#contact" className="block w-full text-center bg-primary text-white font-bold py-3 rounded shadow-md hover:bg-primary-hover transition uppercase text-sm">
+                                    CONTACT US
                                 </Link>
                             </>
                         )}
+
+                        <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
+                            <span className="text-gray-500 font-bold text-sm">Language</span>
+                            <LanguageSelector />
+                        </div>
                     </div>
                 </div>
-            )}
-        </header>
+            )
+            }
+        </header >
     );
 }
