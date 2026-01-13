@@ -434,6 +434,43 @@ export const dictionary = {
             signOut: "Sign out",
             privacy: "Privacy Policy",
             terms: "Terms of Service"
+        },
+        demoRequest: {
+            title: "Request your Innovera demo today",
+            subtitle: "See it in action",
+            description: "Learn firsthand why businesses rely on Innovera to help them streamline workflows, develop applications, and empower employees to automate their most important work.",
+            points: [
+                "Won top industry awards for innovation and speed.",
+                "Earned \"Momentum Leader\" for Digital Process Automation.",
+                "Awarded \"Fastest Implementation\" honors."
+            ],
+            form: {
+                workEmail: "Work Email",
+                firstName: "First Name",
+                lastName: "Last Name",
+                phoneNumber: "Phone Number",
+                companyName: "Company",
+                country: "Country/Territory",
+                interest: "What can our process experts help with?",
+                submit: "Book your demo",
+                submitting: "Submitting...",
+                success: {
+                    title: "Thank You!",
+                    message: "We've received your request and will be in touch shortly.",
+                    newRequest: "Send another request"
+                },
+                options: {
+                    select: "Select...",
+                    innoOne: "INNO ONE",
+                    lawfirm: "LAWFIRM",
+                    physicalTherapy: "PHYSICAL THERAPY",
+                    dormitory: "DORMITORY",
+                    processAutomation: "Process Automation",
+                    appDevelopment: "App Development",
+                    consulting: "Consulting",
+                    other: "Other"
+                }
+            }
         }
     },
     th: {
@@ -871,6 +908,43 @@ export const dictionary = {
             signOut: "ออกจากระบบ",
             privacy: "นโยบายความเป็นส่วนตัว",
             terms: "เงื่อนไขการให้บริการ"
+        },
+        demoRequest: {
+            title: "ขอสาธิตการใช้งาน Innovera วันนี้",
+            subtitle: "ดูการทำงานจริง",
+            description: "เรียนรู้โดยตรงว่าทำไมธุรกิจต่างๆ ถึงไว้วางใจ Innovera เพื่อช่วยปรับปรุงกระบวนการทำงาน พัฒนาแอปพลิเคชัน และเพิ่มศักยภาพให้พนักงานในการทำระบบอัตโนมัติสำหรับงานที่สำคัญที่สุด",
+            points: [
+                "ได้รับรางวัลระดับอุตสาหกรรมในด้านนวัตกรรมและความรวดเร็ว",
+                "ได้รับการยกย่องเป็น \"Momentum Leader\" สำหรับ Digital Process Automation",
+                "ได้รับรางวัล \"การติดตั้งที่รวดเร็วที่สุด\""
+            ],
+            form: {
+                workEmail: "อีเมลที่ทำงาน",
+                firstName: "ชื่อจริง",
+                lastName: "นามสกุล",
+                phoneNumber: "เบอร์โทรศัพท์",
+                companyName: "ชื่อบริษัท",
+                country: "ประเทศ/เขตปกครอง",
+                interest: "คุณต้องการให้ผู้เชี่ยวชาญของเราช่วยเหลือเรื่องใด?",
+                submit: "จองเวลาสาธิต",
+                submitting: "กำลังส่งข้อมูล...",
+                success: {
+                    title: "ขอบคุณ!",
+                    message: "เราได้รับคำขอของคุณแล้วและจะติดต่อกลับโดยเร็วที่สุด",
+                    newRequest: "ส่งคำขออีกครั้ง"
+                },
+                options: {
+                    select: "เลือก...",
+                    innoOne: "INNO ONE",
+                    lawfirm: "LAWFIRM",
+                    physicalTherapy: "PHYSICAL THERAPY",
+                    dormitory: "DORMITORY",
+                    processAutomation: "Process Automation",
+                    appDevelopment: "App Development",
+                    consulting: "Consulting",
+                    other: "อื่นๆ"
+                }
+            }
         }
     }
 };

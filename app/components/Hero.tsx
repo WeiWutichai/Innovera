@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import Link from 'next/link';
 import Image from 'next/image';
 
 import Robot from './Robot';
@@ -46,9 +47,9 @@ export default function Hero() {
                         {t.hero.description}
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4">
-                        <a href="#contact" className="bg-primary text-white px-8 py-4 rounded font-bold hover:bg-primary-hover transition shadow-lg flex items-center justify-center gap-2 uppercase tracking-wide text-sm font-sans">
+                        <Link href="/request-demo" className="bg-primary text-white px-8 py-4 rounded font-bold hover:bg-primary-hover transition shadow-lg flex items-center justify-center gap-2 uppercase tracking-wide text-sm font-sans">
                             REQUEST DEMO
-                        </a>
+                        </Link>
                         <a href="#references" className="bg-transparent border border-white text-white px-8 py-4 rounded font-bold hover:bg-white hover:text-secondary transition flex items-center justify-center gap-2 uppercase tracking-wide text-sm font-sans">
                             WATCH VIDEO
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none">

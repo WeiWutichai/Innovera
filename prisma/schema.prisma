@@ -67,3 +67,16 @@ model Post {
   metaDescription_th String?
   metaKeywords_th String?
 }
+
+model DemoRequest {
+  id          String   @id @default(uuid())
+  workEmail   String
+  firstName   String
+  lastName    String
+  phoneNumber String
+  companyName String
+  country     String
+  interest    String
+  status      String   @default("PENDING") // PENDING, CONTACTED, CLOSED
+  createdAt   DateTime @default(now())
+}

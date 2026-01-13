@@ -51,10 +51,10 @@ export default function NavbarContent({ user }: NavbarContentProps) {
                                 <>
 
                                     <Link
-                                        href="#contact"
+                                        href="/request-demo"
                                         className="bg-primary text-white px-6 py-3 rounded hover:bg-primary-hover transition font-bold shadow-md text-sm font-sans uppercase tracking-wide"
                                     >
-                                        Contact Us
+                                        Request Demo
                                     </Link>
                                 </>
                             )}
