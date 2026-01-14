@@ -4,6 +4,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useLanguage } from "../../context/LanguageContext";
+import { useMemo } from "react";
+import DOMPurify from "isomorphic-dompurify";
 
 interface Post {
     id: number;
@@ -31,6 +33,26 @@ export default function BlogPostContent({ post, otherPosts }: BlogPostContentPro
 
     const title = (isThai && post.title_th) ? post.title_th : post.title;
     const content = (isThai && post.content_th) ? post.content_th : post.content;
+
+    // Sanitize HTML content to prevent XSS attacks
+    const sanitizedContent = useMemo(() => {
+        return DOMPurify.sanitize(content, {
+            ALLOWED_TAGS: [
+                'p', 'br', 'strong', 'em', 'u', 'i', 'b',
+                'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+                'ul', 'ol', 'li',
+                'a', 'img',
+                'blockquote', 'code', 'pre',
+                'table', 'thead', 'tbody', 'tr', 'th', 'td',
+                'div', 'span'
+            ],
+            ALLOWED_ATTR: [
+                'href', 'src', 'alt', 'title', 'class', 'id',
+                'width', 'height', 'style'
+            ],
+            ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
+        });
+    }, [content]);
 
     return (
         <div className="flex-grow pt-32 pb-16 px-6 md:px-12 max-w-7xl mx-auto w-full">
@@ -107,9 +129,9 @@ export default function BlogPostContent({ post, otherPosts }: BlogPostContentPro
                         </div>
                     )}
 
-                    {/* Content */}
+                    {/* Content - Now sanitized to prevent XSS */}
                     <div className="prose prose-invert prose-lg max-w-none prose-headings:font-bold prose-headings:text-white prose-p:text-white prose-li:text-white prose-a:text-pink-400 prose-a:no-underline hover:prose-a:underline prose-strong:text-white prose-code:text-pink-300 prose-pre:bg-white/5 prose-pre:border prose-pre:border-white/10 [&>div>p]:text-white [&>div>ul>li]:text-white [&>div>ol>li]:text-white [&_strong]:text-white [&_span]:text-white">
-                        <div dangerouslySetInnerHTML={{ __html: content }} />
+                        <div dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
                     </div>
                 </article>
 
