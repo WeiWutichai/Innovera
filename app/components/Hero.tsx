@@ -1,13 +1,15 @@
 "use client";
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import Link from 'next/link';
 import Image from 'next/image';
 
 import Robot from './Robot';
+import VideoModal from './VideoModal';
 
 export default function Hero() {
     const { t } = useLanguage();
+    const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
     useEffect(() => {
         const reveal = () => {
@@ -50,12 +52,15 @@ export default function Hero() {
                         <Link href="/request-demo" className="bg-primary text-white px-8 py-4 rounded font-bold hover:bg-primary-hover transition shadow-lg flex items-center justify-center gap-2 uppercase tracking-wide text-sm font-sans">
                             REQUEST DEMO
                         </Link>
-                        <a href="#references" className="bg-transparent border border-white text-white px-8 py-4 rounded font-bold hover:bg-white hover:text-secondary transition flex items-center justify-center gap-2 uppercase tracking-wide text-sm font-sans">
+                        <button
+                            onClick={() => setIsVideoModalOpen(true)}
+                            className="bg-transparent border border-white text-white px-8 py-4 rounded font-bold hover:bg-white hover:text-secondary transition flex items-center justify-center gap-2 uppercase tracking-wide text-sm font-sans"
+                        >
                             WATCH VIDEO
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none">
                                 <path d="M5 3l14 9-14 9V3z" />
                             </svg>
-                        </a>
+                        </button>
                     </div>
                 </div>
                 <div className="lg:w-1/2 flex justify-center">
@@ -69,6 +74,13 @@ export default function Hero() {
                     <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" className="fill-white"></path>
                 </svg>
             </div>
+
+            {/* Video Modal */}
+            <VideoModal
+                isOpen={isVideoModalOpen}
+                onClose={() => setIsVideoModalOpen(false)}
+                videoUrl="/videos/innovera-company.mp4"
+            />
         </header>
     );
 }

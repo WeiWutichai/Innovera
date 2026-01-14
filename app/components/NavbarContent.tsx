@@ -49,12 +49,18 @@ export default function NavbarContent({ user }: NavbarContentProps) {
                                 <ProfileMenu user={user} />
                             ) : (
                                 <>
-
                                     <Link
-                                        href="/request-demo"
+                                        href="/#contact"
                                         className="bg-primary text-white px-6 py-3 rounded hover:bg-primary-hover transition font-bold shadow-md text-sm font-sans uppercase tracking-wide"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            const contactSection = document.getElementById('contact');
+                                            if (contactSection) {
+                                                contactSection.scrollIntoView({ behavior: 'smooth' });
+                                            }
+                                        }}
                                     >
-                                        Request Demo
+                                        Contact Us
                                     </Link>
                                 </>
                             )}

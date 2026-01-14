@@ -171,6 +171,7 @@ export default function DemoRequestForm() {
                                     <option value="LAWFIRM">{t.demoRequest.form.options.lawfirm}</option>
                                     <option value="PHYSICAL THERAPY">{t.demoRequest.form.options.physicalTherapy}</option>
                                     <option value="DORMITORY">{t.demoRequest.form.options.dormitory}</option>
+                                    <option value="OTHER">{t.demoRequest.form.options.other}</option>
                                 </select>
                             </div>
 
