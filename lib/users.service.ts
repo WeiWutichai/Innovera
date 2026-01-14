@@ -1,10 +1,11 @@
 import { PrismaClient } from '@prisma/client';
+import { prisma as defaultPrisma } from './prisma';
 
 export class UsersService {
     private prisma: PrismaClient;
 
     constructor(prisma?: PrismaClient) {
-        this.prisma = prisma || new PrismaClient();
+        this.prisma = prisma || defaultPrisma;
     }
 
     async findAll() {

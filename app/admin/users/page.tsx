@@ -1,6 +1,7 @@
 
 import { prisma } from "@/lib/prisma";
 import UserList from "./UserList";
+import { UserWithRole } from "@/types/models";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,7 @@ export default async function AdminUsersPage() {
                     </div>
                 </div>
 
-                <UserList users={users as any[]} />
+                <UserList users={users as UserWithRole[]} />
             </div>
         </div>
     );

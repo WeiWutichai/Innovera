@@ -1,19 +1,23 @@
 import { NextResponse } from "next/server"
 import { hash } from "bcryptjs"
-import { PrismaClient } from "@prisma/client"
-
-const prisma = new PrismaClient()
+import { prisma } from "@/lib/prisma"
+import { registerSchema } from "@/lib/validation"
 
 export async function POST(req: Request) {
     try {
-        const { email, password, name } = await req.json()
+        const body = await req.json()
 
-        if (!email || !password) {
+        // Validate input with Zod
+        const validationResult = registerSchema.safeParse(body);
+
+        if (!validationResult.success) {
             return NextResponse.json(
-                { error: "Missing required fields" },
+                { error: "Validation failed", details: validationResult.error.format() },
                 { status: 400 }
             )
         }
+
+        const { email, password, name } = validationResult.data;
 
         const existingUser = await prisma.user.findUnique({
             where: { email },

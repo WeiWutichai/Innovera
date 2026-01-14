@@ -1,19 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import { auth } from "@/auth";
-
 import { prisma } from "@/lib/prisma";
+import { demoRequestSchema } from "@/lib/validation";
+import { z } from "zod";
 
 // POST: Create a new demo request (Public)
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { workEmail, firstName, lastName, phoneNumber, companyName, country, interest } = body;
 
-        // Basic validation
-        if (!workEmail || !firstName || !lastName || !companyName) {
-            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+        // Validate input with Zod
+        const validationResult = demoRequestSchema.safeParse(body);
+
+        if (!validationResult.success) {
+            return NextResponse.json({
+                error: "Validation failed",
+                details: validationResult.error.format()
+            }, { status: 400 });
         }
+
+        const { workEmail, firstName, lastName, phoneNumber, companyName, country, interest } = validationResult.data;
 
         const demoRequest = await prisma.demoRequest.create({
             data: {
@@ -30,7 +36,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(demoRequest, { status: 201 });
     } catch (error) {
         console.error("Error creating demo request:", error);
-        return NextResponse.json({ error: "Internal Server Error", details: error instanceof Error ? error.message : String(error) }, { status: 500 });
+        const errorMessage = process.env.NODE_ENV === "development" && error instanceof Error
+            ? error.message
+            : "Failed to create demo request";
+        return NextResponse.json({ error: "Internal Server Error", details: errorMessage }, { status: 500 });
     }
 }
 
