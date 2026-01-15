@@ -99,6 +99,45 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         initSession();
     }, []);
 
+    // Poll for new messages when chat is open
+    useEffect(() => {
+        if (!sessionId || !isOpen) return;
+
+        const pollMessages = async () => {
+            try {
+                const response = await fetch(`/api/chat/history/${sessionId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const newMessages = data.data.messages.map((msg: any) => ({
+                        ...msg,
+                        timestamp: new Date(msg.timestamp),
+                    }));
+
+                    // Only update if there are new messages
+                    if (newMessages.length > messages.length) {
+                        setMessages(newMessages);
+                    }
+
+                    // Check if admin is assigned
+                    if (data.data.session?.assignedAdminId) {
+                        setAdminAssigned(true);
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to poll messages:", error);
+            }
+        };
+
+        // Poll immediately
+        pollMessages();
+
+        // Then poll every 3 seconds
+        const interval = setInterval(pollMessages, 3000);
+
+        return () => clearInterval(interval);
+    }, [sessionId, isOpen, messages.length]);
+
     const sendMessage = async (message: string) => {
         if (!sessionId || !message.trim()) return;
 
