@@ -140,8 +140,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         // Poll immediately
         pollMessages();
 
-        // Then poll every 3 seconds
-        const interval = setInterval(pollMessages, 3000);
+        // Then poll every 1 second for faster read receipt updates
+        const interval = setInterval(pollMessages, 1000);
 
         return () => clearInterval(interval);
     }, [sessionId, isOpen, messages.length]);

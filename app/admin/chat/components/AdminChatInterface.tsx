@@ -59,8 +59,8 @@ export default function AdminChatInterface({ session }: { session: ChatSession }
         // Poll immediately
         pollMessages();
 
-        // Then poll every 3 seconds
-        const interval = setInterval(pollMessages, 3000);
+        // Then poll every 1 second for faster read receipt updates
+        const interval = setInterval(pollMessages, 1000);
 
         return () => clearInterval(interval);
     }, [session.id, messages.length]);
