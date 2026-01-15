@@ -28,11 +28,17 @@ export async function GET(
             success: true,
             data: {
                 sessionId: session.id,
+                session: {
+                    assignedAdminId: session.assignedAdminId,
+                },
                 messages: session.messages.map((msg) => ({
                     id: msg.id,
                     role: msg.role,
                     content: msg.content,
                     timestamp: msg.timestamp,
+                    sentByAdmin: msg.sentByAdmin,
+                    isReadByAdmin: msg.isReadByAdmin,
+                    isReadByUser: msg.isReadByUser,
                 })),
             },
         });
