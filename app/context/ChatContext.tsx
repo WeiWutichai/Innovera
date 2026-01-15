@@ -8,6 +8,7 @@ interface Message {
     content: string;
     timestamp: Date;
     sentByAdmin?: boolean;
+    isReadByAdmin?: boolean;
 }
 
 interface ChatContextType {
@@ -117,6 +118,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                     // Only update if there are new messages
                     if (newMessages.length > messages.length) {
                         setMessages(newMessages);
+
+                        // Mark admin messages as read
+                        fetch("/api/chat/mark-read", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ sessionId }),
+                        }).catch(err => console.error("Failed to mark as read:", err));
                     }
 
                     // Check if admin is assigned

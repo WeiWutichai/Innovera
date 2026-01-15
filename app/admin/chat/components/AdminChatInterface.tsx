@@ -42,6 +42,13 @@ export default function AdminChatInterface({ session }: { session: ChatSession }
                     const data = await response.json();
                     if (data.messages && data.messages.length > messages.length) {
                         setMessages(data.messages);
+
+                        // Mark user messages as read
+                        fetch("/api/admin/chat/mark-read", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ sessionId: session.id }),
+                        }).catch(err => console.error("Failed to mark as read:", err));
                     }
                 }
             } catch (error) {
@@ -120,8 +127,13 @@ export default function AdminChatInterface({ session }: { session: ChatSession }
                                 }`}
                         >
                             <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                            <p className={`text-xs mt-1 ${message.sentByAdmin ? "text-white/70" : "text-gray-400"}`}>
+                            <p className={`text-xs mt-1 flex items-center gap-1 ${message.sentByAdmin ? "text-white/70" : "text-gray-400"}`}>
                                 {new Date(message.timestamp).toLocaleTimeString("th-TH")}
+                                {message.sentByAdmin && (
+                                    <span className="ml-1">
+                                        {(message as any).isReadByUser ? "✓✓" : "✓"}
+                                    </span>
+                                )}
                             </p>
                         </div>
                         {message.sentByAdmin && (

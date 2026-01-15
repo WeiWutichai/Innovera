@@ -116,7 +116,8 @@ model Message {
   timestamp     DateTime      @default(now())
   metadata      Json? // Store tokens, model used, etc.
   feedback      ChatFeedback?
-  isReadByAdmin Boolean       @default(false) // Track unread messages
+  isReadByAdmin Boolean       @default(false) // Track if admin read user messages
+  isReadByUser  Boolean       @default(false) // Track if user read admin messages
   sentByAdmin   Boolean       @default(false) // Distinguish admin replies
 
   @@index([sessionId])
