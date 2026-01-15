@@ -7,10 +7,11 @@ export const dynamic = "force-dynamic";
 export default async function ChatDetailPage({
     params,
 }: {
-    params: { id: string };
+    params: Promise<{ id: string }>;
 }) {
+    const { id } = await params;
     const session = await prisma.chatSession.findUnique({
-        where: { id: params.id },
+        where: { id },
         include: {
             user: {
                 select: {
@@ -40,7 +41,7 @@ export default async function ChatDetailPage({
     // Mark messages as read
     await prisma.message.updateMany({
         where: {
-            sessionId: params.id,
+            sessionId: id,
             isReadByAdmin: false,
             sentByAdmin: false,
         },
