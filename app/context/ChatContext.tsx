@@ -115,11 +115,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                         timestamp: new Date(msg.timestamp),
                     }));
 
-                    // Only update if there are new messages
-                    if (newMessages.length > messages.length) {
-                        setMessages(newMessages);
+                    // Always update messages to catch read status changes
+                    setMessages(newMessages);
 
-                        // Mark admin messages as read
+                    // Mark admin messages as read when new messages arrive
+                    if (newMessages.length > messages.length) {
                         fetch("/api/chat/mark-read", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
@@ -144,7 +144,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         const interval = setInterval(pollMessages, 1000);
 
         return () => clearInterval(interval);
-    }, [sessionId, isOpen, messages.length]);
+    }, [sessionId, isOpen]);
 
     const sendMessage = async (message: string) => {
         if (!sessionId || !message.trim()) return;

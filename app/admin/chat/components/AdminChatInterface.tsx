@@ -40,15 +40,18 @@ export default function AdminChatInterface({ session }: { session: ChatSession }
                 const response = await fetch(`/api/admin/chat/sessions/${session.id}`);
                 if (response.ok) {
                     const data = await response.json();
-                    if (data.messages && data.messages.length > messages.length) {
+                    if (data.messages) {
+                        // Always update messages to catch read status changes
                         setMessages(data.messages);
 
-                        // Mark user messages as read
-                        fetch("/api/admin/chat/mark-read", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ sessionId: session.id }),
-                        }).catch(err => console.error("Failed to mark as read:", err));
+                        // Mark user messages as read when new messages arrive
+                        if (data.messages.length > messages.length) {
+                            fetch("/api/admin/chat/mark-read", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ sessionId: session.id }),
+                            }).catch(err => console.error("Failed to mark as read:", err));
+                        }
                     }
                 }
             } catch (error) {
@@ -63,7 +66,7 @@ export default function AdminChatInterface({ session }: { session: ChatSession }
         const interval = setInterval(pollMessages, 1000);
 
         return () => clearInterval(interval);
-    }, [session.id, messages.length]);
+    }, [session.id]);
 
     const handleSend = async () => {
         if (!newMessage.trim() || sending) return;
