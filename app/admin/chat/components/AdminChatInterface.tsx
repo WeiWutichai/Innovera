@@ -33,6 +33,31 @@ export default function AdminChatInterface({ session }: { session: ChatSession }
         scrollToBottom();
     }, [messages]);
 
+    // Poll for new messages every 3 seconds
+    useEffect(() => {
+        const pollMessages = async () => {
+            try {
+                const response = await fetch(`/api/admin/chat/sessions/${session.id}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.messages && data.messages.length > messages.length) {
+                        setMessages(data.messages);
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to poll messages:", error);
+            }
+        };
+
+        // Poll immediately
+        pollMessages();
+
+        // Then poll every 3 seconds
+        const interval = setInterval(pollMessages, 3000);
+
+        return () => clearInterval(interval);
+    }, [session.id, messages.length]);
+
     const handleSend = async () => {
         if (!newMessage.trim() || sending) return;
 
@@ -88,10 +113,10 @@ export default function AdminChatInterface({ session }: { session: ChatSession }
                         )}
                         <div
                             className={`max-w-[70%] rounded-lg p-3 ${message.sentByAdmin
-                                    ? "bg-primary text-white"
-                                    : message.role === "user"
-                                        ? "bg-white/10 text-white"
-                                        : "bg-cyan-500/10 text-cyan-100 border border-cyan-500/20"
+                                ? "bg-primary text-white"
+                                : message.role === "user"
+                                    ? "bg-white/10 text-white"
+                                    : "bg-cyan-500/10 text-cyan-100 border border-cyan-500/20"
                                 }`}
                         >
                             <p className="text-sm whitespace-pre-wrap">{message.content}</p>

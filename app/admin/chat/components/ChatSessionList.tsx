@@ -23,9 +23,9 @@ export default function ChatSessionList() {
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<"all" | "needsSupport" | "active">("all");
 
-    const fetchSessions = async () => {
+    const fetchSessions = async (silent = false) => {
         try {
-            setLoading(true);
+            if (!silent) setLoading(true);
             const response = await fetch(`/api/admin/chat/sessions?status=${filter}`);
             if (response.ok) {
                 const data = await response.json();
@@ -34,12 +34,19 @@ export default function ChatSessionList() {
         } catch (error) {
             console.error("Failed to fetch sessions:", error);
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
         }
     };
 
     useEffect(() => {
         fetchSessions();
+
+        // Poll for updates every 5 seconds (silent refresh)
+        const interval = setInterval(() => {
+            fetchSessions(true);
+        }, 5000);
+
+        return () => clearInterval(interval);
     }, [filter]);
 
     const formatTimestamp = (date: Date | null) => {
@@ -65,8 +72,8 @@ export default function ChatSessionList() {
                 <button
                     onClick={() => setFilter("all")}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === "all"
-                            ? "bg-primary text-white"
-                            : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
+                        ? "bg-primary text-white"
+                        : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
                         }`}
                 >
                     ทั้งหมด
@@ -74,8 +81,8 @@ export default function ChatSessionList() {
                 <button
                     onClick={() => setFilter("needsSupport")}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === "needsSupport"
-                            ? "bg-primary text-white"
-                            : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
+                        ? "bg-primary text-white"
+                        : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
                         }`}
                 >
                     ต้องการความช่วยเหลือ
@@ -83,8 +90,8 @@ export default function ChatSessionList() {
                 <button
                     onClick={() => setFilter("active")}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === "active"
-                            ? "bg-primary text-white"
-                            : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
+                        ? "bg-primary text-white"
+                        : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
                         }`}
                 >
                     กำลังดำเนินการ
