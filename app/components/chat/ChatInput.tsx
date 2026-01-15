@@ -33,7 +33,7 @@ export default function ChatInput() {
                     onKeyPress={handleKeyPress}
                     placeholder="พิมพ์ข้อความ..."
                     disabled={isLoading}
-                    className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900"
                     maxLength={1000}
                 />
                 <button
