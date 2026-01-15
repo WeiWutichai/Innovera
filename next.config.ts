@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 // Config updated to force reload for new routes
 const nextConfig: NextConfig = {
   output: "standalone",
+  poweredByHeader: false, // Hide X-Powered-By header for security
   images: {
     remotePatterns: [
       {
@@ -43,6 +44,24 @@ const nextConfig: NextConfig = {
           {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=()'
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "img-src 'self' data: https: blob:",
+              "font-src 'self' data: https://fonts.gstatic.com",
+              "connect-src 'self' https://innovera.co.th",
+              "media-src 'self' blob: data:",
+              "object-src 'none'",
+              "frame-src 'self' https://www.youtube.com https://player.vimeo.com",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "frame-ancestors 'self'",
+              "upgrade-insecure-requests"
+            ].join('; ')
           }
         ]
       }

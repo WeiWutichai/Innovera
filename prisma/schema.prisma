@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x", "linux-musl-arm64-openssl-3.0.x"]
 }
 
@@ -9,16 +9,18 @@ datasource db {
 }
 
 model User {
-  id            Int       @id @default(autoincrement())
-  email         String    @unique
-  name          String?
-  password      String?
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  accounts      Account[]
-  role          Role      @default(USER)
-  posts         Post[]
+  id                Int           @id @default(autoincrement())
+  email             String        @unique
+  name              String?
+  password          String?
+  image             String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  accounts          Account[]
+  role              Role          @default(USER)
+  posts             Post[]
+  chatSessions      ChatSession[]
+  assignedChats     ChatSession[] @relation("AdminChats")
 }
 
 enum Role {
@@ -27,18 +29,18 @@ enum Role {
 }
 
 model Account {
-  id                 Int     @id @default(autoincrement())
-  userId             Int
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?
-  access_token       String?
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?
-  session_state      String?
+  id                Int     @id @default(autoincrement())
+  userId            Int
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -46,26 +48,26 @@ model Account {
 }
 
 model Post {
-  id        Int      @id @default(autoincrement())
-  title     String
-  slug      String   @unique
-  content   String
-  excerpt   String
-  image     String?
-  title_th   String?
-  content_th String?
-  excerpt_th String?
-  published Boolean  @default(false)
-  authorId  Int
-  author    User     @relation(fields: [authorId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  metaTitle       String?
-  metaDescription String?
-  metaKeywords    String?
-  metaTitle_th    String?
+  id                 Int      @id @default(autoincrement())
+  title              String
+  slug               String   @unique
+  content            String
+  excerpt            String
+  image              String?
+  title_th           String?
+  content_th         String?
+  excerpt_th         String?
+  published          Boolean  @default(false)
+  authorId           Int
+  author             User     @relation(fields: [authorId], references: [id])
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  metaTitle          String?
+  metaDescription    String?
+  metaKeywords       String?
+  metaTitle_th       String?
   metaDescription_th String?
-  metaKeywords_th String?
+  metaKeywords_th    String?
 }
 
 model DemoRequest {
@@ -79,4 +81,56 @@ model DemoRequest {
   interest    String
   status      String   @default("PENDING") // PENDING, CONTACTED, CLOSED
   createdAt   DateTime @default(now())
+}
+
+// Chat Models
+model ChatSession {
+  id                  String    @id @default(cuid())
+  userId              Int? // Optional: for logged-in users
+  user                User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  guestId             String? // For anonymous users
+  startedAt           DateTime  @default(now())
+  endedAt             DateTime?
+  messages            Message[]
+  metadata            Json? // Store user preferences, context
+  requestHumanSupport Boolean   @default(false) // User requested human help
+  assignedAdminId     Int? // Admin handling this chat
+  assignedAdmin       User?     @relation("AdminChats", fields: [assignedAdminId], references: [id], onDelete: SetNull)
+  lastMessageAt       DateTime? // For sorting by activity
+  isActive            Boolean   @default(true) // Active or archived
+
+  @@index([userId])
+  @@index([guestId])
+  @@index([startedAt])
+  @@index([requestHumanSupport])
+  @@index([assignedAdminId])
+  @@index([lastMessageAt])
+}
+
+model Message {
+  id            String        @id @default(cuid())
+  sessionId     String
+  session       ChatSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role          String // 'user' or 'assistant'
+  content       String        @db.Text
+  timestamp     DateTime      @default(now())
+  metadata      Json? // Store tokens, model used, etc.
+  feedback      ChatFeedback?
+  isReadByAdmin Boolean       @default(false) // Track unread messages
+  sentByAdmin   Boolean       @default(false) // Distinguish admin replies
+
+  @@index([sessionId])
+  @@index([timestamp])
+  @@index([isReadByAdmin])
+}
+
+model ChatFeedback {
+  id        String   @id @default(cuid())
+  messageId String   @unique
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  rating    Int // 1-5 stars
+  comment   String?
+  createdAt DateTime @default(now())
+
+  @@index([rating])
 }
