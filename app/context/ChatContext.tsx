@@ -38,17 +38,20 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     const [guestId, setGuestId] = useState<string | null>(null);
     const [humanSupportRequested, setHumanSupportRequested] = useState(false);
     const [adminAssigned, setAdminAssigned] = useState(false);
-    const [captchaVerified, setCaptchaVerified] = useState(false);
+    const [captchaVerified, setCaptchaVerified] = useState(true); // Default true - CAPTCHA is optional
     const [captchaLoading, setCaptchaLoading] = useState(false);
 
     // Load reCAPTCHA script
     useEffect(() => {
         const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
         if (!siteKey) {
-            console.warn("reCAPTCHA site key not configured");
-            setCaptchaVerified(true); // Skip CAPTCHA if not configured
+            console.warn("reCAPTCHA site key not configured - chat will work without CAPTCHA");
+            // captchaVerified is already true by default
             return;
         }
+
+        // CAPTCHA is configured, set to false until verified
+        setCaptchaVerified(false);
 
         // Check if script already loaded
         if (document.querySelector('script[src*="recaptcha"]')) {
