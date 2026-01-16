@@ -50,13 +50,34 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             return;
         }
 
+        // Check if script already loaded
+        if (document.querySelector('script[src*="recaptcha"]')) {
+            return;
+        }
+
         const script = document.createElement("script");
         script.src = `https://www.google.com/recaptcha/api.js?render=${siteKey}`;
         script.async = true;
+
+        script.onload = () => {
+            console.log("reCAPTCHA script loaded successfully");
+        };
+
+        script.onerror = () => {
+            console.error("Failed to load reCAPTCHA script");
+            setCaptchaVerified(true); // Allow chat if script fails to load
+        };
+
         document.head.appendChild(script);
 
         return () => {
-            document.head.removeChild(script);
+            try {
+                if (script.parentNode) {
+                    document.head.removeChild(script);
+                }
+            } catch (e) {
+                // Ignore cleanup errors
+            }
         };
     }, []);
 
