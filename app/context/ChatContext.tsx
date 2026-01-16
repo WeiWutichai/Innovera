@@ -73,16 +73,31 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
             setCaptchaLoading(true);
 
+            // Set timeout fallback - allow chat after 5 seconds even if CAPTCHA fails
+            const timeoutId = setTimeout(() => {
+                console.warn("CAPTCHA verification timeout - allowing chat anyway");
+                setCaptchaVerified(true);
+                setCaptchaLoading(false);
+            }, 5000);
+
             try {
-                // Wait for reCAPTCHA to be ready
-                await new Promise((resolve) => {
+                // Wait for reCAPTCHA to be ready (max 3 seconds)
+                const readyPromise = new Promise((resolve, reject) => {
                     const checkReady = setInterval(() => {
                         if (typeof window.grecaptcha !== 'undefined' && window.grecaptcha.ready) {
                             clearInterval(checkReady);
                             resolve(true);
                         }
                     }, 100);
+
+                    // Timeout after 3 seconds
+                    setTimeout(() => {
+                        clearInterval(checkReady);
+                        reject(new Error("reCAPTCHA script load timeout"));
+                    }, 3000);
                 });
+
+                await readyPromise;
 
                 // Execute reCAPTCHA
                 window.grecaptcha.ready(async () => {
@@ -100,23 +115,27 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
                         const data = await response.json();
 
+                        clearTimeout(timeoutId);
+
                         if (data.success) {
+                            console.log("CAPTCHA verified, score:", data.score);
                             setCaptchaVerified(true);
                         } else {
-                            console.error("CAPTCHA verification failed:", data.error);
-                            alert("การยืนยันตัวตนล้มเหลว กรุณาลองใหม่อีกครั้ง");
-                            setIsOpen(false);
+                            console.warn("CAPTCHA verification failed:", data.error);
+                            // Allow chat anyway on failure
+                            setCaptchaVerified(true);
                         }
                     } catch (error) {
                         console.error("CAPTCHA execution error:", error);
-                        alert("เกิดข้อผิดพลาดในการยืนยันตัวตน กรุณาลองใหม่อีกครั้ง");
-                        setIsOpen(false);
+                        clearTimeout(timeoutId);
+                        setCaptchaVerified(true); // Allow chat on error
                     } finally {
                         setCaptchaLoading(false);
                     }
                 });
             } catch (error) {
                 console.error("CAPTCHA error:", error);
+                clearTimeout(timeoutId);
                 setCaptchaLoading(false);
                 setCaptchaVerified(true); // Allow chat on error
             }
