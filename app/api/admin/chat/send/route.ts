@@ -47,9 +47,11 @@ export async function POST(request: NextRequest) {
             },
         });
 
-        // Update session
+        // Update session - mark that admin took over
         const updateData: any = {
             lastMessageAt: new Date(),
+            adminTookOver: true, // Admin is now handling conversation
+            lastAdminReplyAt: new Date(), // Track when admin last replied
         };
 
         if (assignToMe && session.user.id) {

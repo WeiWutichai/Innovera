@@ -93,9 +93,52 @@ export async function POST(request: NextRequest) {
             content: msg.content,
         }));
 
-        // Generate AI response (only if not requesting human support)
+        // Check if bot should respond (Smart Handoff Logic)
+        const shouldBotRespond = () => {
+            // Always respond if requesting human support
+            if (requestHumanSupport) return false;
+
+            // If admin never took over, bot always responds
+            if (!session.adminTookOver) return true;
+
+            // Check if user mentions bot (case-insensitive)
+            const botKeywords = ['น้องอินโน', 'อินโน', 'inno', 'bot', 'ai'];
+            const mentionsBot = botKeywords.some(keyword =>
+                sanitizedMessage.toLowerCase().includes(keyword.toLowerCase())
+            );
+            if (mentionsBot) {
+                console.log('User mentioned bot - resuming AI responses');
+                return true;
+            }
+
+            // Check 5-minute timeout
+            if (session.lastAdminReplyAt) {
+                const TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+                const timeSinceAdminReply = Date.now() - new Date(session.lastAdminReplyAt).getTime();
+                if (timeSinceAdminReply > TIMEOUT_MS) {
+                    console.log('Admin timeout (5 min) - resuming AI responses');
+                    return true;
+                }
+            }
+
+            // Admin is handling - bot should not respond
+            console.log('Admin is handling conversation - bot silent');
+            return false;
+        };
+
+        // Generate AI response (only if bot should respond)
         let assistantMessage = null;
-        if (!requestHumanSupport) {
+        const botShouldRespond = shouldBotRespond();
+
+        if (botShouldRespond) {
+            // Reset adminTookOver if bot is resuming
+            if (session.adminTookOver) {
+                await prisma.chatSession.update({
+                    where: { id: sessionId },
+                    data: { adminTookOver: false },
+                });
+            }
+
             const aiResponse = await generateChatResponse(sanitizedMessage, history);
 
             // Save AI response

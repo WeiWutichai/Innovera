@@ -98,6 +98,8 @@ model ChatSession {
   assignedAdmin       User?     @relation("AdminChats", fields: [assignedAdminId], references: [id], onDelete: SetNull)
   lastMessageAt       DateTime? // For sorting by activity
   isActive            Boolean   @default(true) // Active or archived
+  adminTookOver       Boolean   @default(false) // Admin took over conversation
+  lastAdminReplyAt    DateTime? // Last time admin replied
 
   @@index([userId])
   @@index([guestId])
