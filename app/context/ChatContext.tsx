@@ -19,6 +19,8 @@ interface ChatContextType {
     guestId: string | null;
     humanSupportRequested: boolean;
     adminAssigned: boolean;
+    captchaVerified: boolean;
+    captchaLoading: boolean;
     sendMessage: (message: string) => Promise<void>;
     requestHumanSupport: () => Promise<void>;
     toggleChat: () => void;
@@ -36,9 +38,96 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     const [guestId, setGuestId] = useState<string | null>(null);
     const [humanSupportRequested, setHumanSupportRequested] = useState(false);
     const [adminAssigned, setAdminAssigned] = useState(false);
+    const [captchaVerified, setCaptchaVerified] = useState(false);
+    const [captchaLoading, setCaptchaLoading] = useState(false);
+
+    // Load reCAPTCHA script
+    useEffect(() => {
+        const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+        if (!siteKey) {
+            console.warn("reCAPTCHA site key not configured");
+            setCaptchaVerified(true); // Skip CAPTCHA if not configured
+            return;
+        }
+
+        const script = document.createElement("script");
+        script.src = `https://www.google.com/recaptcha/api.js?render=${siteKey}`;
+        script.async = true;
+        document.head.appendChild(script);
+
+        return () => {
+            document.head.removeChild(script);
+        };
+    }, []);
+
+    // Verify CAPTCHA when chat opens
+    useEffect(() => {
+        if (!isOpen || captchaVerified || captchaLoading) return;
+
+        const verifyCaptcha = async () => {
+            const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+            if (!siteKey) {
+                setCaptchaVerified(true);
+                return;
+            }
+
+            setCaptchaLoading(true);
+
+            try {
+                // Wait for reCAPTCHA to be ready
+                await new Promise((resolve) => {
+                    const checkReady = setInterval(() => {
+                        if (typeof window.grecaptcha !== 'undefined' && window.grecaptcha.ready) {
+                            clearInterval(checkReady);
+                            resolve(true);
+                        }
+                    }, 100);
+                });
+
+                // Execute reCAPTCHA
+                window.grecaptcha.ready(async () => {
+                    try {
+                        const token = await window.grecaptcha.execute(siteKey, {
+                            action: "chat_open",
+                        });
+
+                        // Verify token with backend
+                        const response = await fetch("/api/chat/verify-captcha", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ token }),
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            setCaptchaVerified(true);
+                        } else {
+                            console.error("CAPTCHA verification failed:", data.error);
+                            alert("การยืนยันตัวตนล้มเหลว กรุณาลองใหม่อีกครั้ง");
+                            setIsOpen(false);
+                        }
+                    } catch (error) {
+                        console.error("CAPTCHA execution error:", error);
+                        alert("เกิดข้อผิดพลาดในการยืนยันตัวตน กรุณาลองใหม่อีกครั้ง");
+                        setIsOpen(false);
+                    } finally {
+                        setCaptchaLoading(false);
+                    }
+                });
+            } catch (error) {
+                console.error("CAPTCHA error:", error);
+                setCaptchaLoading(false);
+                setCaptchaVerified(true); // Allow chat on error
+            }
+        };
+
+        verifyCaptcha();
+    }, [isOpen, captchaVerified, captchaLoading]);
 
     // Initialize session
     useEffect(() => {
+        if (!captchaVerified) return; // Wait for CAPTCHA verification
         const initSession = async () => {
             // Check for existing session in localStorage
             const storedSessionId = localStorage.getItem("chatSessionId");
@@ -270,6 +359,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 guestId,
                 humanSupportRequested,
                 adminAssigned,
+                captchaVerified,
+                captchaLoading,
                 sendMessage,
                 requestHumanSupport,
                 toggleChat,
