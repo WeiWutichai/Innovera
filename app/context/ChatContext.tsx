@@ -108,7 +108,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 // Wait for reCAPTCHA to be ready (max 3 seconds)
                 const readyPromise = new Promise((resolve, reject) => {
                     const checkReady = setInterval(() => {
-                        if (typeof window.grecaptcha !== 'undefined' && window.grecaptcha.ready) {
+                        if (typeof window.grecaptcha !== 'undefined' && typeof window.grecaptcha.ready === 'function') {
                             clearInterval(checkReady);
                             resolve(true);
                         }
