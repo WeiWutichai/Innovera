@@ -5,12 +5,17 @@ import NextAuth, { DefaultSession } from "next-auth";
 declare module "next-auth" {
     interface Session {
         user: {
+            id: string;
             role: Role;
+            isApproved: boolean;
+            canReportIssues: boolean;
         } & DefaultSession["user"];
     }
 
     interface User {
         role: Role;
+        isApproved: boolean;
+        canReportIssues: boolean;
     }
 }
 

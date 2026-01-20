@@ -20,6 +20,7 @@ export default function NavLinks({ mobile }: NavLinksProps) {
                 <Link href="/#platforms" className={mobileLinkClass}>{t.nav.platforms}</Link>
                 <Link href="/#site-reference" className={mobileLinkClass}>{t.nav.siteReference}</Link>
                 <Link href="/blog" className={mobileLinkClass}>{t.nav.blog}</Link>
+                <Link href="/community" className={mobileLinkClass}>{t.nav.community}</Link>
                 <Link href="/#customers" className={mobileLinkClass}>{t.nav.pricing}</Link>
 
 
@@ -33,6 +34,7 @@ export default function NavLinks({ mobile }: NavLinksProps) {
             <Link href="/#platforms" className={linkClass}>{t.nav.platforms}</Link>
             <Link href="/#site-reference" className={linkClass}>{t.nav.siteReference}</Link>
             <Link href="/blog" className={linkClass}>{t.nav.blog}</Link>
+            <Link href="/community" className={linkClass}>{t.nav.community}</Link>
             <Link href="/#customers" className={linkClass}>{t.nav.pricing}</Link>
 
         </nav>

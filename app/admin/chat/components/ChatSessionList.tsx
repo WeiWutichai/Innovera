@@ -111,7 +111,7 @@ export default function ChatSessionList() {
                         <Link
                             key={session.id}
                             href={`/admin/chat/${session.id}`}
-                            className="block bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg p-4 transition-colors"
+                            className="block bg-[#1E293B] hover:bg-[#253248] border border-white/5 rounded-lg p-4 transition-colors shadow-md"
                         >
                             <div className="flex items-start justify-between gap-4">
                                 {/* User Info */}

@@ -16,7 +16,7 @@ export default async function AdminBlogPage() {
     });
 
     return (
-        <div className="min-h-screen bg-secondary p-8 font-sans">
+        <div className="font-sans">
             <div className="max-w-6xl mx-auto">
                 <div className="flex items-center justify-between mb-8">
                     <div>

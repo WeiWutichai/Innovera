@@ -51,8 +51,8 @@ export default async function ChatDetailPage({
     });
 
     return (
-        <div className="min-h-screen bg-secondary font-sans">
-            <div className="max-w-6xl mx-auto">
+        <div className="font-sans h-[calc(100vh-64px)] overflow-hidden">
+            <div className="max-w-6xl mx-auto h-full flex flex-col p-8">
                 {/* Header */}
                 <div className="mb-6">
                     <h1 className="text-2xl font-bold text-white mb-2">

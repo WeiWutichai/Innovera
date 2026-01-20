@@ -15,10 +15,10 @@ export default function MessageList() {
     };
 
     useEffect(() => {
-        // Only auto-scroll if user is near bottom (within 100px)
+        // Only auto-scroll if user is near bottom (within 150px)
         if (containerRef.current) {
             const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
-            const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+            const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
 
             if (isNearBottom) {
                 scrollToBottom();

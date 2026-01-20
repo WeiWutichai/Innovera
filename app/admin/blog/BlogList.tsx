@@ -26,7 +26,7 @@ export default function BlogList({ posts }: { posts: Post[] }) {
     };
 
     return (
-        <div className="bg-[#1e1e1e] rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
+        <div className="bg-[#1E293B] rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
             <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm text-gray-400">
                     <thead className="bg-white/5 text-gray-200 uppercase font-medium">

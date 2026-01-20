@@ -28,6 +28,7 @@
     "react-dom": "19.2.1",
     "react-markdown": "^10.1.0",
     "react-quill-new": "^3.7.0",
+    "sharp": "^0.34.5",
     "zod": "^4.3.5"
   },
   "devDependencies": {

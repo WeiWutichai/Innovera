@@ -4,6 +4,11 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false, // Hide X-Powered-By header for security
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '25mb', // Increase limit for image uploads
+    },
+  },
   images: {
     remotePatterns: [
       {

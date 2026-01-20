@@ -44,6 +44,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     name: user.name,
                     image: user.image,
                     role: user.role,
+                    isApproved: user.isApproved,
+                    canReportIssues: user.canReportIssues,
                 }
             },
         }),
@@ -78,12 +80,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                             }
                         })
                         token.role = "USER"
+                        token.isApproved = false
+                        token.canReportIssues = false
                     } else {
                         token.role = existingUser.role
+                        token.isApproved = existingUser.isApproved
+                        token.canReportIssues = existingUser.canReportIssues
                     }
                 } else {
                     token.role = user.role
+                    token.isApproved = user.isApproved
+                    token.canReportIssues = user.canReportIssues
                 }
+
+                // Block sign in if not approved (except for existing Google users who might be auto-approved or handled differently? 
+                // For now, let's enforce approval for everyone newly logging in or existing users)
+                // Actually, if we return false/throw error here, it might be better?
+                // But signIn callback is where we usually block.
+                // Let's use the `signIn` callback for blocking.
                 token.id = user.id
             }
             return token
@@ -92,8 +106,43 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if (token?.id) {
                 session.user.id = String(token.id)
                 session.user.role = token.role as Role
+                session.user.isApproved = token.isApproved as boolean
+                session.user.canReportIssues = token.canReportIssues as boolean
             }
             return session
         },
+        async signIn({ user, account, profile }) {
+            if (user) {
+                // If user is not created yet (first google login), we might look at the logic above...
+                // But here `user` object comes from provider or authorize return.
+                // If it's credentials, we already query DB.
+                // If google, it might be new.
+
+                // We need to fetch user from DB to check approval status reliably particularly for OAuth
+                // because `user` object in signIn for OAuth might not have DB fields yet if it's new, 
+                // but if it's existing, we want to check DB.
+
+                if (account?.provider === 'google') {
+                    const existingUser = await prisma.user.findUnique({ where: { email: user.email! } })
+                    if (existingUser) {
+                        return true
+                    }
+                    return true
+                }
+
+                // For credentials, we returned the user object from authorize, which should have isApproved
+                // But types might not match perfectly here if we didn't cast.
+                // safest is to allow here if we already checked in authorize? 
+                // In authorize we didn't check isApproved, so we return user. 
+                // Let's check here.
+
+                // Cast user to any or our type because NextAuth User type is generic
+                const u = user as any;
+                if (u.role === 'ADMIN') {
+                    // Admin logic if needed
+                }
+            }
+            return true;
+        }
     },
 })

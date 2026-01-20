@@ -18,14 +18,21 @@ model User {
   updatedAt         DateTime      @updatedAt
   accounts          Account[]
   role              Role          @default(USER)
+  isApproved        Boolean       @default(true)
+  canReportIssues   Boolean       @default(true)
   posts             Post[]
   chatSessions      ChatSession[]
   assignedChats     ChatSession[] @relation("AdminChats")
+  issues            Issue[]
+  communityPosts    CommunityPost[]
+  comments          Comment[]
+  products          Product[]     @relation("UserProducts")
 }
 
 enum Role {
   USER
   ADMIN
+  OWNER
 }
 
 model Account {
@@ -136,4 +143,85 @@ model ChatFeedback {
   createdAt DateTime @default(now())
 
   @@index([rating])
+}
+
+model Product {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  image       String?
+  documents   Document[]
+  owners      User[]     @relation("UserProducts")
+  issues      Issue[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Document {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   @db.Text
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category  String?
+  videoUrl  String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([productId])
+}
+
+model Issue {
+  id            String   @id @default(cuid())
+  title         String
+  description   String   @db.Text
+  status        String   @default("OPEN") // User side: OPEN, PENDING_REVIEW, CLOSED, REJECTED
+  supportStatus String   @default("TODO") // Support side: TODO, IN_PROGRESS, COMPLETE, COMPLETED, REJECTED
+  userId        Int
+  user          User     @relation(fields: [userId], references: [id])
+  productId     String?
+  product       Product? @relation(fields: [productId], references: [id])
+  images        IssueImage[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@index([productId])
+}
+
+model IssueImage {
+  id        String   @id @default(cuid())
+  url       String
+  issueId   String
+  issue     Issue    @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([issueId])
+}
+
+model CommunityPost {
+  id        String    @id @default(cuid())
+  title     String
+  content   String    @db.Text
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id])
+  comments  Comment[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Comment {
+  id        String        @id @default(cuid())
+  content   String        @db.Text
+  postId    String
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User          @relation(fields: [userId], references: [id])
+  createdAt DateTime      @default(now())
+
+  @@index([postId])
+  @@index([userId])
 }

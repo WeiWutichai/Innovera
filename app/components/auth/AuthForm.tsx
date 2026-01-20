@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import SocialButton from "./SocialButton";
 
 export default function AuthForm({ type }: { type: "login" | "register" }) {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const callbackUrl = searchParams.get("callbackUrl") || "/";
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -44,7 +46,8 @@ export default function AuthForm({ type }: { type: "login" | "register" }) {
                 if (result?.error) {
                     setError(result.error);
                 } else {
-                    router.push("/");
+                    router.push(callbackUrl);
+                    router.refresh();
                 }
 
             } else {
@@ -57,7 +60,7 @@ export default function AuthForm({ type }: { type: "login" | "register" }) {
                 if (result?.error) {
                     setError("Invalid email or password");
                 } else {
-                    router.push("/");
+                    router.push(callbackUrl);
                     router.refresh();
                 }
             }
