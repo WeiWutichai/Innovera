@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Bold, Italic, List, Image as ImageIcon, Link as LinkIcon, Save, X, Upload } from 'lucide-react';
+import { Bold, Italic, List, Image as ImageIcon, Link as LinkIcon, Save, X, Upload, FileText } from 'lucide-react';
 import { getDocument, updateDocument } from '@/app/actions/document';
 import { uploadImage } from '@/app/actions/upload';
 
@@ -113,10 +113,13 @@ export default function DocumentEditor({ documentId, productId, onClose }: Docum
 
     if (!documentId) {
         return (
-            <div className="bg-[#1E293B] rounded-lg border border-white/5 p-6 flex items-center justify-center h-full">
-                <div className="text-center text-gray-500">
-                    <p className="text-lg mb-2">เลือกเอกสารจากเมนูด้านซ้าย</p>
-                    <p className="text-sm">หรือสร้างเอกสารใหม่โดยคลิกปุ่ม + ในหมวดหมู่ย่อย</p>
+            <div className="bg-white rounded-xl border border-gray-200 p-8 flex items-center justify-center h-full shadow-lg">
+                <div className="text-center">
+                    <div className="w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <FileText className="w-8 h-8 text-indigo-500" />
+                    </div>
+                    <p className="text-lg font-medium text-gray-900 mb-2">เลือกเอกสารจากเมนูด้านซ้าย</p>
+                    <p className="text-sm text-gray-500">หรือสร้างเอกสารใหม่โดยคลิกปุ่ม + ในหมวดหมู่ย่อย</p>
                 </div>
             </div>
         );
@@ -124,29 +127,29 @@ export default function DocumentEditor({ documentId, productId, onClose }: Docum
 
     if (loading) {
         return (
-            <div className="bg-[#1E293B] rounded-lg border border-white/5 p-6 flex items-center justify-center h-full">
+            <div className="bg-white rounded-xl border border-gray-200 p-8 flex items-center justify-center h-full shadow-lg">
                 <div className="text-gray-400">กำลังโหลด...</div>
             </div>
         );
     }
 
     return (
-        <div className="bg-[#1E293B] rounded-lg border border-white/5 flex flex-col h-full">
+        <div className="bg-white rounded-xl border border-gray-200 flex flex-col h-full shadow-lg overflow-hidden">
             {/* Header */}
-            <div className="p-4 border-b border-white/5 flex items-center justify-between">
-                <h3 className="font-bold text-white">แก้ไขเอกสาร</h3>
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-indigo-50 to-white">
+                <h3 className="font-bold text-gray-900">แก้ไขเอกสาร</h3>
                 <div className="flex items-center gap-2">
                     <button
                         onClick={handleSave}
                         disabled={saving || !title.trim()}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+                        className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg hover:from-indigo-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-all shadow-lg shadow-indigo-500/25"
                     >
                         <Save className="w-4 h-4" />
                         {saving ? 'กำลังบันทึก...' : 'บันทึก'}
                     </button>
                     <button
                         onClick={onClose}
-                        className="p-1.5 text-gray-400 hover:text-white transition-colors"
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -154,66 +157,66 @@ export default function DocumentEditor({ documentId, productId, onClose }: Docum
             </div>
 
             {/* Form */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto p-6 space-y-5">
                 {/* Title */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">ชื่อเอกสาร</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">ชื่อเอกสาร</label>
                     <input
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        className="w-full bg-[#0F172A] border border-white/10 rounded px-3 py-2 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
                         placeholder="ชื่อเอกสาร..."
                     />
                 </div>
 
                 {/* Video URL */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">Video URL (YouTube)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Video URL (YouTube)</label>
                     <input
                         type="text"
                         value={videoUrl}
                         onChange={(e) => setVideoUrl(e.target.value)}
-                        className="w-full bg-[#0F172A] border border-white/10 rounded px-3 py-2 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
                         placeholder="https://www.youtube.com/watch?v=..."
                     />
                 </div>
 
                 {/* Content Editor */}
                 <div className="flex-1">
-                    <label className="block text-sm font-medium text-gray-300 mb-1">เนื้อหา</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">เนื้อหา</label>
 
                     {/* Toolbar */}
-                    <div className="flex items-center gap-1 mb-2 bg-[#0F172A] border border-white/10 rounded-t p-2">
+                    <div className="flex items-center gap-1 mb-0 bg-gray-50 border border-gray-200 rounded-t-xl p-2">
                         <button
                             onClick={() => insertTag('<strong>', '</strong>')}
-                            className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+                            className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                             title="ตัวหนา"
                         >
                             <Bold className="w-4 h-4" />
                         </button>
                         <button
                             onClick={() => insertTag('<em>', '</em>')}
-                            className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+                            className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                             title="ตัวเอียง"
                         >
                             <Italic className="w-4 h-4" />
                         </button>
                         <button
                             onClick={() => insertTag('<ul>\n  <li>', '</li>\n</ul>')}
-                            className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+                            className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                             title="รายการ"
                         >
                             <List className="w-4 h-4" />
                         </button>
                         <button
                             onClick={() => insertTag('<a href="">', '</a>')}
-                            className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+                            className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                             title="ลิงก์"
                         >
                             <LinkIcon className="w-4 h-4" />
                         </button>
-                        <div className="h-4 w-px bg-white/10 mx-1" />
+                        <div className="h-5 w-px bg-gray-200 mx-1" />
                         <input
                             ref={fileInputRef}
                             type="file"
@@ -224,7 +227,7 @@ export default function DocumentEditor({ documentId, productId, onClose }: Docum
                         <button
                             onClick={() => fileInputRef.current?.click()}
                             disabled={uploadingImage}
-                            className="flex items-center gap-1 px-2 py-1 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors disabled:opacity-50"
+                            className="flex items-center gap-1.5 px-3 py-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors disabled:opacity-50"
                             title="แทรกรูปภาพ"
                         >
                             {uploadingImage ? (
@@ -232,7 +235,7 @@ export default function DocumentEditor({ documentId, productId, onClose }: Docum
                             ) : (
                                 <ImageIcon className="w-4 h-4" />
                             )}
-                            <span className="text-xs">แทรกรูป</span>
+                            <span className="text-xs font-medium">แทรกรูป</span>
                         </button>
                     </div>
 
@@ -241,18 +244,18 @@ export default function DocumentEditor({ documentId, productId, onClose }: Docum
                         ref={textareaRef}
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
-                        className="w-full h-64 bg-[#0F172A] border border-white/10 border-t-0 rounded-b p-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm resize-none"
+                        className="w-full h-64 bg-gray-50 border border-gray-200 border-t-0 rounded-b-xl p-4 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500/20 outline-none font-mono text-sm resize-none"
                         placeholder="เนื้อหาเอกสาร (รองรับ HTML)..."
                     />
-                    <p className="text-xs text-gray-500 mt-1">รองรับ HTML สำหรับการจัดรูปแบบและแทรกรูปภาพ</p>
+                    <p className="text-xs text-gray-400 mt-1">รองรับ HTML สำหรับการจัดรูปแบบและแทรกรูปภาพ</p>
                 </div>
 
                 {/* Preview */}
                 {content && (
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">ตัวอย่าง</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">ตัวอย่าง</label>
                         <div
-                            className="bg-white text-gray-900 rounded p-4 prose prose-sm max-w-none overflow-auto max-h-48"
+                            className="bg-white border border-gray-200 text-gray-900 rounded-xl p-4 prose prose-sm max-w-none overflow-auto max-h-48"
                             dangerouslySetInnerHTML={{ __html: content }}
                         />
                     </div>
