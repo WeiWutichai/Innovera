@@ -27,6 +27,8 @@ model User {
   communityPosts    CommunityPost[]
   comments          Comment[]
   products          Product[]     @relation("UserProducts")
+  issueComments     IssueComment[] @relation("IssueComments")
+  issueActivities   IssueActivity[]
 }
 
 enum Role {
@@ -183,6 +185,8 @@ model Issue {
   productId     String?
   product       Product? @relation(fields: [productId], references: [id])
   images        IssueImage[]
+  comments      IssueComment[]
+  activities    IssueActivity[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -198,6 +202,31 @@ model IssueImage {
   createdAt DateTime @default(now())
 
   @@index([issueId])
+}
+
+model IssueComment {
+  id        String              @id @default(cuid())
+  content   String              @db.Text
+  type      String              // REJECTION, RESUBMIT
+  issueId   String
+  issue     Issue               @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User                @relation("IssueComments", fields: [userId], references: [id])
+  images    IssueCommentImage[]
+  createdAt DateTime            @default(now())
+
+  @@index([issueId])
+  @@index([userId])
+}
+
+model IssueCommentImage {
+  id        String       @id @default(cuid())
+  url       String
+  commentId String
+  comment   IssueComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now())
+
+  @@index([commentId])
 }
 
 model CommunityPost {
@@ -224,4 +253,18 @@ model Comment {
 
   @@index([postId])
   @@index([userId])
+}
+
+model IssueActivity {
+  id               String   @id @default(cuid())
+  issueId          String
+  issue            Issue    @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  userId           Int?
+  user             User?    @relation(fields: [userId], references: [id])
+  actorName        String?  // Fallback for system or deleted users
+  type             String   // CREATED, STATUS_CHANGE, COMMENTED, etc.
+  description      String   @db.Text
+  createdAt        DateTime @default(now())
+
+  @@index([issueId])
 }

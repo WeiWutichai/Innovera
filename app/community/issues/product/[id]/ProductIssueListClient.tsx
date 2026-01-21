@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import IssueFormModal from "../../IssueFormModal";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 interface Product {
     id: string;
@@ -28,21 +30,30 @@ const getStatusColor = (status: string) => {
     }
 };
 
-import { useSession } from "next-auth/react";
-
 const STATUS_TABS = [
     { key: 'ALL', label: 'All' },
     { key: 'OPEN', label: 'Open' },
     { key: 'IN_PROGRESS', label: 'In Progress' },
     { key: 'PENDING_REVIEW', label: 'Pending Review' },
     { key: 'CLOSED', label: 'Closed' },
+    { key: 'REJECTED', label: 'Rejected' },
 ];
 
 export default function ProductIssueListClient({ product, issues }: { product: Product, issues: any[] }) {
+    const router = useRouter();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('ALL');
     const [searchQuery, setSearchQuery] = useState('');
     const { data: session } = useSession();
+
+    // Auto-refresh logic: refresh data every 30 seconds
+    useEffect(() => {
+        const interval = setInterval(() => {
+            router.refresh();
+        }, 30000); // 30 seconds
+
+        return () => clearInterval(interval);
+    }, [router]);
 
     const isOwnerOrAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'OWNER';
 

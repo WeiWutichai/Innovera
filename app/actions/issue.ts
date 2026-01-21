@@ -4,6 +4,29 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 
+async function logActivity(data: {
+    issueId: string;
+    userId?: number;
+    actorName?: string;
+    type: string;
+    description: string;
+}) {
+    // Using nested write to avoid direct accessor issues
+    return await prisma.issue.update({
+        where: { id: data.issueId },
+        data: {
+            activities: {
+                create: {
+                    userId: data.userId,
+                    actorName: data.actorName,
+                    type: data.type,
+                    description: data.description,
+                }
+            }
+        } as any
+    });
+}
+
 export async function getIssues(productId?: string) {
     const session = await auth();
     if (!session?.user) {
@@ -76,7 +99,6 @@ export async function createIssue(data: { title: string; description: string; pr
                 description: data.description,
                 userId: parseInt(session.user.id),
                 productId: data.productId,
-                // images: { create: ... } // Removed nested write to avoid potential Prisma client validation issues in dev
             }
         });
 
@@ -90,6 +112,15 @@ export async function createIssue(data: { title: string; description: string; pr
             });
         }
 
+        // 3. Log Activity
+        await logActivity({
+            issueId: newIssue.id,
+            userId: parseInt(session.user.id),
+            actorName: (session.user.name || session.user.email || 'Unknown'),
+            type: 'CREATED',
+            description: `Issue created: ${newIssue.title}`
+        });
+
         revalidatePath("/community/issues");
         if (data.productId) {
             revalidatePath(`/community/issues/product/${data.productId}`);
@@ -98,7 +129,6 @@ export async function createIssue(data: { title: string; description: string; pr
         return newIssue;
     } catch (error: any) {
         console.error("Error creating issue:", error);
-        // Surface the actual error for debugging
         throw new Error(error?.message || "Failed to create issue. Please try again later.");
     }
 }
@@ -112,6 +142,14 @@ export async function updateIssueStatus(id: string, status: string) {
     const issue = await prisma.issue.update({
         where: { id },
         data: { status }
+    });
+
+    await logActivity({
+        issueId: id,
+        userId: parseInt(session.user.id),
+        actorName: (session.user.name || session.user.email || 'Unknown'),
+        type: 'STATUS_CHANGE',
+        description: `Issue status updated to ${status}`
     });
 
     revalidatePath('/community/issues');
@@ -128,6 +166,12 @@ export async function getIssueById(id: string) {
         where: { id },
         include: {
             user: { select: { name: true, email: true } },
+            ...({
+                activities: {
+                    include: { user: { select: { name: true, email: true } } },
+                    orderBy: { createdAt: 'desc' }
+                }
+            } as any)
         }
     });
 
@@ -135,19 +179,16 @@ export async function getIssueById(id: string) {
         throw new Error("Issue not found");
     }
 
-    // Check access: Admin/Owner can see all, User can only see their own
     const isOwner = session.user.role === 'OWNER' || session.user.role === 'ADMIN';
     if (!isOwner && issue.userId !== parseInt(session.user.id)) {
         throw new Error("Unauthorized");
     }
 
-    // Fetch images separately (workaround for cache issue)
     const images = await prisma.issueImage.findMany({
         where: { issueId: id },
         select: { id: true, url: true }
     });
 
-    // Fetch product info
     let product = null;
     if (issue.productId) {
         product = await prisma.product.findUnique({
@@ -159,11 +200,11 @@ export async function getIssueById(id: string) {
     return {
         ...issue,
         images,
-        product
+        product,
+        activities: (issue as any).activities || []
     };
 }
 
-// Owner/Support accepts the issue - changes supportStatus to IN_PROGRESS
 export async function acceptIssue(id: string) {
     const session = await auth();
     if (!session?.user) throw new Error("Unauthorized");
@@ -176,11 +217,18 @@ export async function acceptIssue(id: string) {
         data: { supportStatus: 'IN_PROGRESS' }
     });
 
+    await logActivity({
+        issueId: id,
+        userId: parseInt(session.user.id),
+        actorName: (session.user.name || session.user.email || 'Unknown'),
+        type: 'STATUS_CHANGE',
+        description: `Issue accepted by support. Support status: IN_PROGRESS`
+    });
+
     revalidatePath('/community/issues');
     return issue;
 }
 
-// Owner/Support completes the fix - changes supportStatus to COMPLETE, status to PENDING_REVIEW
 export async function completeIssue(id: string) {
     const session = await auth();
     if (!session?.user) throw new Error("Unauthorized");
@@ -196,16 +244,22 @@ export async function completeIssue(id: string) {
         }
     });
 
+    await logActivity({
+        issueId: id,
+        userId: parseInt(session.user.id),
+        actorName: (session.user.name || session.user.email || 'Unknown'),
+        type: 'STATUS_CHANGE',
+        description: `Issue marked as complete by support. Waiting for user review.`
+    });
+
     revalidatePath('/community/issues');
     return issue;
 }
 
-// User closes the issue (accepts the fix) - changes status to CLOSED, supportStatus to COMPLETED
 export async function closeIssue(id: string) {
     const session = await auth();
     if (!session?.user) throw new Error("Unauthorized");
 
-    // Verify user owns this issue
     const existingIssue = await prisma.issue.findUnique({ where: { id } });
     if (!existingIssue) throw new Error("Issue not found");
     if (existingIssue.userId !== parseInt(session.user.id) && session.user.role !== 'ADMIN') {
@@ -220,16 +274,22 @@ export async function closeIssue(id: string) {
         }
     });
 
+    await logActivity({
+        issueId: id,
+        userId: parseInt(session.user.id),
+        actorName: (session.user.name || session.user.email || 'Unknown'),
+        type: 'STATUS_CHANGE',
+        description: `Issue closed and accepted by user.`
+    });
+
     revalidatePath('/community/issues');
     return issue;
 }
 
-// User rejects the fix - changes both statuses to REJECTED
 export async function rejectIssue(id: string) {
     const session = await auth();
     if (!session?.user) throw new Error("Unauthorized");
 
-    // Verify user owns this issue
     const existingIssue = await prisma.issue.findUnique({ where: { id } });
     if (!existingIssue) throw new Error("Issue not found");
     if (existingIssue.userId !== parseInt(session.user.id) && session.user.role !== 'ADMIN') {
@@ -244,6 +304,116 @@ export async function rejectIssue(id: string) {
         }
     });
 
+    await logActivity({
+        issueId: id,
+        userId: parseInt(session.user.id),
+        actorName: (session.user.name || session.user.email || 'Unknown'),
+        type: 'STATUS_CHANGE',
+        description: `Issue rejected by user with feedback.`
+    });
+
     revalidatePath('/community/issues');
     return issue;
+}
+
+export async function resubmitIssue(id: string) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const isOwner = session.user.role === 'OWNER' || session.user.role === 'ADMIN';
+    if (!isOwner) throw new Error("Only Owners can resubmit issues");
+
+    const issue = await prisma.issue.update({
+        where: { id },
+        data: {
+            supportStatus: 'COMPLETE',
+            status: 'PENDING_REVIEW'
+        }
+    });
+
+    await logActivity({
+        issueId: id,
+        userId: parseInt(session.user.id),
+        actorName: (session.user.name || session.user.email || 'Unknown'),
+        type: 'STATUS_CHANGE',
+        description: `Issue resubmitted by support after fix.`
+    });
+
+    revalidatePath('/community/issues');
+    return issue;
+}
+
+export async function addIssueComment(data: {
+    issueId: string;
+    content: string;
+    type: 'REJECTION' | 'RESUBMIT';
+    imageUrls?: string[];
+}) {
+    const session = await auth();
+    if (!session?.user) throw new Error("Unauthorized");
+
+    const comment = await prisma.issueComment.create({
+        data: {
+            content: data.content,
+            type: data.type,
+            issueId: data.issueId,
+            userId: parseInt(session.user.id),
+        }
+    });
+
+    if (data.imageUrls && data.imageUrls.length > 0) {
+        for (const url of data.imageUrls) {
+            await prisma.issueCommentImage.create({
+                data: {
+                    url,
+                    commentId: comment.id
+                }
+            });
+        }
+    }
+
+    await logActivity({
+        issueId: data.issueId,
+        userId: parseInt(session.user.id),
+        actorName: (session.user.name || session.user.email || 'Unknown'),
+        type: 'COMMENTED',
+        description: `Added a ${data.type.toLowerCase()} comment: ${data.content.substring(0, 50)}${data.content.length > 50 ? '...' : ''}`
+    });
+
+    revalidatePath('/community/issues');
+    return comment;
+}
+
+export async function getIssueComments(issueId: string) {
+    const comments = await prisma.issueComment.findMany({
+        where: { issueId },
+        include: {
+            user: { select: { name: true, email: true } },
+            images: true
+        },
+        orderBy: { createdAt: 'desc' }
+    });
+    return comments;
+}
+export async function deleteIssue(id: string) {
+    const session = await auth();
+    const userRole = session?.user?.role;
+
+    console.log(`[deleteIssue] Attempting to delete ID: ${id} by user role: ${userRole}`);
+
+    if (userRole !== 'ADMIN' && userRole !== 'OWNER') {
+        throw new Error("Unauthorized: Only Admins or Owners can delete issues");
+    }
+
+    try {
+        await prisma.issue.delete({
+            where: { id }
+        });
+
+        revalidatePath('/community/issues', 'layout');
+        return { success: true };
+    } catch (error: any) {
+        console.error("Error deleting issue:", error);
+        throw new Error(error?.message || "Failed to delete issue");
+    }
 }

@@ -1,6 +1,5 @@
 import type { NextConfig } from "next";
 
-// Config updated to force reload for new routes
 const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false, // Hide X-Powered-By header for security

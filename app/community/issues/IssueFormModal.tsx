@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createIssue } from "@/app/actions/issue";
 import { uploadImage } from "@/app/actions/upload";
+import { useRouter } from "next/navigation";
 
 interface Product {
     id: string;
@@ -16,6 +17,7 @@ export default function IssueFormModal({
     product: Product;
     onClose: () => void;
 }) {
+    const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [description, setDescription] = useState("");
@@ -79,6 +81,9 @@ export default function IssueFormModal({
                 productId: product.id,
                 imageUrls
             });
+
+            // Refresh the page data to show the new issue
+            router.refresh();
 
             // Success handling
             setSuccess(true);
