@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { MessageSquare, User, Clock } from "lucide-react";
+import { MessageSquare, User, Clock, Inbox } from "lucide-react";
 
 interface ChatSession {
     id: string;
@@ -71,27 +71,27 @@ export default function ChatSessionList() {
             <div className="flex gap-2 mb-6">
                 <button
                     onClick={() => setFilter("all")}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === "all"
-                        ? "bg-primary text-white"
-                        : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${filter === "all"
+                        ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/25"
+                        : "bg-white text-gray-600 hover:text-gray-900 hover:bg-gray-50 border border-gray-200"
                         }`}
                 >
                     ทั้งหมด
                 </button>
                 <button
                     onClick={() => setFilter("needsSupport")}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === "needsSupport"
-                        ? "bg-primary text-white"
-                        : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${filter === "needsSupport"
+                        ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/25"
+                        : "bg-white text-gray-600 hover:text-gray-900 hover:bg-gray-50 border border-gray-200"
                         }`}
                 >
                     ต้องการความช่วยเหลือ
                 </button>
                 <button
                     onClick={() => setFilter("active")}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === "active"
-                        ? "bg-primary text-white"
-                        : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${filter === "active"
+                        ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/25"
+                        : "bg-white text-gray-600 hover:text-gray-900 hover:bg-gray-50 border border-gray-200"
                         }`}
                 >
                     กำลังดำเนินการ
@@ -102,48 +102,49 @@ export default function ChatSessionList() {
             {loading ? (
                 <div className="text-center py-12 text-gray-400">กำลังโหลด...</div>
             ) : sessions.length === 0 ? (
-                <div className="text-center py-12 text-gray-400">
-                    ไม่มีแชทในหมวดนี้
+                <div className="text-center py-16 bg-white rounded-2xl border border-gray-200 shadow-lg">
+                    <Inbox className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500">ไม่มีแชทในหมวดนี้</p>
                 </div>
             ) : (
-                <div className="grid gap-4">
+                <div className="grid gap-3">
                     {sessions.map((session) => (
                         <Link
                             key={session.id}
                             href={`/admin/chat/${session.id}`}
-                            className="block bg-[#1E293B] hover:bg-[#253248] border border-white/5 rounded-lg p-4 transition-colors shadow-md"
+                            className="block bg-white hover:bg-gray-50 border border-gray-200 hover:border-indigo-200 rounded-xl p-5 transition-all shadow-sm hover:shadow-md"
                         >
                             <div className="flex items-start justify-between gap-4">
                                 {/* User Info */}
-                                <div className="flex items-start gap-3 flex-1 min-w-0">
-                                    <div className="flex-shrink-0 w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
-                                        <User className="w-5 h-5 text-primary" />
+                                <div className="flex items-start gap-4 flex-1 min-w-0">
+                                    <div className="flex-shrink-0 w-11 h-11 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl flex items-center justify-center">
+                                        <User className="w-5 h-5 text-indigo-600" />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
-                                            <h3 className="text-white font-medium truncate">
+                                            <h3 className="text-gray-900 font-semibold truncate">
                                                 {session.user?.name ||
                                                     session.user?.email ||
                                                     `Guest ${session.guestId?.slice(0, 8)}`}
                                             </h3>
                                             {session.unreadCount > 0 && (
-                                                <span className="flex-shrink-0 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                                <span className="flex-shrink-0 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
                                                     {session.unreadCount}
                                                 </span>
                                             )}
                                             {session.requestHumanSupport && (
-                                                <span className="flex-shrink-0 bg-yellow-500/20 text-yellow-400 text-xs px-2 py-0.5 rounded">
+                                                <span className="flex-shrink-0 bg-amber-50 text-amber-600 text-xs px-2 py-0.5 rounded-lg font-medium border border-amber-100">
                                                     ต้องการช่วยเหลือ
                                                 </span>
                                             )}
                                         </div>
                                         {session.lastMessage && (
-                                            <p className="text-sm text-gray-400 truncate">
+                                            <p className="text-sm text-gray-500 truncate">
                                                 {session.lastMessage.sentByAdmin && "คุณ: "}
                                                 {session.lastMessage.content}
                                             </p>
                                         )}
-                                        <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                                        <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
                                             <span className="flex items-center gap-1">
                                                 <Clock className="w-3 h-3" />
                                                 {formatTimestamp(session.lastMessageAt)}
@@ -158,7 +159,7 @@ export default function ChatSessionList() {
 
                                 {/* Assigned Admin */}
                                 {session.assignedAdmin && (
-                                    <div className="flex-shrink-0 text-xs text-gray-400">
+                                    <div className="flex-shrink-0 text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-lg">
                                         ดูแลโดย: {session.assignedAdmin.name || session.assignedAdmin.email}
                                     </div>
                                 )}
