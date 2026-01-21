@@ -3,6 +3,7 @@
 import { Role } from "@prisma/client";
 import { updateUserRole } from "@/app/actions/admin";
 import { useState, useTransition } from "react";
+import { ChevronDown } from "lucide-react";
 
 interface UserRoleSelectorProps {
     userId: number;
@@ -28,22 +29,31 @@ export default function UserRoleSelector({ userId, currentRole }: UserRoleSelect
         });
     };
 
+    const getRoleStyles = () => {
+        switch (role) {
+            case 'OWNER':
+                return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+            case 'ADMIN':
+                return 'bg-purple-50 text-purple-700 border-purple-200';
+            default:
+                return 'bg-gray-100 text-gray-700 border-gray-200';
+        }
+    };
+
     return (
         <div className="relative inline-block">
             <select
                 value={role}
                 onChange={handleChange}
                 disabled={isPending}
-                className={`appearance-none bg-black text-white font-bold rounded-lg pl-4 pr-10 py-2 border border-white/10 hover:border-white/20 focus:outline-none focus:ring-2 focus:ring-white/20 transition-colors uppercase tracking-wider text-sm cursor-pointer ${isPending ? 'opacity-50' : ''}`}
+                className={`appearance-none font-medium rounded-lg pl-4 pr-10 py-2 border focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-colors uppercase tracking-wider text-xs cursor-pointer ${getRoleStyles()} ${isPending ? 'opacity-50' : ''}`}
             >
-                <option value="USER" className="bg-[#1E1E2D] text-gray-300">USER</option>
-                <option value="ADMIN" className="bg-[#1E1E2D] text-white">ADMIN</option>
-                <option value="OWNER" className="bg-[#1E1E2D] text-emerald-400">OWNER</option>
+                <option value="USER">USER</option>
+                <option value="ADMIN">ADMIN</option>
+                <option value="OWNER">OWNER</option>
             </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-white/50">
-                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                    <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                </svg>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                <ChevronDown className="w-4 h-4" />
             </div>
         </div>
     );

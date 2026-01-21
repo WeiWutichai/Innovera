@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createProduct } from "@/app/actions/product";
+import { Plus, X } from "lucide-react";
 
 export default function CreateProductButton() {
     const [isOpen, setIsOpen] = useState(false);
@@ -27,11 +28,9 @@ export default function CreateProductButton() {
         return (
             <button
                 onClick={() => setIsOpen(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 font-medium shadow-lg shadow-blue-900/20"
+                className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-5 py-2.5 rounded-xl hover:from-indigo-600 hover:to-purple-600 transition-all flex items-center gap-2 font-medium shadow-lg shadow-indigo-500/25"
             >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                </svg>
+                <Plus className="w-5 h-5" />
                 Create Product
             </button>
         );
@@ -41,70 +40,66 @@ export default function CreateProductButton() {
         <>
             <button
                 onClick={() => setIsOpen(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 font-medium shadow-lg shadow-blue-900/20"
+                className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-5 py-2.5 rounded-xl hover:from-indigo-600 hover:to-purple-600 transition-all flex items-center gap-2 font-medium shadow-lg shadow-indigo-500/25"
             >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                </svg>
+                <Plus className="w-5 h-5" />
                 Create Product
             </button>
 
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                <div className="bg-[#1E293B] rounded-xl border border-white/10 shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
-                    <div className="p-6 border-b border-white/10 flex justify-between items-center">
-                        <h2 className="text-xl font-bold text-white">Create New Product</h2>
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+                    <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-indigo-50 to-white">
+                        <h2 className="text-xl font-bold text-gray-900">Create New Product</h2>
                         <button
                             onClick={() => setIsOpen(false)}
-                            className="text-gray-400 hover:text-white transition-colors"
+                            className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-lg"
                         >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
+                            <X className="w-5 h-5" />
                         </button>
                     </div>
 
                     <form action={handleSubmit} className="p-6 space-y-4">
                         <div>
-                            <label className="block text-sm font-medium mb-1 text-gray-300">Product Name</label>
+                            <label className="block text-sm font-medium mb-2 text-gray-700">Product Name</label>
                             <input
                                 type="text"
                                 name="name"
                                 required
                                 autoFocus
-                                className="w-full bg-[#0F172A] border border-white/10 rounded-lg p-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3.5 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
                                 placeholder="e.g. Enterprise Suite"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1 text-gray-300">Description</label>
+                            <label className="block text-sm font-medium mb-2 text-gray-700">Description</label>
                             <textarea
                                 name="description"
                                 rows={3}
-                                className="w-full bg-[#0F172A] border border-white/10 rounded-lg p-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3.5 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
                                 placeholder="Brief description of the product..."
                             ></textarea>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1 text-gray-300">Image URL</label>
+                            <label className="block text-sm font-medium mb-2 text-gray-700">Image URL</label>
                             <input
                                 type="text"
                                 name="image"
-                                className="w-full bg-[#0F172A] border border-white/10 rounded-lg p-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3.5 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
                                 placeholder="https://..."
                             />
                         </div>
-                        <div className="flex justify-end gap-3 mt-6">
+                        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
                             <button
                                 type="button"
                                 onClick={() => setIsOpen(false)}
-                                className="px-4 py-2 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                                className="px-5 py-2.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-colors font-medium"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 py-2.5 rounded-xl hover:from-indigo-600 hover:to-purple-600 font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-indigo-500/25"
                             >
                                 {isSubmitting ? (
                                     <>

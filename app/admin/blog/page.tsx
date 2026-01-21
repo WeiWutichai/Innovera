@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import BlogList from "./BlogList";
+import { Plus, FileText } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -20,18 +21,16 @@ export default async function AdminBlogPage() {
             <div className="max-w-6xl mx-auto">
                 <div className="flex items-center justify-between mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-white mb-2">Blog Management</h1>
-                        <p className="text-gray-400">
+                        <h1 className="text-2xl font-bold text-gray-900 mb-1">Blog Management</h1>
+                        <p className="text-gray-500">
                             Create and manage blog posts.
                         </p>
                     </div>
                     <Link
                         href="/admin/blog/create"
-                        className="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+                        className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white px-5 py-2.5 rounded-xl font-medium transition-all flex items-center gap-2 shadow-lg shadow-indigo-500/25"
                     >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                        </svg>
+                        <Plus className="w-5 h-5" />
                         New Post
                     </Link>
                 </div>

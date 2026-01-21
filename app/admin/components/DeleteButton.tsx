@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { Trash2 } from "lucide-react";
 
 interface DeleteButtonProps {
     action: (id: string) => Promise<void>;
@@ -23,8 +24,9 @@ export default function DeleteButton({ action, id, itemName = "item" }: DeleteBu
         <button
             onClick={handleDelete}
             disabled={isPending}
-            className="px-3 py-1 bg-red-500/10 text-red-400 rounded hover:bg-red-500/20 text-sm border border-red-500/10 transition-colors disabled:opacity-50"
+            className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 text-sm border border-red-100 transition-colors disabled:opacity-50 flex items-center gap-1.5 font-medium"
         >
+            <Trash2 className="w-4 h-4" />
             {isPending ? "Deleting..." : "Delete"}
         </button>
     );

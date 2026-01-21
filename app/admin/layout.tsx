@@ -17,13 +17,13 @@ export default async function AdminLayout({
     }
 
     return (
-        <section className="min-h-screen bg-[#141D2F]">
+        <section className="min-h-screen bg-gray-50">
             <AdminSidebar />
             <div className="pl-64 transition-all duration-300">
                 {/* Admin Header */}
-                <header className="h-16 bg-[#141D2F] border-b border-white/5 flex items-center justify-between px-8 sticky top-0 z-10">
+                <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 sticky top-0 z-10 shadow-sm">
                     <div className="flex items-center gap-4">
-                        <h2 className="text-lg font-semibold text-white">Admin Dashboard</h2>
+                        <h2 className="text-lg font-semibold text-gray-800">Admin Dashboard</h2>
                     </div>
                     <NotificationBell />
                 </header>
