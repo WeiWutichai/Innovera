@@ -66,7 +66,7 @@ export async function updateUserRole(userId: number, role: Role, canReportIssues
         throw new Error("Unauthorized");
     }
 
-    return await prisma.user.update({
+    const user = await prisma.user.update({
         where: { id: userId },
         data: { role, canReportIssues }
     });
