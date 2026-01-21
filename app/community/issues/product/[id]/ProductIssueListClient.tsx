@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import IssueFormModal from "../../IssueFormModal";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+
 
 interface Product {
     id: string;
@@ -39,12 +39,11 @@ const STATUS_TABS = [
     { key: 'REJECTED', label: 'Rejected' },
 ];
 
-export default function ProductIssueListClient({ product, issues }: { product: Product, issues: any[] }) {
+export default function ProductIssueListClient({ product, issues, user }: { product: Product, issues: any[], user: any }) {
     const router = useRouter();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('ALL');
     const [searchQuery, setSearchQuery] = useState('');
-    const { data: session } = useSession();
 
     // Auto-refresh logic: refresh data every 30 seconds
     useEffect(() => {
@@ -55,7 +54,7 @@ export default function ProductIssueListClient({ product, issues }: { product: P
         return () => clearInterval(interval);
     }, [router]);
 
-    const isOwnerOrAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'OWNER';
+    const isOwnerOrAdmin = user?.role === 'ADMIN' || user?.role === 'OWNER';
 
     // Filter issues based on active tab and search query
     const filteredIssues = issues.filter(issue => {

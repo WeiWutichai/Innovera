@@ -3,7 +3,11 @@ import Link from "next/link";
 import { auth } from "@/auth";
 
 export default async function CommunityPage() {
-    const products = await getProducts();
+    const allProducts = await getProducts();
+    const allowedProducts = ["INNO ONE", "LAW FIRM", "PHYSICAL THERAPY", "DOMITORY"];
+    const products = allProducts.filter((product: any) =>
+        allowedProducts.some(allowed => product.name.toUpperCase().includes(allowed))
+    );
     const session = await auth();
 
     return (

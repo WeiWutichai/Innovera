@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition, useRef } from "react";
 import { getIssueById, acceptIssue, completeIssue, closeIssue, rejectIssue, resubmitIssue, addIssueComment, getIssueComments, deleteIssue } from "@/app/actions/issue";
+import { markIssueNotificationsAsRead } from "@/app/actions/notification";
 import { uploadImage } from "@/app/actions/upload";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -65,6 +66,24 @@ export default function IssueDetailPage() {
 
     const isOwner = session?.user?.role === 'OWNER' || session?.user?.role === 'ADMIN';
     const isIssueOwner = issue?.userId === parseInt(session?.user?.id || "0");
+
+    // Mark notifications as read when viewing the issue
+    useEffect(() => {
+        if (!id || !issue) return;
+
+        // If Owner/Admin hasn't accepted the task yet (status TODO), keep notification
+        if (isOwner && issue.supportStatus === 'TODO') {
+            return;
+        }
+
+        // If User hasn't verified the task yet (status PENDING_REVIEW), keep notification
+        if (isIssueOwner && issue.status === 'PENDING_REVIEW') {
+            return;
+        }
+
+        markIssueNotificationsAsRead(id)
+            .catch(err => console.error("Failed to mark notifications as read:", err));
+    }, [id, issue, isOwner, isIssueOwner]);
 
     useEffect(() => {
         async function fetchIssue() {
@@ -341,8 +360,8 @@ export default function IssueDetailPage() {
                                         <span className="text-gray-500 italic">Waiting for user review</span>
                                     )}
 
-                                    {/* Admin/Owner Delete Action */}
-                                    {(session?.user?.role === 'ADMIN' || session?.user?.role === 'OWNER') && (
+                                    {/* Admin Delete Action */}
+                                    {session?.user?.role === 'ADMIN' && (
                                         <div className="ml-auto flex items-center gap-2">
                                             {!showDeleteConfirm ? (
                                                 <button

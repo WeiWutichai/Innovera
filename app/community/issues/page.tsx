@@ -1,4 +1,5 @@
 import { getMyProducts } from "@/app/actions/product";
+import { getUnreadCountsByProduct } from "@/app/actions/notification";
 import { auth } from "@/auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -13,6 +14,7 @@ export default async function IssuesPage() {
     }
 
     const myProducts = await getMyProducts();
+    const notificationCounts = await getUnreadCountsByProduct();
 
     return (
         <div className="min-h-screen bg-gray-50 font-sans">
@@ -30,7 +32,7 @@ export default async function IssuesPage() {
                                 <span className="w-1.5 h-8 bg-[#4B286D] rounded-full"></span>
                                 My Products
                             </h2>
-                            <MyProductsList products={myProducts} />
+                            <MyProductsList products={myProducts} notificationCounts={notificationCounts} />
                         </section>
                     </div>
                 </div>

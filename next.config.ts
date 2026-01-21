@@ -73,4 +73,5 @@ const nextConfig: NextConfig = {
   }
 };
 
+// Forced restart for Prisma Schema update
 export default nextConfig;

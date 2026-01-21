@@ -29,6 +29,7 @@ model User {
   products          Product[]     @relation("UserProducts")
   issueComments     IssueComment[] @relation("IssueComments")
   issueActivities   IssueActivity[]
+  notifications     Notification[]
 }
 
 enum Role {
@@ -155,6 +156,7 @@ model Product {
   documents   Document[]
   owners      User[]     @relation("UserProducts")
   issues      Issue[]
+  notifications Notification[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 }
@@ -187,6 +189,7 @@ model Issue {
   images        IssueImage[]
   comments      IssueComment[]
   activities    IssueActivity[]
+  notifications Notification[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -267,4 +270,24 @@ model IssueActivity {
   createdAt        DateTime @default(now())
 
   @@index([issueId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  issueId   String?
+  issue     Issue?   @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  type      String   // ISSUE_CREATED, ISSUE_ACTIVITY
+  title     String
+  message   String   @db.Text
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([productId])
+  @@index([isRead])
 }

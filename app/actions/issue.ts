@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
+import { createNotification, markIssueNotificationsAsRead } from "./notification";
 
 async function logActivity(data: {
     issueId: string;
@@ -121,6 +122,42 @@ export async function createIssue(data: { title: string; description: string; pr
             description: `Issue created: ${newIssue.title}`
         });
 
+        // Notify product owners and admins
+        if (data.productId) {
+            const product = await prisma.product.findUnique({
+                where: { id: data.productId },
+                include: { owners: true }
+            });
+
+            const admins = await prisma.user.findMany({
+                where: { role: 'ADMIN' }
+            });
+
+            // Combine owners and admins, remove duplicates and current user
+            const currentUserId = parseInt(session.user.id);
+            const notifyUsers = new Map<number, { id: number }>();
+
+            if (product && product.owners) {
+                product.owners.forEach(owner => notifyUsers.set(owner.id, owner));
+            }
+            admins.forEach(admin => notifyUsers.set(admin.id, admin));
+
+            // Remove current user (creator)
+            notifyUsers.delete(currentUserId);
+
+            for (const user of notifyUsers.values()) {
+                await createNotification({
+                    userId: user.id,
+                    productId: data.productId,
+                    issueId: newIssue.id,
+                    type: "ISSUE_CREATED",
+                    title: "New Issue Reported",
+                    message: `New issue "${data.title}" reported for ${product?.name || 'Product'}`,
+                    link: `/community/issues/view/${newIssue.id}`
+                });
+            }
+        }
+
         revalidatePath("/community/issues");
         if (data.productId) {
             revalidatePath(`/community/issues/product/${data.productId}`);
@@ -225,6 +262,23 @@ export async function acceptIssue(id: string) {
         description: `Issue accepted by support. Support status: IN_PROGRESS`
     });
 
+    // Clear previous notifications (e.g. New Issue Reported) for the owner
+    await markIssueNotificationsAsRead(id);
+
+    // Fetch issue details for notification
+    const updatedIssue = await prisma.issue.findUnique({ where: { id } });
+    if (updatedIssue) {
+        await createNotification({
+            userId: updatedIssue.userId,
+            productId: updatedIssue.productId || undefined,
+            issueId: id,
+            type: "ISSUE_STATUS_UPDATE",
+            title: "Issue Accepted",
+            message: `Your issue "${updatedIssue.title}" has been accepted and is now In Progress.`,
+            link: `/community/issues/view/${id}`
+        });
+    }
+
     revalidatePath('/community/issues');
     return issue;
 }
@@ -251,6 +305,23 @@ export async function completeIssue(id: string) {
         type: 'STATUS_CHANGE',
         description: `Issue marked as complete by support. Waiting for user review.`
     });
+
+    // Clear previous notifications (e.g. New Issue for owner)
+    await markIssueNotificationsAsRead(id);
+
+    // Fetch issue details for notification
+    const updatedIssue = await prisma.issue.findUnique({ where: { id } });
+    if (updatedIssue) {
+        await createNotification({
+            userId: updatedIssue.userId,
+            productId: updatedIssue.productId || undefined,
+            issueId: id,
+            type: "ISSUE_COMPLETE",
+            title: "Issue Completed",
+            message: `Support has marked your issue "${updatedIssue.title}" as Complete. Please review the fix.`,
+            link: `/community/issues/view/${id}`
+        });
+    }
 
     revalidatePath('/community/issues');
     return issue;
@@ -282,6 +353,31 @@ export async function closeIssue(id: string) {
         description: `Issue closed and accepted by user.`
     });
 
+    // Clear all notifications for this issue as it is closed
+    await markIssueNotificationsAsRead(id);
+
+    // Notify Product Owner that User Closed/Accepted the issue
+    if (existingIssue.productId) {
+        const product = await prisma.product.findUnique({
+            where: { id: existingIssue.productId },
+            include: { owners: true }
+        });
+
+        if (product && product.owners) {
+            for (const owner of product.owners) {
+                await createNotification({
+                    userId: owner.id,
+                    productId: existingIssue.productId,
+                    issueId: id,
+                    type: "ISSUE_CLOSED",
+                    title: "Issue Closed by User",
+                    message: `User accepted and closed issue "${existingIssue.title}".`,
+                    link: `/community/issues/view/${id}`
+                });
+            }
+        }
+    }
+
     revalidatePath('/community/issues');
     return issue;
 }
@@ -311,6 +407,32 @@ export async function rejectIssue(id: string) {
         type: 'STATUS_CHANGE',
         description: `Issue rejected by user with feedback.`
     });
+
+    // Clear user's "Complete" notification
+    await markIssueNotificationsAsRead(id);
+
+    // Notify support/owners
+    // Since we don't easily know WHICH owner to notify, we might skip or notify all.
+    // Ideally we notify the owners of the product.
+    if (existingIssue.productId) {
+        const product = await prisma.product.findUnique({
+            where: { id: existingIssue.productId },
+            include: { owners: true }
+        });
+        if (product && product.owners) {
+            for (const owner of product.owners) {
+                await createNotification({
+                    userId: owner.id,
+                    productId: existingIssue.productId,
+                    issueId: id,
+                    type: "ISSUE_REJECTED",
+                    title: "Issue Rejected by User",
+                    message: `User rejected fix for issue "${existingIssue.title}".`,
+                    link: `/community/issues/view/${id}`
+                });
+            }
+        }
+    }
 
     revalidatePath('/community/issues');
     return issue;
@@ -380,6 +502,45 @@ export async function addIssueComment(data: {
         description: `Added a ${data.type.toLowerCase()} comment: ${data.content.substring(0, 50)}${data.content.length > 50 ? '...' : ''}`
     });
 
+    // Notify the other party
+    const issue = await prisma.issue.findUnique({
+        where: { id: data.issueId },
+        include: { product: { include: { owners: true } } }
+    });
+
+    if (issue) {
+        const userRole = session.user.role;
+        const isSupport = userRole === 'OWNER' || userRole === 'ADMIN';
+
+        if (isSupport) {
+            // Notify Issue Reporter
+            await createNotification({
+                userId: issue.userId,
+                productId: issue.productId || undefined,
+                issueId: issue.id,
+                type: "ISSUE_COMMENT",
+                title: "New Comment",
+                message: `Support commented on your issue "${issue.title}": ${data.content}`,
+                link: `/community/issues/view/${issue.id}`
+            });
+        } else {
+            // Notify Product Owners
+            if (issue.product && issue.product.owners) {
+                for (const owner of issue.product.owners) {
+                    await createNotification({
+                        userId: owner.id,
+                        productId: issue.productId || undefined,
+                        issueId: issue.id,
+                        type: "ISSUE_COMMENT",
+                        title: "New Comment",
+                        message: `User commented on issue "${issue.title}": ${data.content}`,
+                        link: `/community/issues/view/${issue.id}`
+                    });
+                }
+            }
+        }
+    }
+
     revalidatePath('/community/issues');
     return comment;
 }
@@ -401,8 +562,8 @@ export async function deleteIssue(id: string) {
 
     console.log(`[deleteIssue] Attempting to delete ID: ${id} by user role: ${userRole}`);
 
-    if (userRole !== 'ADMIN' && userRole !== 'OWNER') {
-        throw new Error("Unauthorized: Only Admins or Owners can delete issues");
+    if (userRole !== 'ADMIN') {
+        throw new Error("Unauthorized: Only Admins can delete issues");
     }
 
     try {

@@ -33,7 +33,7 @@ export default async function ProductIssuesPage(props: { params: Promise<{ id: s
                     </div>
                 </div>
 
-                <ProductIssueListClient product={product} issues={issues} />
+                <ProductIssueListClient product={product} issues={issues} user={session.user} />
             </div>
         </div>
     );
