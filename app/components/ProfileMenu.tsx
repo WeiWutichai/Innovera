@@ -52,12 +52,22 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
             {/* Trigger Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-2 focus:outline-none group"
+                className="flex items-center justify-center w-10 h-10 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all duration-200 border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 overflow-hidden"
                 aria-label="Open profile menu"
             >
-                <span className={`text-sm font-medium transition-colors duration-200 ${isOpen ? 'text-indigo-400' : 'text-gray-300 group-hover:text-white'}`}>
-                    {user.name || "User"}
-                </span>
+                {user.image ? (
+                    <Image
+                        src={user.image}
+                        alt={user.name || "User"}
+                        width={40}
+                        height={40}
+                        className="w-full h-full object-cover"
+                    />
+                ) : (
+                    <span className="text-sm font-bold text-indigo-300">
+                        {getInitials(user.name, user.email)}
+                    </span>
+                )}
             </button>
 
             {/* Dropdown Menu */}

@@ -11,8 +11,9 @@ import ReactMarkdown from 'react-markdown'; // Assuming we handle markdown or pl
 // I'll stick to basic rendering for this iteration to avoid new deps if possible, 
 // BUT the request implies "Add images", so likely HTML is stored.
 
-export default async function DocumentPage({ params }: { params: { id: string } }) {
-    const doc = await getDocument(params.id);
+export default async function DocumentPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
+    const doc = await getDocument(id);
     if (!doc) notFound();
 
     return (

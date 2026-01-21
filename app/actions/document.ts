@@ -18,7 +18,7 @@ export async function getDocument(id: string) {
     });
 }
 
-export async function createDocument(data: { title: string; content: string; productId: string; category?: string; videoUrl?: string; order?: number }) {
+export async function createDocument(data: { title: string; content: string; productId: string; subcategoryId?: string; category?: string; videoUrl?: string; order?: number }) {
     const session = await auth();
     if (session?.user?.role !== 'ADMIN') {
         throw new Error("Unauthorized");

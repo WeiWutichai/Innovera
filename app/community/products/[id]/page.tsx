@@ -1,22 +1,22 @@
 import { getProduct } from "@/app/actions/product";
 import { getDocuments } from "@/app/actions/document";
+import { getCategories } from "@/app/actions/docCategory";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import DocumentViewer from "./DocumentViewer";
 
 export default async function ProductPage(props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
     const product = await getProduct(params.id);
     if (!product) notFound();
 
-    const documents = await getDocuments(params.id);
+    const [categories, documents] = await Promise.all([
+        getCategories(params.id),
+        getDocuments(params.id)
+    ]);
 
-    // Group documents by category if needed, or just list them
-    const groupedDocs = documents.reduce((acc: any, doc: any) => {
-        const cat = doc.category || "General";
-        if (!acc[cat]) acc[cat] = [];
-        acc[cat].push(doc);
-        return acc;
-    }, {} as Record<string, any[]>);
+    // Filter legacy documents (those without subcategoryId)
+    const legacyDocuments = documents.filter((doc: any) => !doc.subcategoryId);
 
     return (
         <div className="min-h-screen bg-gray-50 font-sans">
@@ -47,62 +47,11 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
             </div>
 
             <div className="container mx-auto px-4 py-8">
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                    {/* Sidebar Navigation */}
-                    <aside className="hidden lg:block lg:col-span-1">
-                        <div className="sticky top-24 bg-white rounded-lg shadow-sm border p-6">
-                            <div className="mb-6">
-                                {product.image && <img src={product.image} alt={product.name} className="w-full h-32 object-cover rounded mb-4" />}
-                                <h2 className="font-bold text-xl text-gray-900 mb-2">{product.name}</h2>
-                                <p className="text-sm text-gray-600">{product.description}</p>
-                            </div>
-
-                            <nav className="space-y-1">
-                                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Categories</h3>
-                                {Object.keys(groupedDocs).map(category => (
-                                    <a href={`#cat-${category.replace(/\s+/g, '-')}`} key={category} className="block px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded transition">
-                                        {category}
-                                    </a>
-                                ))}
-                            </nav>
-                        </div>
-                    </aside>
-
-                    {/* Main Content Areas */}
-                    <main className="lg:col-span-3">
-                        <div className="bg-white rounded-xl shadow-sm border p-8 mb-8">
-                            <h1 className="text-3xl font-bold mb-4">Documentation Library</h1>
-                            <p className="text-lg text-gray-600 mb-6">Browse guides, tutorials, and references for {product.name}.</p>
-
-                            {/* Categories Loop */}
-                            {Object.entries(groupedDocs).map(([category, docs]) => (
-                                <div key={category} id={`cat-${category.replace(/\s+/g, '-')}`} className="mb-10 scroll-mt-28">
-                                    <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                                        <span className="w-2 h-8 bg-blue-600 rounded-r mr-3"></span>
-                                        {category}
-                                    </h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {(docs as any[]).map((doc: any) => (
-                                            <Link href={`/community/docs/${doc.id}`} key={doc.id} className="group block p-5 border rounded-lg hover:border-blue-400 hover:shadow-md transition bg-white">
-                                                <div className="flex justify-between items-start mb-2">
-                                                    <h3 className="font-bold text-lg text-gray-900 group-hover:text-blue-600 transition">{doc.title}</h3>
-                                                    {doc.videoUrl && <span className="flex-shrink-0 text-red-500"><svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" /></svg></span>}
-                                                </div>
-                                                <p className="text-sm text-gray-500 line-clamp-2">Click to view article</p>
-                                            </Link>
-                                        ))}
-                                    </div>
-                                </div>
-                            ))}
-
-                            {documents.length === 0 && (
-                                <div className="text-center py-12 bg-gray-50 rounded-lg dashed-border">
-                                    <p className="text-gray-500 italic">No documentation available yet.</p>
-                                </div>
-                            )}
-                        </div>
-                    </main>
-                </div>
+                <DocumentViewer
+                    product={product}
+                    categories={categories}
+                    legacyDocuments={legacyDocuments}
+                />
             </div>
         </div>
     );

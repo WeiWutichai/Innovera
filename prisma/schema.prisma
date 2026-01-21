@@ -149,31 +149,61 @@ model ChatFeedback {
 }
 
 model Product {
-  id          String     @id @default(cuid())
+  id          String        @id @default(cuid())
   name        String
   description String?
   image       String?
   documents   Document[]
-  owners      User[]     @relation("UserProducts")
+  categories  DocCategory[]
+  owners      User[]        @relation("UserProducts")
   issues      Issue[]
   notifications Notification[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model DocCategory {
+  id            String           @id @default(cuid())
+  name          String
+  order         Int              @default(0)
+  productId     String
+  product       Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  subcategories DocSubcategory[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([productId])
+}
+
+model DocSubcategory {
+  id          String      @id @default(cuid())
+  name        String
+  order       Int         @default(0)
+  categoryId  String
+  category    DocCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  documents   Document[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([categoryId])
 }
 
 model Document {
-  id        String   @id @default(cuid())
-  title     String
-  content   String   @db.Text
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  category  String?
-  videoUrl  String?
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String          @id @default(cuid())
+  title         String
+  content       String          @db.Text
+  productId     String
+  product       Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  subcategoryId String?
+  subcategory   DocSubcategory? @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
+  category      String?
+  videoUrl      String?
+  order         Int             @default(0)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
   
   @@index([productId])
+  @@index([subcategoryId])
 }
 
 model Issue {
