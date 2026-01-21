@@ -82,7 +82,7 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
                                         {category}
                                     </h2>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {docs.map((doc: any) => (
+                                        {(docs as any[]).map((doc: any) => (
                                             <Link href={`/community/docs/${doc.id}`} key={doc.id} className="group block p-5 border rounded-lg hover:border-blue-400 hover:shadow-md transition bg-white">
                                                 <div className="flex justify-between items-start mb-2">
                                                     <h3 className="font-bold text-lg text-gray-900 group-hover:text-blue-600 transition">{doc.title}</h3>
