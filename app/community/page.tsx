@@ -2,6 +2,8 @@ import { getProducts } from "@/app/actions/product";
 import Link from "next/link";
 import { auth } from "@/auth";
 
+export const dynamic = 'force-dynamic';
+
 export default async function CommunityPage() {
     const allProducts = await getProducts();
     const allowedProducts = ["INNO ONE", "LAW FIRM", "PHYSICAL THERAPY", "DOMITORY"];

@@ -3,6 +3,8 @@ import { auth } from "@/auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+export const dynamic = 'force-dynamic';
+
 export default async function ForumPage() {
     const posts = await getPosts();
     const session = await auth();
