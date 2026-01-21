@@ -1,5 +1,6 @@
 
 import Link from "next/link";
+import { Suspense } from "react";
 import AuthForm from "@/app/components/auth/AuthForm";
 
 export default function LoginPage() {
@@ -23,7 +24,9 @@ export default function LoginPage() {
                 <p className="text-white/60 mt-2 font-nunito">Access your account and continue your journey with us</p>
             </div>
 
-            <AuthForm type="login" />
+            <Suspense fallback={<div>Loading...</div>}>
+                <AuthForm type="login" />
+            </Suspense>
 
             <p className="mt-6 text-center text-sm text-white/50 font-nunito">
                 New to our platform?{" "}
