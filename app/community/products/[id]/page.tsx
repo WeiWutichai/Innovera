@@ -16,7 +16,7 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
         if (!acc[cat]) acc[cat] = [];
         acc[cat].push(doc);
         return acc;
-    }, {} as Record<string, typeof documents>);
+    }, {} as Record<string, any[]>);
 
     return (
         <div className="min-h-screen bg-gray-50 font-sans">
