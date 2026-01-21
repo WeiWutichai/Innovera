@@ -28,7 +28,7 @@ export async function uploadImage(formData: FormData): Promise<string> {
                     withoutEnlargement: true
                 })
                 .jpeg({ quality: 80 }) // Convert to JPEG with 80% quality
-                .toBuffer();
+                .toBuffer() as any;
         }
     } catch (err) {
         // If sharp fails (e.g., unsupported format), use original buffer
