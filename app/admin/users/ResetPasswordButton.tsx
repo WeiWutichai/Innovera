@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { resetUserPassword } from "./actions";
+import { Key, X, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface Props {
     userId: number;
@@ -53,71 +54,74 @@ export default function ResetPasswordButton({ userId, userEmail }: Props) {
         <>
             <button
                 onClick={openModal}
-                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold rounded-lg transition flex items-center gap-2"
+                className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-orange-500/25 flex items-center gap-2 active:scale-95"
             >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                </svg>
+                <Key className="w-4 h-4" />
                 Reset Password
             </button>
 
             {isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-                    <div className="bg-[#1e1e1e] w-full max-w-md rounded-xl border border-white/10 shadow-2xl overflow-hidden">
-                        <div className="bg-orange-600 p-4 text-white flex justify-between items-center">
-                            <h2 className="text-lg font-bold">Reset Password</h2>
-                            <button onClick={closeModal} className="text-white/60 hover:text-white transition">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100">
+                        <div className="bg-gradient-to-r from-amber-500 to-orange-600 p-6 text-white flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-md">
+                                    <Key className="w-6 h-6 text-white" />
+                                </div>
+                                <h2 className="text-xl font-bold">Reset Password</h2>
+                            </div>
+                            <button onClick={closeModal} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/20 transition-colors">
+                                <X className="w-5 h-5" />
                             </button>
                         </div>
-                        <div className="p-6 space-y-4">
+                        <div className="p-8 space-y-6">
                             {success ? (
-                                <div className="text-center py-4">
-                                    <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-green-400">
-                                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                        </svg>
+                                <div className="text-center py-6 animate-in zoom-in duration-300">
+                                    <div className="w-20 h-20 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-green-600 shadow-inner">
+                                        <CheckCircle2 className="w-10 h-10" />
                                     </div>
-                                    <p className="text-green-400 font-bold">Password Reset Successfully!</p>
+                                    <p className="text-green-600 text-xl font-bold">Success!</p>
+                                    <p className="text-gray-500 mt-1">Password has been updated.</p>
                                 </div>
                             ) : (
                                 <>
-                                    <div className="text-gray-300 text-sm">
-                                        Resetting password for: <strong className="text-white">{userEmail}</strong>
+                                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                        <div className="text-gray-500 text-sm mb-1 uppercase tracking-wider font-semibold">User Email</div>
+                                        <div className="text-gray-900 font-bold">{userEmail}</div>
                                     </div>
 
                                     {error && (
-                                        <div className="p-3 bg-red-500/20 border border-red-500/30 text-red-400 text-sm rounded">
+                                        <div className="p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl flex items-center gap-2 animate-in slide-in-from-top-2">
+                                            <AlertCircle className="w-5 h-5" />
                                             {error}
                                         </div>
                                     )}
 
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-400 mb-2">New Password</label>
+                                        <label className="block text-sm font-semibold text-gray-700 mb-2">New Password</label>
                                         <input
                                             type="password"
                                             value={newPassword}
                                             onChange={(e) => setNewPassword(e.target.value)}
-                                            placeholder="Enter new password (min 6 characters)"
-                                            className="w-full bg-[#050505] border border-white/10 text-white py-2 px-3 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+                                            placeholder="Min 6 characters"
+                                            className="w-full bg-gray-50 border border-gray-200 text-gray-900 py-3 px-4 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-400"
+                                            autoFocus
                                         />
                                     </div>
 
                                     <div className="flex gap-3 pt-2">
                                         <button
                                             onClick={closeModal}
-                                            className="flex-1 px-4 py-2 border border-white/10 text-gray-400 font-bold rounded-lg hover:bg-white/5 transition"
+                                            className="flex-1 px-4 py-3 border border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-gray-50 transition-all active:scale-95"
                                         >
                                             Cancel
                                         </button>
                                         <button
                                             onClick={handleReset}
                                             disabled={isPending || newPassword.length < 6}
-                                            className="flex-1 bg-orange-600 text-white py-2 px-4 font-bold rounded-lg hover:bg-orange-700 transition disabled:opacity-50"
+                                            className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 px-4 font-bold rounded-xl hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-500/25 transition-all disabled:opacity-50 disabled:shadow-none active:scale-95"
                                         >
-                                            {isPending ? "Resetting..." : "Reset Password"}
+                                            {isPending ? "Resetting..." : "Update Password"}
                                         </button>
                                     </div>
                                 </>

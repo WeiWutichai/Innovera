@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { updateProduct } from "@/app/actions/product";
 
+import { Pencil, X, Save, Loader2 } from "lucide-react";
+
 interface Product {
     id: string;
     name: string;
@@ -25,109 +27,103 @@ export default function EditProductButton({ product }: { product: Product }) {
             return;
         }
 
-        await updateProduct(product.id, { name, description, image });
-        setIsSubmitting(false);
-        setIsOpen(false);
-    }
-
-    if (!isOpen) {
-        return (
-            <button
-                onClick={() => setIsOpen(true)}
-                className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded transition-colors text-sm border border-white/10 flex items-center gap-2"
-            >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                </svg>
-                Edit
-            </button>
-        );
+        try {
+            await updateProduct(product.id, { name, description, image });
+            setIsOpen(false);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsSubmitting(false);
+        }
     }
 
     return (
         <>
             <button
                 onClick={() => setIsOpen(true)}
-                className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded transition-colors text-sm border border-white/10 flex items-center gap-2"
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all font-medium text-sm shadow-sm active:scale-95"
             >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                </svg>
+                <Pencil className="w-4 h-4 text-indigo-500" />
                 Edit
             </button>
 
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                <div className="bg-[#1E293B] rounded-xl border border-white/10 shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
-                    <div className="p-6 border-b border-white/10 flex justify-between items-center">
-                        <h2 className="text-xl font-bold text-white">Edit Product</h2>
-                        <button
-                            onClick={() => setIsOpen(false)}
-                            className="text-gray-400 hover:text-white transition-colors"
-                        >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
-
-                    <form action={handleSubmit} className="p-6 space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium mb-1 text-gray-300">Product Name</label>
-                            <input
-                                type="text"
-                                name="name"
-                                required
-                                defaultValue={product.name}
-                                className="w-full bg-[#0F172A] border border-white/10 rounded-lg p-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium mb-1 text-gray-300">Description</label>
-                            <textarea
-                                name="description"
-                                rows={3}
-                                defaultValue={product.description || ''}
-                                className="w-full bg-[#0F172A] border border-white/10 rounded-lg p-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                            ></textarea>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium mb-1 text-gray-300">Image URL</label>
-                            <input
-                                type="text"
-                                name="image"
-                                defaultValue={product.image || ''}
-                                className="w-full bg-[#0F172A] border border-white/10 rounded-lg p-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                            />
-                        </div>
-                        <div className="flex justify-end gap-3 mt-6">
+            {isOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+                                    <Pencil className="w-5 h-5 text-indigo-600" />
+                                </div>
+                                <h2 className="text-xl font-bold text-gray-900">Edit Product</h2>
+                            </div>
                             <button
-                                type="button"
                                 onClick={() => setIsOpen(false)}
-                                className="px-4 py-2 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
                             >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={isSubmitting}
-                                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                            >
-                                {isSubmitting ? (
-                                    <>
-                                        <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        Saving...
-                                    </>
-                                ) : (
-                                    "Save Changes"
-                                )}
+                                <X className="w-5 h-5" />
                             </button>
                         </div>
-                    </form>
+
+                        <form action={handleSubmit} className="p-8 space-y-5">
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">Product Name</label>
+                                <input
+                                    type="text"
+                                    name="name"
+                                    required
+                                    defaultValue={product.name}
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-900 placeholder-gray-400 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                                <textarea
+                                    name="description"
+                                    rows={3}
+                                    defaultValue={product.description || ''}
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-900 placeholder-gray-400 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all resize-none"
+                                ></textarea>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">Image URL</label>
+                                <input
+                                    type="text"
+                                    name="image"
+                                    defaultValue={product.image || ''}
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-900 placeholder-gray-400 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all"
+                                />
+                            </div>
+                            <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-100">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsOpen(false)}
+                                    className="px-6 py-2.5 text-gray-600 font-bold hover:bg-gray-50 rounded-xl transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting}
+                                    className="px-8 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-500/25 transition-all disabled:opacity-50 flex items-center gap-2 active:scale-95"
+                                >
+                                    {isSubmitting ? (
+                                        <>
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                            Saving...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Save className="w-5 h-5" />
+                                            Save Changes
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-            </div>
+            )}
         </>
     );
 }
