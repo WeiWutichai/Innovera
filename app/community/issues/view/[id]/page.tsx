@@ -194,22 +194,37 @@ export default function IssueDetailPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#4B286D] border-t-transparent"></div>
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-indigo-50/50 flex items-center justify-center">
+                <div className="relative">
+                    <div className="w-16 h-16 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin"></div>
+                    <div className="absolute inset-0 w-16 h-16 rounded-full border-4 border-transparent border-r-purple-400 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+                </div>
             </div>
         );
     }
 
     if (error && !issue) {
         return (
-            <div className="min-h-screen bg-gray-50 p-8">
-                <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm p-8 text-center">
-                    <div className="text-red-500 text-6xl mb-4">⚠️</div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Error</h1>
-                    <p className="text-gray-600 mb-6">{error}</p>
-                    <Link href="/community/issues" className="text-[#4B286D] hover:underline font-bold">
-                        ← Back to Issues
-                    </Link>
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-indigo-50/50 p-8">
+                <div className="max-w-4xl mx-auto">
+                    <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 p-12 text-center">
+                        <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-rose-100 to-red-100 rounded-full flex items-center justify-center">
+                            <svg className="w-10 h-10 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <h1 className="text-2xl font-bold text-gray-900 mb-3">Error Loading Issue</h1>
+                        <p className="text-gray-600 mb-8">{error}</p>
+                        <Link
+                            href="/community/issues"
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-indigo-500/25 transition-all duration-300"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                            </svg>
+                            Back to Issues
+                        </Link>
+                    </div>
                 </div>
             </div>
         );
@@ -218,53 +233,74 @@ export default function IssueDetailPage() {
     if (!issue) return null;
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-indigo-50/50 py-8">
             <div className="max-w-4xl mx-auto px-4">
                 {/* Back Button */}
                 <Link
                     href={issue.product ? `/community/issues/product/${issue.product.id}` : "/community/issues"}
-                    className="inline-flex items-center gap-2 text-gray-600 hover:text-[#4B286D] mb-6 font-medium"
+                    className="group inline-flex items-center gap-2 text-gray-500 hover:text-indigo-600 mb-6 font-medium transition-colors duration-300"
                 >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
+                    <div className="w-8 h-8 rounded-full bg-white shadow-sm group-hover:shadow-md group-hover:bg-indigo-50 flex items-center justify-center transition-all duration-300">
+                        <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </div>
                     Back to Issues
                 </Link>
 
                 {/* Success Message */}
                 {actionSuccess && (
-                    <div className="mb-4 p-4 bg-green-100 border border-green-300 text-green-800 rounded-lg font-medium">
-                        ✓ {actionSuccess}
+                    <div className="mb-6 p-4 bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-2xl flex items-center gap-3 animate-in slide-in-from-top-2 duration-300">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shrink-0">
+                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <span className="text-emerald-800 font-medium">{actionSuccess}</span>
                     </div>
                 )}
 
                 {/* Error Message */}
                 {error && (
-                    <div className="mb-4 p-4 bg-red-100 border border-red-300 text-red-800 rounded-lg font-medium">
-                        ❌ {error}
+                    <div className="mb-6 p-4 bg-gradient-to-r from-rose-50 to-red-50 border border-rose-200 rounded-2xl flex items-center gap-3 animate-in slide-in-from-top-2 duration-300">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-400 to-red-500 flex items-center justify-center shrink-0">
+                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </div>
+                        <span className="text-rose-800 font-medium">{error}</span>
                     </div>
                 )}
 
                 {/* Issue Card */}
-                <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                    {/* Header */}
-                    <div className="bg-[#4B286D] p-8 text-white">
-                        <div className="flex justify-between items-start gap-6">
-                            <div>
-                                <h1 className="text-3xl font-bold mb-2">{issue.title}</h1>
+                <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 overflow-hidden">
+                    {/* Header - Modern Gradient */}
+                    <div className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-600 p-8 text-white overflow-hidden">
+                        {/* Decorative Elements */}
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl"></div>
+                        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2 blur-xl"></div>
+
+                        <div className="relative flex justify-between items-start gap-6">
+                            <div className="min-w-0 flex-1">
+                                <h1 className="text-3xl font-bold mb-2 text-white drop-shadow-sm">{issue.title}</h1>
                                 {issue.product && (
-                                    <p className="text-purple-200 text-base">Product: {issue.product.name}</p>
+                                    <p className="text-indigo-200 text-base flex items-center gap-2">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                        </svg>
+                                        Product: {issue.product.name}
+                                    </p>
                                 )}
                             </div>
                             <div className="flex flex-col gap-3 items-end shrink-0">
                                 {/* User Status */}
                                 <div className="flex items-center gap-3">
-                                    <span className="text-sm text-purple-200">User Status:</span>
-                                    <span className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-full ${issue.status === 'OPEN' ? 'bg-green-500' :
-                                        issue.status === 'PENDING_REVIEW' ? 'bg-purple-500' :
-                                            issue.status === 'CLOSED' ? 'bg-gray-500' :
-                                                issue.status === 'REJECTED' ? 'bg-red-500' :
-                                                    'bg-blue-500'
+                                    <span className="text-sm text-indigo-200">User Status:</span>
+                                    <span className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-full shadow-lg backdrop-blur-sm ${issue.status === 'OPEN' ? 'bg-white/20 border border-white/30' :
+                                        issue.status === 'PENDING_REVIEW' ? 'bg-white/20 border border-white/30' :
+                                            issue.status === 'CLOSED' ? 'bg-white/20 border border-white/30' :
+                                                issue.status === 'REJECTED' ? 'bg-white/20 border border-white/30' :
+                                                    'bg-white/20 border border-white/30'
                                         } text-white`}>
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -274,12 +310,12 @@ export default function IssueDetailPage() {
                                 </div>
                                 {/* Support Status */}
                                 <div className="flex items-center gap-3">
-                                    <span className="text-sm text-purple-200">Support Status:</span>
-                                    <span className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-full ${(issue.supportStatus || 'TODO') === 'TODO' ? 'bg-blue-500' :
-                                        (issue.supportStatus || 'TODO') === 'IN_PROGRESS' ? 'bg-yellow-500' :
-                                            (issue.supportStatus || 'TODO') === 'COMPLETE' ? 'bg-purple-500' :
-                                                (issue.supportStatus || 'TODO') === 'COMPLETED' ? 'bg-green-500' :
-                                                    (issue.supportStatus || 'TODO') === 'REJECTED' ? 'bg-red-500' :
+                                    <span className="text-sm text-indigo-200">Support Status:</span>
+                                    <span className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-full shadow-lg ${(issue.supportStatus || 'TODO') === 'TODO' ? 'bg-sky-500' :
+                                        (issue.supportStatus || 'TODO') === 'IN_PROGRESS' ? 'bg-amber-500' :
+                                            (issue.supportStatus || 'TODO') === 'COMPLETE' ? 'bg-violet-500' :
+                                                (issue.supportStatus || 'TODO') === 'COMPLETED' ? 'bg-emerald-500' :
+                                                    (issue.supportStatus || 'TODO') === 'REJECTED' ? 'bg-rose-500' :
                                                         'bg-gray-500'
                                         } text-white`}>
                                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -293,11 +329,16 @@ export default function IssueDetailPage() {
                     </div>
 
                     {/* Body */}
-                    <div className="p-6 space-y-6">
+                    <div className="p-8 space-y-8">
                         {/* Description */}
                         <div>
-                            <h2 className="text-sm font-bold text-gray-700 mb-2">Description</h2>
-                            <div className="bg-gray-50 p-4 rounded-lg text-gray-800 whitespace-pre-wrap">
+                            <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                                </svg>
+                                Description
+                            </h2>
+                            <div className="bg-gradient-to-br from-gray-50 to-slate-50 p-5 rounded-2xl text-gray-700 whitespace-pre-wrap border border-gray-100">
                                 {issue.description}
                             </div>
                         </div>
@@ -305,18 +346,23 @@ export default function IssueDetailPage() {
                         {/* Images */}
                         {issue.images && issue.images.length > 0 && (
                             <div>
-                                <h2 className="text-sm font-bold text-gray-700 mb-3">Attachments ({issue.images.length})</h2>
+                                <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    Attachments ({issue.images.length})
+                                </h2>
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                     {issue.images.map((img, index) => (
                                         <button
                                             key={img.id}
                                             onClick={() => setLightboxIndex(index)}
-                                            className="block aspect-video rounded-lg border border-gray-200 overflow-hidden hover:border-[#4B286D] transition focus:outline-none focus:ring-2 focus:ring-[#4B286D]"
+                                            className="group block aspect-video rounded-2xl border-2 border-gray-100 overflow-hidden hover:border-indigo-300 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                         >
                                             <img
                                                 src={img.url}
                                                 alt={`Attachment ${index + 1}`}
-                                                className="w-full h-full object-cover"
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                             />
                                         </button>
                                     ))}
@@ -326,15 +372,23 @@ export default function IssueDetailPage() {
 
                         {/* Action Buttons for Owner/Support */}
                         {isOwner && (
-                            <div className="border-t pt-4">
-                                <h3 className="text-sm font-bold text-gray-700 mb-3">Support Actions</h3>
-                                <div className="flex gap-3">
+                            <div className="border-t border-gray-100 pt-6">
+                                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                    </svg>
+                                    Support Actions
+                                </h3>
+                                <div className="flex flex-wrap gap-3">
                                     {issue.supportStatus === 'TODO' && (
                                         <button
                                             onClick={() => handleAction(() => acceptIssue(issue.id), "Issue accepted! Status changed to In Progress.")}
                                             disabled={isPending}
-                                            className="px-4 py-2 bg-yellow-500 text-white font-bold rounded-lg hover:bg-yellow-600 transition disabled:opacity-50"
+                                            className="group px-5 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-white font-semibold rounded-xl shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/30 hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                         >
+                                            <svg className="w-5 h-5 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
                                             {isPending ? "Processing..." : "Accept Task"}
                                         </button>
                                     )}
@@ -342,8 +396,11 @@ export default function IssueDetailPage() {
                                         <button
                                             onClick={() => handleAction(() => completeIssue(issue.id), "Issue marked complete! Waiting for user review.")}
                                             disabled={isPending}
-                                            className="px-4 py-2 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 transition disabled:opacity-50"
+                                            className="group px-5 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg shadow-violet-500/25 hover:shadow-xl hover:shadow-violet-500/30 hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                         >
+                                            <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                            </svg>
                                             {isPending ? "Processing..." : "Mark Complete"}
                                         </button>
                                     )}
@@ -351,13 +408,21 @@ export default function IssueDetailPage() {
                                         <button
                                             onClick={() => setShowCommentForm('RESUBMIT')}
                                             disabled={isPending}
-                                            className="px-4 py-2 bg-orange-500 text-white font-bold rounded-lg hover:bg-orange-600 transition disabled:opacity-50"
+                                            className="group px-5 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-semibold rounded-xl shadow-lg shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/30 hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                         >
+                                            <svg className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                            </svg>
                                             Respond & Resubmit
                                         </button>
                                     )}
                                     {(issue.supportStatus === 'COMPLETE' || issue.supportStatus === 'COMPLETED') && (
-                                        <span className="text-gray-500 italic">Waiting for user review</span>
+                                        <span className="px-4 py-2.5 bg-gray-100 text-gray-500 rounded-xl font-medium flex items-center gap-2">
+                                            <svg className="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            Waiting for user review
+                                        </span>
                                     )}
 
                                     {/* Admin Delete Action */}
@@ -367,13 +432,13 @@ export default function IssueDetailPage() {
                                                 <button
                                                     onClick={() => setShowDeleteConfirm(true)}
                                                     disabled={isPending}
-                                                    className="px-4 py-2 bg-red-600/10 text-red-600 border border-red-600/20 font-bold rounded-lg hover:bg-red-600 hover:text-white transition disabled:opacity-50"
+                                                    className="px-4 py-2.5 bg-rose-50 text-rose-600 border border-rose-200 font-semibold rounded-xl hover:bg-rose-500 hover:text-white hover:border-rose-500 transition-all duration-200 disabled:opacity-50"
                                                 >
                                                     Delete Issue
                                                 </button>
                                             ) : (
-                                                <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2">
-                                                    <span className="text-xs font-bold text-red-600 uppercase tracking-wider">Are you sure?</span>
+                                                <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2 p-3 bg-rose-50 rounded-xl border border-rose-200">
+                                                    <span className="text-xs font-bold text-rose-600 uppercase tracking-wider">Confirm delete?</span>
                                                     <button
                                                         onClick={() => {
                                                             startTransition(async () => {
@@ -393,16 +458,16 @@ export default function IssueDetailPage() {
                                                             });
                                                         }}
                                                         disabled={isPending}
-                                                        className="px-4 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition disabled:opacity-50 shadow-sm"
+                                                        className="px-4 py-2 bg-rose-600 text-white font-bold rounded-lg hover:bg-rose-700 transition disabled:opacity-50"
                                                     >
-                                                        {isPending ? "Deleting..." : "Yes, Delete"}
+                                                        {isPending ? "Deleting..." : "Yes"}
                                                     </button>
                                                     <button
                                                         onClick={() => setShowDeleteConfirm(false)}
                                                         disabled={isPending}
-                                                        className="px-4 py-2 bg-gray-100 text-gray-600 font-bold rounded-lg hover:bg-gray-200 transition"
+                                                        className="px-4 py-2 bg-white text-gray-600 font-bold rounded-lg hover:bg-gray-100 transition border border-gray-200"
                                                     >
-                                                        Cancel
+                                                        No
                                                     </button>
                                                 </div>
                                             )}
@@ -414,21 +479,32 @@ export default function IssueDetailPage() {
 
                         {/* Action Buttons for User (Issue Reporter) */}
                         {isIssueOwner && issue.status === 'PENDING_REVIEW' && (
-                            <div className="border-t pt-4">
-                                <h3 className="text-sm font-bold text-gray-700 mb-3">Review Support's Fix</h3>
+                            <div className="border-t border-gray-100 pt-6">
+                                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                                    </svg>
+                                    Review Support's Fix
+                                </h3>
                                 <div className="flex gap-3">
                                     <button
                                         onClick={() => handleAction(() => closeIssue(issue.id), "Issue closed! Thank you for your feedback.")}
                                         disabled={isPending}
-                                        className="px-4 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+                                        className="group px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-green-500 text-white font-semibold rounded-xl shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                     >
+                                        <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                        </svg>
                                         {isPending ? "Processing..." : "Accept & Close"}
                                     </button>
                                     <button
                                         onClick={() => setShowCommentForm('REJECTION')}
                                         disabled={isPending}
-                                        className="px-4 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+                                        className="group px-5 py-2.5 bg-gradient-to-r from-rose-500 to-red-500 text-white font-semibold rounded-xl shadow-lg shadow-rose-500/25 hover:shadow-xl hover:shadow-rose-500/30 hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                     >
+                                        <svg className="w-5 h-5 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
                                         Reject with Reason
                                     </button>
                                 </div>
@@ -437,18 +513,21 @@ export default function IssueDetailPage() {
 
                         {/* Comment Form Modal */}
                         {showCommentForm && (
-                            <div className="border-t pt-4">
-                                <h3 className="text-sm font-bold text-gray-700 mb-3">
+                            <div className="border-t border-gray-100 pt-6 animate-in slide-in-from-top-2 duration-300">
+                                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                                    </svg>
                                     {showCommentForm === 'REJECTION' ? 'Reason for Rejection' : 'Response & Fix Details'}
                                 </h3>
-                                <div className="space-y-4">
+                                <div className="space-y-4 bg-gradient-to-br from-gray-50 to-slate-50 p-5 rounded-2xl border border-gray-100">
                                     <textarea
                                         value={commentText}
                                         onChange={(e) => setCommentText(e.target.value)}
                                         placeholder={showCommentForm === 'REJECTION'
                                             ? "Please describe what's wrong and what you expected..."
                                             : "Describe what was fixed and any additional notes..."}
-                                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4B286D] focus:border-transparent min-h-[120px] text-gray-900"
+                                        className="w-full p-4 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent min-h-[120px] text-gray-900 placeholder-gray-400 transition-all duration-200"
                                     />
 
                                     {/* Image Upload */}
@@ -467,7 +546,7 @@ export default function IssueDetailPage() {
                                         <button
                                             type="button"
                                             onClick={() => fileInputRef.current?.click()}
-                                            className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition"
+                                            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
                                         >
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -477,18 +556,18 @@ export default function IssueDetailPage() {
 
                                         {/* Image Preview */}
                                         {commentImages.length > 0 && (
-                                            <div className="flex gap-2 mt-2 flex-wrap">
+                                            <div className="flex gap-3 mt-3 flex-wrap">
                                                 {commentImages.map((file, idx) => (
                                                     <div key={idx} className="relative group">
                                                         <img
                                                             src={URL.createObjectURL(file)}
                                                             alt={`Preview ${idx + 1}`}
-                                                            className="w-16 h-16 object-cover rounded border"
+                                                            className="w-20 h-20 object-cover rounded-xl border-2 border-gray-100 group-hover:border-indigo-300 transition-colors"
                                                         />
                                                         <button
                                                             type="button"
                                                             onClick={() => setCommentImages(prev => prev.filter((_, i) => i !== idx))}
-                                                            className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                                                            className="absolute -top-2 -right-2 w-6 h-6 bg-rose-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
                                                         >
                                                             ×
                                                         </button>
@@ -499,7 +578,7 @@ export default function IssueDetailPage() {
                                     </div>
 
                                     {/* Submit Buttons */}
-                                    <div className="flex gap-3">
+                                    <div className="flex gap-3 pt-2">
                                         <button
                                             onClick={() => handleSubmitComment(
                                                 showCommentForm,
@@ -508,12 +587,20 @@ export default function IssueDetailPage() {
                                                     : () => resubmitIssue(issue.id)
                                             )}
                                             disabled={uploadingComment || !commentText.trim()}
-                                            className={`px-4 py-2 text-white font-bold rounded-lg transition disabled:opacity-50 ${showCommentForm === 'REJECTION'
-                                                ? 'bg-red-600 hover:bg-red-700'
-                                                : 'bg-orange-500 hover:bg-orange-600'
-                                                }`}
+                                            className={`px-5 py-2.5 text-white font-semibold rounded-xl shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${showCommentForm === 'REJECTION'
+                                                ? 'bg-gradient-to-r from-rose-500 to-red-500 shadow-rose-500/25 hover:shadow-xl hover:shadow-rose-500/30'
+                                                : 'bg-gradient-to-r from-orange-500 to-amber-500 shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/30'
+                                                } hover:scale-[1.02]`}
                                         >
-                                            {uploadingComment ? "Submitting..." : showCommentForm === 'REJECTION' ? "Submit Rejection" : "Submit & Resubmit"}
+                                            {uploadingComment ? (
+                                                <>
+                                                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                    Submitting...
+                                                </>
+                                            ) : showCommentForm === 'REJECTION' ? "Submit Rejection" : "Submit & Resubmit"}
                                         </button>
                                         <button
                                             onClick={() => {
@@ -521,7 +608,7 @@ export default function IssueDetailPage() {
                                                 setCommentText("");
                                                 setCommentImages([]);
                                             }}
-                                            className="px-4 py-2 bg-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-300 transition"
+                                            className="px-5 py-2.5 bg-white text-gray-600 font-semibold rounded-xl border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
                                         >
                                             Cancel
                                         </button>
@@ -530,113 +617,181 @@ export default function IssueDetailPage() {
                             </div>
                         )}
 
-                        {/* Comments Thread */}
+                        {/* Comments Thread - Modern Design */}
                         {comments.length > 0 && (
-                            <div className="border-t pt-4">
-                                <h3 className="text-sm font-bold text-gray-700 mb-3">Conversation History ({comments.length})</h3>
+                            <div className="border-t border-gray-100 pt-6">
+                                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+                                    </svg>
+                                    Conversation History ({comments.length})
+                                </h3>
                                 <div className="space-y-4">
                                     {comments.map((comment) => (
                                         <div
                                             key={comment.id}
-                                            className={`p-4 rounded-lg ${comment.type === 'REJECTION'
-                                                ? 'bg-red-50 border-l-4 border-red-500'
-                                                : 'bg-orange-50 border-l-4 border-orange-500'
+                                            className={`relative p-5 rounded-2xl transition-all duration-300 hover:shadow-md ${comment.type === 'REJECTION'
+                                                ? 'bg-gradient-to-br from-rose-50 to-red-50/50 border border-rose-100'
+                                                : 'bg-gradient-to-br from-orange-50 to-amber-50/50 border border-orange-100'
                                                 }`}
                                         >
-                                            <div className="flex justify-between items-start mb-2">
-                                                <div className="flex items-center gap-2">
-                                                    <span className={`px-2 py-0.5 text-xs font-bold rounded ${comment.type === 'REJECTION'
-                                                        ? 'bg-red-100 text-red-700'
-                                                        : 'bg-orange-100 text-orange-700'
-                                                        }`}>
-                                                        {comment.type === 'REJECTION' ? 'User Rejection' : 'Support Response'}
-                                                    </span>
-                                                    <span className="text-sm text-gray-500">
-                                                        {comment.user?.name || comment.user?.email}
-                                                    </span>
-                                                </div>
-                                                <span className="text-xs text-gray-400" suppressHydrationWarning>
-                                                    {new Date(comment.createdAt).toLocaleString('th-TH', {
-                                                        year: 'numeric',
-                                                        month: '2-digit',
-                                                        day: '2-digit',
-                                                        hour: '2-digit',
-                                                        minute: '2-digit',
-                                                        hour12: false
-                                                    })}
-                                                </span>
-                                            </div>
-                                            <p className="text-gray-700 whitespace-pre-wrap">{comment.content}</p>
+                                            {/* Accent Line */}
+                                            <div className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-full ${comment.type === 'REJECTION' ? 'bg-gradient-to-b from-rose-400 to-red-500' : 'bg-gradient-to-b from-orange-400 to-amber-500'
+                                                }`}></div>
 
-                                            {/* Comment Images */}
-                                            {comment.images && comment.images.length > 0 && (
-                                                <div className="flex gap-2 mt-3 flex-wrap">
-                                                    {comment.images.map((img) => (
-                                                        <img
-                                                            key={img.id}
-                                                            src={img.url}
-                                                            alt="Attachment"
-                                                            className="w-20 h-20 object-cover rounded border cursor-pointer hover:opacity-80 transition"
-                                                            onClick={() => window.open(img.url, '_blank')}
-                                                        />
-                                                    ))}
+                                            <div className="pl-4">
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <div className="flex items-center gap-3">
+                                                        {/* Avatar */}
+                                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm ${comment.type === 'REJECTION' ? 'bg-gradient-to-br from-rose-400 to-red-500' : 'bg-gradient-to-br from-orange-400 to-amber-500'
+                                                            }`}>
+                                                            {(comment.user?.name || comment.user?.email || '?')[0].toUpperCase()}
+                                                        </div>
+                                                        <div>
+                                                            <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${comment.type === 'REJECTION'
+                                                                ? 'bg-rose-100 text-rose-700'
+                                                                : 'bg-orange-100 text-orange-700'
+                                                                }`}>
+                                                                {comment.type === 'REJECTION' ? 'User Rejection' : 'Support Response'}
+                                                            </span>
+                                                            <p className="text-sm text-gray-600 mt-1 font-medium">
+                                                                {comment.user?.name || comment.user?.email}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <span className="text-xs text-gray-400 bg-white/50 px-2 py-1 rounded-lg" suppressHydrationWarning>
+                                                        {new Date(comment.createdAt).toLocaleString('th-TH', {
+                                                            year: 'numeric',
+                                                            month: '2-digit',
+                                                            day: '2-digit',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit',
+                                                            hour12: false
+                                                        })}
+                                                    </span>
                                                 </div>
-                                            )}
+                                                <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{comment.content}</p>
+
+                                                {/* Comment Images */}
+                                                {comment.images && comment.images.length > 0 && (
+                                                    <div className="flex gap-3 mt-4 flex-wrap">
+                                                        {comment.images.map((img) => (
+                                                            <img
+                                                                key={img.id}
+                                                                src={img.url}
+                                                                alt="Attachment"
+                                                                className="w-24 h-24 object-cover rounded-xl border-2 border-white shadow-sm cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-300"
+                                                                onClick={() => window.open(img.url, '_blank')}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         )}
-                        {/* Activity Log */}
+
+                        {/* Activity Log - Modern Timeline */}
                         {issue.activities && issue.activities.length > 0 && (
-                            <div className="border-t pt-4">
-                                <h3 className="text-sm font-bold text-gray-700 mb-4">Activity Log</h3>
-                                <div className="space-y-4">
-                                    {issue.activities.map((activity) => (
-                                        <div key={activity.id} className="flex gap-4">
-                                            <div className="flex flex-col items-center">
-                                                <div className={`w-2 h-2 rounded-full mt-2 ${activity.type === 'CREATED' ? 'bg-green-500' :
-                                                    activity.type === 'STATUS_CHANGE' ? 'bg-blue-500' :
-                                                        activity.type === 'COMMENTED' ? 'bg-purple-500' :
-                                                            'bg-gray-400'
-                                                    }`} />
-                                                <div className="w-0.5 h-full bg-gray-100" />
+                            <div className="border-t border-gray-100 pt-6">
+                                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Activity Log
+                                </h3>
+                                <div className="relative">
+                                    {/* Timeline Line */}
+                                    <div className="absolute left-[11px] top-3 bottom-3 w-0.5 bg-gradient-to-b from-indigo-200 via-purple-200 to-gray-100"></div>
+
+                                    <div className="space-y-4">
+                                        {issue.activities.map((activity, index) => (
+                                            <div key={activity.id} className="flex gap-4 relative">
+                                                {/* Timeline Dot */}
+                                                <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 z-10 shadow-sm ${activity.type === 'CREATED' ? 'bg-gradient-to-br from-emerald-400 to-green-500' :
+                                                        activity.type === 'STATUS_CHANGE' ? 'bg-gradient-to-br from-blue-400 to-indigo-500' :
+                                                            activity.type === 'COMMENTED' ? 'bg-gradient-to-br from-violet-400 to-purple-500' :
+                                                                'bg-gradient-to-br from-gray-300 to-gray-400'
+                                                    }`}>
+                                                    {activity.type === 'CREATED' && (
+                                                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                                        </svg>
+                                                    )}
+                                                    {activity.type === 'STATUS_CHANGE' && (
+                                                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                        </svg>
+                                                    )}
+                                                    {activity.type === 'COMMENTED' && (
+                                                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                                                        </svg>
+                                                    )}
+                                                </div>
+
+                                                <div className={`flex-1 bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-300 ${index === 0 ? 'ring-2 ring-indigo-100' : ''
+                                                    }`}>
+                                                    <p className="text-sm text-gray-800">
+                                                        <span className="font-semibold text-gray-900">{activity.actorName || activity.user?.name || activity.user?.email || 'System'}</span>
+                                                        {' '}<span className="text-gray-600">{activity.description}</span>
+                                                    </p>
+                                                    <p className="text-xs text-gray-400 mt-1.5 flex items-center gap-1" suppressHydrationWarning>
+                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                        </svg>
+                                                        {new Date(activity.createdAt).toLocaleString('th-TH', {
+                                                            year: 'numeric',
+                                                            month: '2-digit',
+                                                            day: '2-digit',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit',
+                                                            hour12: false
+                                                        })}
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div className="pb-4">
-                                                <p className="text-sm text-gray-800">
-                                                    <span className="font-bold">{activity.actorName || activity.user?.name || activity.user?.email || 'System'}</span>
-                                                    {' '}{activity.description}
-                                                </p>
-                                                <p className="text-xs text-gray-400 mt-1" suppressHydrationWarning>
-                                                    {new Date(activity.createdAt).toLocaleString('th-TH', {
-                                                        year: 'numeric',
-                                                        month: '2-digit',
-                                                        day: '2-digit',
-                                                        hour: '2-digit',
-                                                        minute: '2-digit',
-                                                        hour12: false
-                                                    })}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         )}
 
                         {/* Meta Info */}
-                        <div className="border-t pt-4 flex justify-between text-sm text-gray-500">
-                            <div>
-                                <strong>Reported by:</strong> {issue.user?.name || issue.user?.email || "Unknown"}
-                            </div>
-                            <div>
-                                <strong>Date:</strong> {new Date(issue.createdAt).toLocaleDateString('th-TH', {
-                                    year: 'numeric',
-                                    month: 'long',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                })}
+                        <div className="border-t border-gray-100 pt-6">
+                            <div className="flex flex-wrap justify-between gap-4 text-sm">
+                                <div className="flex items-center gap-2 text-gray-500">
+                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
+                                        <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <span className="text-gray-400 text-xs">Reported by</span>
+                                        <p className="font-medium text-gray-700">{issue.user?.name || issue.user?.email || "Unknown"}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 text-gray-500">
+                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
+                                        <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <span className="text-gray-400 text-xs">Date</span>
+                                        <p className="font-medium text-gray-700" suppressHydrationWarning>
+                                            {new Date(issue.createdAt).toLocaleDateString('th-TH', {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            })}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -646,15 +801,15 @@ export default function IssueDetailPage() {
             {/* Lightbox Modal */}
             {lightboxIndex !== null && issue.images && issue.images[lightboxIndex] && (
                 <div
-                    className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+                    className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex items-center justify-center p-4"
                     onClick={() => setLightboxIndex(null)}
                 >
                     {/* Close Button */}
                     <button
                         onClick={() => setLightboxIndex(null)}
-                        className="absolute top-4 right-4 text-white/60 hover:text-white transition z-10"
+                        className="absolute top-6 right-6 text-white/60 hover:text-white transition z-10 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center backdrop-blur-sm"
                     >
-                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
@@ -666,7 +821,7 @@ export default function IssueDetailPage() {
                                 e.stopPropagation();
                                 setLightboxIndex((lightboxIndex - 1 + issue.images.length) % issue.images.length);
                             }}
-                            className="absolute left-4 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition bg-black/30 rounded-full p-2"
+                            className="absolute left-6 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition bg-white/10 hover:bg-white/20 rounded-full p-3 backdrop-blur-sm"
                         >
                             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -678,7 +833,7 @@ export default function IssueDetailPage() {
                     <img
                         src={issue.images[lightboxIndex].url}
                         alt={`Attachment ${lightboxIndex + 1}`}
-                        className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                        className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl"
                         onClick={(e) => e.stopPropagation()}
                     />
 
@@ -689,7 +844,7 @@ export default function IssueDetailPage() {
                                 e.stopPropagation();
                                 setLightboxIndex((lightboxIndex + 1) % issue.images.length);
                             }}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition bg-black/30 rounded-full p-2"
+                            className="absolute right-6 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition bg-white/10 hover:bg-white/20 rounded-full p-3 backdrop-blur-sm"
                         >
                             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -698,7 +853,7 @@ export default function IssueDetailPage() {
                     )}
 
                     {/* Image Counter */}
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/80 text-sm font-medium bg-black/40 px-3 py-1 rounded-full">
+                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/80 text-sm font-medium bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
                         {lightboxIndex + 1} / {issue.images.length}
                     </div>
                 </div>

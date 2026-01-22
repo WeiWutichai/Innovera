@@ -7,7 +7,7 @@ describe('NavLinks Component', () => {
         render(<NavLinks />);
         const serviceLink = screen.getByRole('link', { name: /service/i });
         expect(serviceLink).toBeInTheDocument();
-        expect(serviceLink).toHaveAttribute('href', '/#insights');
+        expect(serviceLink).toHaveAttribute('href', '/#services');
     });
 
     it('renders other navigation links', () => {
@@ -15,6 +15,7 @@ describe('NavLinks Component', () => {
         expect(screen.getByRole('link', { name: /platforms/i })).toHaveAttribute('href', '/#platforms');
         expect(screen.getByRole('link', { name: /site reference/i })).toHaveAttribute('href', '/#site-reference');
         expect(screen.getByRole('link', { name: /blog/i })).toHaveAttribute('href', '/blog');
-        expect(screen.getByRole('link', { name: /contact us/i })).toHaveAttribute('href', '/#contact');
+        expect(screen.getByRole('link', { name: /community/i })).toHaveAttribute('href', '/community');
+        expect(screen.getByRole('link', { name: /pricing/i })).toHaveAttribute('href', '/#customers');
     });
 });

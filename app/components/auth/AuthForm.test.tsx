@@ -8,6 +8,9 @@ import { useRouter } from 'next/navigation';
 jest.mock('next-auth/react');
 jest.mock('next/navigation', () => ({
     useRouter: jest.fn(),
+    useSearchParams: jest.fn(() => ({
+        get: jest.fn(() => null),
+    })),
 }));
 
 // Mock SocialButton since it uses SVGs that might need transformation or just to simplify
