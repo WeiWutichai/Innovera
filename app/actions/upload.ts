@@ -43,10 +43,8 @@ export async function uploadImage(formData: FormData): Promise<string> {
         // Ignore error if directory already exists
     }
 
-    // Generate unique filename (always save as .jpg after resize)
-    const filteredName = file.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_.-]/g, '')
-    const baseName = filteredName.replace(/\.[^.]+$/, '') // Remove original extension
-    const filename = `${randomUUID()}-${baseName}.jpg`
+    // Generate unique filename (UUID only to prevent encoding/path issues on Production)
+    const filename = `${randomUUID()}.jpg`
     const filepath = join(uploadDir, filename)
 
     // Write file
