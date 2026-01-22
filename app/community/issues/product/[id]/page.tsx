@@ -29,15 +29,8 @@ export default async function ProductIssuesPage(props: { params: Promise<{ id: s
     const issues = await getIssues(params.id);
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-indigo-50/50 font-sans">
-            {/* Decorative Background Elements */}
-            <div className="fixed inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute -top-40 -right-40 w-96 h-96 bg-purple-200/30 rounded-full blur-3xl"></div>
-                <div className="absolute top-1/3 -left-20 w-72 h-72 bg-indigo-200/30 rounded-full blur-3xl"></div>
-                <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-violet-200/20 rounded-full blur-3xl"></div>
-            </div>
-
-            <div className="relative container mx-auto px-4 py-8">
+        <div className="min-h-screen bg-gradient-to-b from-[#F7F8FC] to-[#F3F4F8] font-sans selection:bg-indigo-100 selection:text-indigo-900">
+            <div className="container mx-auto px-4 py-8 relative z-10 max-w-6xl">
                 {/* Back Link */}
                 <Link
                     href="/community/issues"
