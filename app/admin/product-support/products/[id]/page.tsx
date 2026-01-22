@@ -8,7 +8,14 @@ import DocumentManager from "./components/DocumentManager";
 import { ArrowLeft, FileText } from "lucide-react";
 
 export default async function ProductDocumentsPage({ params }: { params: Promise<{ id: string }> }) {
-    const session = await auth();
+    let session;
+    try {
+        session = await auth();
+    } catch (error) {
+        console.error("ProductDocumentsPage Auth Error:", error);
+        redirect('/');
+    }
+
     if (session?.user?.role !== 'ADMIN') {
         redirect('/');
     }

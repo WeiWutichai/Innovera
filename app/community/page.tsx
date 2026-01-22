@@ -10,7 +10,14 @@ export default async function CommunityPage() {
     const products = allProducts.filter((product: any) =>
         allowedProducts.some(allowed => product.name.toUpperCase().includes(allowed))
     );
-    const session = await auth();
+
+    let session;
+    try {
+        session = await auth();
+    } catch (error) {
+        console.error("CommunityPage Auth Error:", error);
+        session = null;
+    }
 
     return (
         <div className="min-h-screen bg-[#F8FAFC] font-sans selection:bg-indigo-100 selection:text-indigo-900">

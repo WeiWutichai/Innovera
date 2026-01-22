@@ -6,7 +6,14 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 
 export default async function AdminProductPage({ params }: { params: { id: string } }) {
-    const session = await auth();
+    let session;
+    try {
+        session = await auth();
+    } catch (error) {
+        console.error("AdminProductPage Auth Error:", error);
+        redirect('/');
+    }
+
     if (session?.user?.role !== 'ADMIN') {
         redirect('/');
     }

@@ -6,7 +6,14 @@ import { notFound, redirect } from "next/navigation";
 import ProductIssueListClient from "./ProductIssueListClient";
 
 export default async function ProductIssuesPage(props: { params: Promise<{ id: string }> }) {
-    const session = await auth();
+    let session;
+    try {
+        session = await auth();
+    } catch (error) {
+        console.error("ProductIssuesPage Auth Error:", error);
+        redirect('/login?callbackUrl=/community/issues');
+    }
+
     // Authorization check
     if (!session || !session.user) {
         redirect('/login?callbackUrl=/community/issues');

@@ -8,7 +8,14 @@ import CreateProductButton from "../components/CreateProductButton";
 import { Package, FileText, ChevronRight } from "lucide-react";
 
 export default async function ProductSupportPage() {
-    const session = await auth();
+    let session;
+    try {
+        session = await auth();
+    } catch (error) {
+        console.error("ProductSupportPage Auth Error:", error);
+        redirect('/');
+    }
+
     if (session?.user?.role !== 'ADMIN') {
         redirect('/');
     }

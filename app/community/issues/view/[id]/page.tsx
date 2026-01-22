@@ -711,9 +711,9 @@ export default function IssueDetailPage() {
                                             <div key={activity.id} className="flex gap-4 relative">
                                                 {/* Timeline Dot */}
                                                 <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 z-10 shadow-sm ${activity.type === 'CREATED' ? 'bg-gradient-to-br from-emerald-400 to-green-500' :
-                                                        activity.type === 'STATUS_CHANGE' ? 'bg-gradient-to-br from-blue-400 to-indigo-500' :
-                                                            activity.type === 'COMMENTED' ? 'bg-gradient-to-br from-violet-400 to-purple-500' :
-                                                                'bg-gradient-to-br from-gray-300 to-gray-400'
+                                                    activity.type === 'STATUS_CHANGE' ? 'bg-gradient-to-br from-blue-400 to-indigo-500' :
+                                                        activity.type === 'COMMENTED' ? 'bg-gradient-to-br from-violet-400 to-purple-500' :
+                                                            'bg-gradient-to-br from-gray-300 to-gray-400'
                                                     }`}>
                                                     {activity.type === 'CREATED' && (
                                                         <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

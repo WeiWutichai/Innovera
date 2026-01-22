@@ -6,7 +6,13 @@ import { redirect } from "next/navigation";
 import MyProductsList from "./MyProductsList";
 
 export default async function IssuesPage() {
-    const session = await auth();
+    let session;
+    try {
+        session = await auth();
+    } catch (error) {
+        console.error("IssuesPage Auth Error:", error);
+        redirect('/login?callbackUrl=/community/issues');
+    }
 
     // Authorization check
     if (!session || !session.user) {
