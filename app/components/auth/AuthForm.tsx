@@ -114,7 +114,7 @@ export default function AuthForm({ type }: { type: "login" | "register" }) {
                             type={showPassword ? "text" : "password"}
                             required
                             placeholder="Enter your password"
-                            className="w-full h-11 pl-4 pr-10 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/20 transition-all font-nunito text-sm"
+                            className="w-full h-11 pl-4 pr-10 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all font-nunito text-sm"
                         />
                         <button
                             type="button"
@@ -143,7 +143,7 @@ export default function AuthForm({ type }: { type: "login" | "register" }) {
                 <button
                     type="submit"
                     disabled={loading}
-                    className="w-full h-11 rounded-xl bg-white text-black font-semibold font-nunito hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-white/50 transition-all shadow-[0_4px_14px_0_rgba(255,255,255,0.1)] disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="w-full h-11 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold font-nunito hover:shadow-lg hover:shadow-indigo-500/25 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all disabled:opacity-70 disabled:cursor-not-allowed disabled:shadow-none disabled:scale-100"
                 >
                     {loading ? (
                         <span className="flex items-center justify-center gap-2">
