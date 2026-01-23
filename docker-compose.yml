@@ -31,11 +31,14 @@ services:
     depends_on:
       database:
         condition: service_healthy
+    volumes:
+      - uploads_data:/app/public/uploads
     networks:
       - innovera-network
 
 volumes:
   postgres_data:
+  uploads_data:
 
 
 networks:
