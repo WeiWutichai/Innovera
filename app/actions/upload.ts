@@ -50,5 +50,5 @@ export async function uploadImage(formData: FormData): Promise<string> {
     // Write file
     await writeFile(filepath, buffer)
 
-    return `/uploads/${filename}`
+    return `/api/uploads/${filename}`
 }
