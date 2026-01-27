@@ -2,9 +2,10 @@
 
 echo "🚀 Starting deployment..."
 
-# Pull the latest changes from git
-echo "📥 Pulling latest changes..."
-git pull
+# Pull the latest changes from git (Force sync with remote)
+echo "📥 Fetching latest changes..."
+git fetch origin
+git reset --hard origin/main
 
 # Rebuild and restart containers
 echo "🔄 Rebuilding and restarting containers..."
