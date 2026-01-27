@@ -45,11 +45,11 @@ export default function ProductIssueListClient({ product, issues, user }: { prod
     const [activeTab, setActiveTab] = useState('ALL');
     const [searchQuery, setSearchQuery] = useState('');
 
-    // Auto-refresh logic: refresh data every 30 seconds
+    // Auto-refresh logic: refresh data every 5 seconds
     useEffect(() => {
         const interval = setInterval(() => {
             router.refresh();
-        }, 30000); // 30 seconds
+        }, 5000); // 5 seconds
 
         return () => clearInterval(interval);
     }, [router]);

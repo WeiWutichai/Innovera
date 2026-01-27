@@ -1,13 +1,15 @@
 import { getPendingUsers, getAllUsers, approveUser, updateUserRole } from "@/app/actions/admin";
 import { getProducts } from "@/app/actions/product";
+import { getLineUsers } from "@/app/actions/line";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Role } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-import { Users, ChevronRight } from "lucide-react";
+import { Users, ChevronRight, MessageCircle } from "lucide-react";
 
 import UserRoleSelector from "./UserRoleSelector";
+import LineUserList from "./LineUserList";
 
 export default async function AdminUsersPage() {
     const session = await auth();
@@ -15,11 +17,18 @@ export default async function AdminUsersPage() {
         redirect('/');
     }
 
-    const allUsers = await getAllUsers();
+    const [allUsers, lineUsers, products] = await Promise.all([
+        getAllUsers(),
+        getLineUsers(),
+        getProducts(),
+    ]);
+
     const totalUsers = allUsers.length;
+    const totalLineUsers = lineUsers.length;
 
     return (
         <div className="container mx-auto">
+            {/* System Users Section */}
             <div className="flex justify-between items-start mb-8">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 mb-1">User Management</h1>
@@ -71,6 +80,24 @@ export default async function AdminUsersPage() {
                         ))}
                     </tbody>
                 </table>
+            </div>
+
+            {/* LINE Users Section */}
+            <div className="mt-12">
+                <div className="flex justify-between items-start mb-8">
+                    <div>
+                        <div className="flex items-center gap-3 mb-1">
+                            <MessageCircle className="w-6 h-6 text-green-600" />
+                            <h2 className="text-2xl font-bold text-gray-900">LINE Users</h2>
+                        </div>
+                        <p className="text-gray-500">จัดการผู้ใช้ LINE OA และกำหนด Products สำหรับการแจ้งเตือน</p>
+                    </div>
+                    <div className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl text-white font-medium shadow-lg shadow-green-500/25">
+                        LINE Users: {totalLineUsers}
+                    </div>
+                </div>
+
+                <LineUserList lineUsers={lineUsers} allProducts={products} />
             </div>
         </div>
     );

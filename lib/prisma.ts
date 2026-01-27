@@ -12,4 +12,4 @@ export const prisma =
     });
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
-// Last updated: 2026-01-21T13:42:00
+// Last updated: 2026-01-27T15:38:00 - Added LineUser model

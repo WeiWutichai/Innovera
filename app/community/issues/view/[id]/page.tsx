@@ -57,7 +57,7 @@ export default function IssueDetailPage() {
 
     // Comment system state
     const [comments, setComments] = useState<IssueComment[]>([]);
-    const [showCommentForm, setShowCommentForm] = useState<'REJECTION' | 'RESUBMIT' | null>(null);
+    const [showCommentForm, setShowCommentForm] = useState<'REJECTION' | 'RESUBMIT' | 'COMPLETE' | null>(null);
     const [commentText, setCommentText] = useState("");
     const [commentImages, setCommentImages] = useState<File[]>([]);
     const [uploadingComment, setUploadingComment] = useState(false);
@@ -134,7 +134,7 @@ export default function IssueDetailPage() {
         });
     };
 
-    const handleSubmitComment = async (type: 'REJECTION' | 'RESUBMIT', statusAction: () => Promise<any>) => {
+    const handleSubmitComment = async (type: 'REJECTION' | 'RESUBMIT' | 'COMPLETE', statusAction: () => Promise<any>) => {
         if (!commentText.trim()) {
             setError("Please enter a comment");
             return;
@@ -151,22 +151,34 @@ export default function IssueDetailPage() {
                 if (url) imageUrls.push(url);
             }
 
-            // Add comment
-            await addIssueComment({
-                issueId: id,
-                content: commentText,
-                type,
-                imageUrls
-            });
+            // Add comment (skip for COMPLETE as completeIssue handles it)
+            if (type !== 'COMPLETE') {
+                await addIssueComment({
+                    issueId: id,
+                    content: commentText,
+                    type,
+                    imageUrls
+                });
+            }
 
-            // Then perform the status action
-            await statusAction();
+            // Then perform the status action (for COMPLETE, pass imageUrls via statusAction)
+            if (type === 'COMPLETE') {
+                await completeIssue(id, { message: commentText, imageUrls });
+            } else {
+                await statusAction();
+            }
 
             // Reset form
             setCommentText("");
             setCommentImages([]);
             setShowCommentForm(null);
-            setActionSuccess(type === 'REJECTION' ? "Issue rejected with feedback" : "Issue resubmitted with response");
+
+            const successMessages: Record<string, string> = {
+                'REJECTION': "Issue rejected with feedback",
+                'RESUBMIT': "Issue resubmitted with response",
+                'COMPLETE': "Issue marked complete with resolution notes"
+            };
+            setActionSuccess(successMessages[type]);
 
             // Refresh data
             const data = await getIssueById(id);
@@ -394,7 +406,7 @@ export default function IssueDetailPage() {
                                     )}
                                     {issue.supportStatus === 'IN_PROGRESS' && (
                                         <button
-                                            onClick={() => handleAction(() => completeIssue(issue.id), "Issue marked complete! Waiting for user review.")}
+                                            onClick={() => setShowCommentForm('COMPLETE')}
                                             disabled={isPending}
                                             className="group px-5 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg shadow-violet-500/25 hover:shadow-xl hover:shadow-violet-500/30 hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                         >
@@ -518,7 +530,11 @@ export default function IssueDetailPage() {
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                                     </svg>
-                                    {showCommentForm === 'REJECTION' ? 'Reason for Rejection' : 'Response & Fix Details'}
+                                    {showCommentForm === 'REJECTION'
+                                        ? 'Reason for Rejection'
+                                        : showCommentForm === 'COMPLETE'
+                                            ? 'Resolution Notes (Required)'
+                                            : 'Response & Fix Details'}
                                 </h3>
                                 <div className="space-y-4 bg-gradient-to-br from-gray-50 to-slate-50 p-5 rounded-2xl border border-gray-100">
                                     <textarea
@@ -526,7 +542,9 @@ export default function IssueDetailPage() {
                                         onChange={(e) => setCommentText(e.target.value)}
                                         placeholder={showCommentForm === 'REJECTION'
                                             ? "Please describe what's wrong and what you expected..."
-                                            : "Describe what was fixed and any additional notes..."}
+                                            : showCommentForm === 'COMPLETE'
+                                                ? "Describe how the issue was resolved, steps taken, and any notes for the user..."
+                                                : "Describe what was fixed and any additional notes..."}
                                         className="w-full p-4 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent min-h-[120px] text-gray-900 placeholder-gray-400 transition-all duration-200"
                                     />
 
@@ -584,12 +602,16 @@ export default function IssueDetailPage() {
                                                 showCommentForm,
                                                 showCommentForm === 'REJECTION'
                                                     ? () => rejectIssue(issue.id)
-                                                    : () => resubmitIssue(issue.id)
+                                                    : showCommentForm === 'COMPLETE'
+                                                        ? () => completeIssue(issue.id, { message: commentText, imageUrls: [] })
+                                                        : () => resubmitIssue(issue.id)
                                             )}
                                             disabled={uploadingComment || !commentText.trim()}
                                             className={`px-5 py-2.5 text-white font-semibold rounded-xl shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${showCommentForm === 'REJECTION'
                                                 ? 'bg-gradient-to-r from-rose-500 to-red-500 shadow-rose-500/25 hover:shadow-xl hover:shadow-rose-500/30'
-                                                : 'bg-gradient-to-r from-orange-500 to-amber-500 shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/30'
+                                                : showCommentForm === 'COMPLETE'
+                                                    ? 'bg-gradient-to-r from-violet-600 to-purple-600 shadow-violet-500/25 hover:shadow-xl hover:shadow-violet-500/30'
+                                                    : 'bg-gradient-to-r from-orange-500 to-amber-500 shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/30'
                                                 } hover:scale-[1.02]`}
                                         >
                                             {uploadingComment ? (
@@ -600,7 +622,11 @@ export default function IssueDetailPage() {
                                                     </svg>
                                                     Submitting...
                                                 </>
-                                            ) : showCommentForm === 'REJECTION' ? "Submit Rejection" : "Submit & Resubmit"}
+                                            ) : showCommentForm === 'REJECTION'
+                                                ? "Submit Rejection"
+                                                : showCommentForm === 'COMPLETE'
+                                                    ? "Mark Complete"
+                                                    : "Submit & Resubmit"}
                                         </button>
                                         <button
                                             onClick={() => {

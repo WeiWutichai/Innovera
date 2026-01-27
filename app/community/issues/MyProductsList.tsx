@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 interface Product {
     id: string;
@@ -16,6 +18,16 @@ export default function MyProductsList({
     products: Product[];
     notificationCounts?: Record<string, number>;
 }) {
+    const router = useRouter();
+
+    // Auto-refresh logic: refresh data every 5 seconds
+    useEffect(() => {
+        const interval = setInterval(() => {
+            router.refresh();
+        }, 5000); // 5 seconds
+
+        return () => clearInterval(interval);
+    }, [router]);
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {products.map((product) => {

@@ -4,6 +4,54 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { createNotification, markIssueNotificationsAsRead } from "./notification";
+import { sendLineMulticastMessage, createIssueNotification } from "@/lib/line-messaging";
+
+// Helper to send LINE notifications to product-assigned LINE users
+async function sendLineNotificationForIssue(
+    eventType: 'create' | 'accept' | 'complete' | 'reject' | 'close' | 'comment',
+    issue: { id: string; title: string; productId?: string | null },
+    actorName?: string
+) {
+    if (!issue.productId) return;
+
+    try {
+        // Get LINE users assigned to this product
+        const lineUsers = await prisma.lineUser.findMany({
+            where: {
+                products: {
+                    some: { id: issue.productId }
+                }
+            },
+            select: { lineUserId: true }
+        });
+
+        if (lineUsers.length === 0) return;
+
+        // Get product name
+        const product = await prisma.product.findUnique({
+            where: { id: issue.productId },
+            select: { name: true }
+        });
+
+        // Create notification message
+        const baseUrl = process.env.NEXTAUTH_URL || 'https://your-domain.com';
+        const message = createIssueNotification(eventType, {
+            id: issue.id,
+            title: issue.title,
+            productName: product?.name,
+            actorName,
+        }, baseUrl);
+
+        // Send to all LINE users
+        const userIds = lineUsers.map(u => u.lineUserId);
+        await sendLineMulticastMessage(userIds, [message]);
+
+        console.log(`[LINE] Sent ${eventType} notification to ${userIds.length} users for issue ${issue.id}`);
+    } catch (error) {
+        console.error('[LINE] Error sending notification:', error);
+        // Don't throw - LINE notification failure shouldn't break the main action
+    }
+}
 
 async function logActivity(data: {
     issueId: string;
@@ -163,6 +211,13 @@ export async function createIssue(data: { title: string; description: string; pr
             revalidatePath(`/community/issues/product/${data.productId}`);
         }
 
+        // Send LINE notification
+        await sendLineNotificationForIssue('create', {
+            id: newIssue.id,
+            title: newIssue.title,
+            productId: data.productId,
+        }, session.user.name || session.user.email || undefined);
+
         return newIssue;
     } catch (error: any) {
         console.error("Error creating issue:", error);
@@ -280,10 +335,17 @@ export async function acceptIssue(id: string) {
     }
 
     revalidatePath('/community/issues');
+
+    // Send LINE notification for accept
+    const issueForLine = await prisma.issue.findUnique({ where: { id }, select: { id: true, title: true, productId: true } });
+    if (issueForLine) {
+        await sendLineNotificationForIssue('accept', issueForLine, session.user.name || session.user.email || undefined);
+    }
+
     return issue;
 }
 
-export async function completeIssue(id: string) {
+export async function completeIssue(id: string, data?: { message?: string; imageUrls?: string[] }) {
     const session = await auth();
     if (!session?.user) throw new Error("Unauthorized");
 
@@ -298,12 +360,35 @@ export async function completeIssue(id: string) {
         }
     });
 
+    // Save resolution comment if message provided
+    if (data?.message) {
+        const comment = await prisma.issueComment.create({
+            data: {
+                content: data.message,
+                type: 'COMPLETE',
+                issueId: id,
+                userId: parseInt(session.user.id),
+            }
+        });
+
+        if (data.imageUrls && data.imageUrls.length > 0) {
+            for (const url of data.imageUrls) {
+                await prisma.issueCommentImage.create({
+                    data: {
+                        url,
+                        commentId: comment.id
+                    }
+                });
+            }
+        }
+    }
+
     await logActivity({
         issueId: id,
         userId: parseInt(session.user.id),
         actorName: (session.user.name || session.user.email || 'Unknown'),
         type: 'STATUS_CHANGE',
-        description: `Issue marked as complete by support. Waiting for user review.`
+        description: `Issue marked as complete by support.${data?.message ? ` Note: ${data.message.substring(0, 50)}${data.message.length > 50 ? '...' : ''}` : ''}`
     });
 
     // Clear previous notifications (e.g. New Issue for owner)
@@ -324,6 +409,13 @@ export async function completeIssue(id: string) {
     }
 
     revalidatePath('/community/issues');
+
+    // Send LINE notification for complete
+    const issueForLine = await prisma.issue.findUnique({ where: { id }, select: { id: true, title: true, productId: true } });
+    if (issueForLine) {
+        await sendLineNotificationForIssue('complete', issueForLine, session.user.name || session.user.email || undefined);
+    }
+
     return issue;
 }
 
@@ -379,6 +471,14 @@ export async function closeIssue(id: string) {
     }
 
     revalidatePath('/community/issues');
+
+    // Send LINE notification for close
+    await sendLineNotificationForIssue('close', {
+        id,
+        title: existingIssue.title,
+        productId: existingIssue.productId,
+    }, session.user.name || session.user.email || undefined);
+
     return issue;
 }
 
@@ -435,6 +535,14 @@ export async function rejectIssue(id: string) {
     }
 
     revalidatePath('/community/issues');
+
+    // Send LINE notification for reject
+    await sendLineNotificationForIssue('reject', {
+        id,
+        title: existingIssue.title,
+        productId: existingIssue.productId,
+    }, session.user.name || session.user.email || undefined);
+
     return issue;
 }
 
@@ -468,7 +576,7 @@ export async function resubmitIssue(id: string) {
 export async function addIssueComment(data: {
     issueId: string;
     content: string;
-    type: 'REJECTION' | 'RESUBMIT';
+    type: 'REJECTION' | 'RESUBMIT' | 'COMPLETE';
     imageUrls?: string[];
 }) {
     const session = await auth();
@@ -542,6 +650,16 @@ export async function addIssueComment(data: {
     }
 
     revalidatePath('/community/issues');
+
+    // Send LINE notification for comment
+    if (issue) {
+        await sendLineNotificationForIssue('comment', {
+            id: issue.id,
+            title: issue.title,
+            productId: issue.productId,
+        }, session.user.name || session.user.email || undefined);
+    }
+
     return comment;
 }
 
