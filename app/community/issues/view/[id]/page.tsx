@@ -46,7 +46,7 @@ interface IssueDetail {
 export default function IssueDetailPage() {
     const params = useParams();
     const router = useRouter();
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
     const id = params.id as string;
     const [issue, setIssue] = useState<IssueDetail | null>(null);
     const [loading, setLoading] = useState(true);
@@ -67,9 +67,47 @@ export default function IssueDetailPage() {
     const isOwner = session?.user?.role === 'OWNER' || session?.user?.role === 'ADMIN';
     const isIssueOwner = issue?.userId === parseInt(session?.user?.id || "0");
 
+    // Handle authentication and fetching
+    useEffect(() => {
+        if (status === "unauthenticated") {
+            const currentPath = window.location.pathname;
+            router.push(`/login?callbackUrl=${encodeURIComponent(currentPath)}`);
+            return;
+        }
+
+        if (status === "authenticated" && id) {
+            fetchIssue();
+        }
+    }, [status, id, router]);
+
+    async function fetchIssue() {
+        setLoading(true);
+        try {
+            const data = await getIssueById(id);
+            if (!data) {
+                setError("Issue not found or unauthorized");
+                return;
+            }
+            setIssue(data as unknown as IssueDetail);
+            // Fetch comments
+            const commentsData = await getIssueComments(id);
+            setComments(commentsData as unknown as IssueComment[]);
+        } catch (err: any) {
+            console.error("Error fetching issue:", err);
+            if (err.message === "Unauthorized") {
+                const currentPath = window.location.pathname;
+                router.push(`/login?callbackUrl=${encodeURIComponent(currentPath)}`);
+            } else {
+                setError(err.message || "Failed to load issue");
+            }
+        } finally {
+            setLoading(false);
+        }
+    }
+
     // Mark notifications as read when viewing the issue
     useEffect(() => {
-        if (!id || !issue) return;
+        if (!id || !issue || !session) return;
 
         // If Owner/Admin hasn't accepted the task yet (status TODO), keep notification
         if (isOwner && issue.supportStatus === 'TODO') {
@@ -83,24 +121,7 @@ export default function IssueDetailPage() {
 
         markIssueNotificationsAsRead(id)
             .catch(err => console.error("Failed to mark notifications as read:", err));
-    }, [id, issue, isOwner, isIssueOwner]);
-
-    useEffect(() => {
-        async function fetchIssue() {
-            try {
-                const data = await getIssueById(id);
-                setIssue(data as unknown as IssueDetail);
-                // Fetch comments
-                const commentsData = await getIssueComments(id);
-                setComments(commentsData as unknown as IssueComment[]);
-            } catch (err: any) {
-                setError(err.message || "Failed to load issue");
-            } finally {
-                setLoading(false);
-            }
-        }
-        fetchIssue();
-    }, [id]);
+    }, [id, issue, isOwner, isIssueOwner, session]);
 
     // Close lightbox on Escape key
     useEffect(() => {
