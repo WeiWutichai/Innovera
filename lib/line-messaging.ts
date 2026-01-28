@@ -182,30 +182,206 @@ export function createIssueNotification(
         actorName?: string;
     },
     baseUrl: string
-): LineTextMessage {
-    const eventLabels: Record<string, { emoji: string; label: string }> = {
-        create: { emoji: '🆕', label: 'Issue ใหม่' },
-        accept: { emoji: '✋', label: 'Issue ถูก Accept' },
-        complete: { emoji: '✅', label: 'แก้ไขเสร็จแล้ว' },
-        reject: { emoji: '❌', label: 'Issue ถูก Reject' },
-        close: { emoji: '🔒', label: 'Issue ถูกปิด' },
-        comment: { emoji: '💬', label: 'Comment ใหม่' },
+): LineFlexMessage {
+    const eventLabels: Record<string, { emoji: string; label: string; color: string; icon: string }> = {
+        create: { emoji: '🆕', label: 'Issue ใหม่', color: '#00A950', icon: 'https://cdn-icons-png.flaticon.com/512/5905/5905335.png' },
+        accept: { emoji: '✋', label: 'Issue ถูก Accept', color: '#00A950', icon: 'https://cdn-icons-png.flaticon.com/512/1045/1045381.png' },
+        complete: { emoji: '✅', label: 'แก้ไขเสร็จแล้ว', color: '#00A950', icon: 'https://cdn-icons-png.flaticon.com/512/190/190411.png' },
+        reject: { emoji: '❌', label: 'Issue ถูก Reject', color: '#E53E3E', icon: 'https://cdn-icons-png.flaticon.com/512/1828/1828843.png' },
+        close: { emoji: '🔒', label: 'Issue ถูกปิด', color: '#718096', icon: 'https://cdn-icons-png.flaticon.com/512/121/121941.png' },
+        comment: { emoji: '💬', label: 'Comment ใหม่', color: '#3182CE', icon: 'https://cdn-icons-png.flaticon.com/512/1380/1380338.png' },
     };
 
-    const { emoji, label } = eventLabels[eventType] || { emoji: '📢', label: 'อัปเดต Issue' };
+    const config = eventLabels[eventType] || { emoji: '📢', label: 'อัปเดต Issue', color: '#00A950', icon: 'https://cdn-icons-png.flaticon.com/512/5905/5905335.png' };
 
-    let text = `${emoji} ${label}\n`;
-    text += `📝 ${issue.title}\n`;
+    // Format timestamp in Thai style: 27 ม.ค. 69 22:31 น.
+    const now = new Date();
+    const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    const day = now.getDate();
+    const month = thaiMonths[now.getMonth()];
+    const year = (now.getFullYear() + 543).toString().slice(-2);
+    const time = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const timestamp = `${day} ${month} ${year} ${time} น.`;
 
-    if (issue.productName) {
-        text += `📦 ${issue.productName}\n`;
-    }
+    const contents = {
+        "type": "bubble",
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "box",
+                    "layout": "horizontal",
+                    "contents": [
+                        {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [
+                                {
+                                    "type": "image",
+                                    "url": config.icon,
+                                    "size": "sm",
+                                    "aspectMode": "fit"
+                                }
+                            ],
+                            "width": "60px",
+                            "height": "60px",
+                            "backgroundColor": config.color,
+                            "cornerRadius": "100px",
+                            "justifyContent": "center",
+                            "alignItems": "center"
+                        },
+                        {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": config.label,
+                                    "weight": "bold",
+                                    "size": "xl",
+                                    "contents": []
+                                },
+                                {
+                                    "type": "text",
+                                    "text": timestamp,
+                                    "size": "sm",
+                                    "color": "#8C8C8C",
+                                    "contents": []
+                                }
+                            ],
+                            "margin": "lg",
+                            "spacing": "none"
+                        }
+                    ],
+                    "alignItems": "center"
+                },
+                {
+                    "type": "separator",
+                    "margin": "xl"
+                },
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "box",
+                            "layout": "horizontal",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": "เรื่อง",
+                                    "size": "sm",
+                                    "color": "#8C8C8C",
+                                    "flex": 2
+                                },
+                                {
+                                    "type": "text",
+                                    "text": issue.title,
+                                    "size": "sm",
+                                    "color": "#111111",
+                                    "align": "end",
+                                    "weight": "bold",
+                                    "flex": 4,
+                                    "wrap": true
+                                }
+                            ]
+                        }
+                    ],
+                    "margin": "xl",
+                    "spacing": "md"
+                },
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "box",
+                            "layout": "horizontal",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": "โปรดักส์",
+                                    "size": "sm",
+                                    "color": "#8C8C8C",
+                                    "flex": 2
+                                },
+                                {
+                                    "type": "text",
+                                    "text": issue.productName || "-",
+                                    "size": "sm",
+                                    "color": "#111111",
+                                    "align": "end",
+                                    "weight": "bold",
+                                    "flex": 4,
+                                    "wrap": true
+                                }
+                            ]
+                        }
+                    ],
+                    "margin": "md",
+                    "spacing": "md"
+                },
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "box",
+                            "layout": "horizontal",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": "โดย",
+                                    "size": "sm",
+                                    "color": "#8C8C8C",
+                                    "flex": 2
+                                },
+                                {
+                                    "type": "text",
+                                    "text": issue.actorName || "-",
+                                    "size": "sm",
+                                    "color": "#111111",
+                                    "align": "end",
+                                    "weight": "bold",
+                                    "flex": 4,
+                                    "wrap": true
+                                }
+                            ]
+                        }
+                    ],
+                    "margin": "md",
+                    "spacing": "md"
+                },
+                {
+                    "type": "separator",
+                    "margin": "xl"
+                },
+                {
+                    "type": "button",
+                    "action": {
+                        "type": "uri",
+                        "label": "ดูรายละเอียด",
+                        "uri": `${baseUrl}/community/issues/view/${issue.id}`
+                    },
+                    "style": "primary",
+                    "color": "#00A950",
+                    "margin": "xl",
+                    "height": "sm"
+                }
+            ],
+            "paddingAll": "20px"
+        },
+        "styles": {
+            "footer": {
+                "separator": true
+            }
+        }
+    };
 
-    if (issue.actorName) {
-        text += `👤 โดย: ${issue.actorName}\n`;
-    }
-
-    text += `\n🔗 ${baseUrl}/community/issues/view/${issue.id}`;
-
-    return createTextMessage(text);
+    return {
+        type: 'flex',
+        altText: `${config.emoji} ${config.label}: ${issue.title}`,
+        contents
+    };
 }
