@@ -220,12 +220,12 @@ export function createIssueNotification(
                                 {
                                     "type": "image",
                                     "url": config.icon,
-                                    "size": "sm",
+                                    "size": "xxs",
                                     "aspectMode": "fit"
                                 }
                             ],
-                            "width": "60px",
-                            "height": "60px",
+                            "width": "48px",
+                            "height": "48px",
                             "backgroundColor": config.color,
                             "cornerRadius": "100px",
                             "justifyContent": "center",
@@ -365,7 +365,7 @@ export function createIssueNotification(
                         "uri": `${baseUrl}/community/issues/view/${issue.id}`
                     },
                     "style": "primary",
-                    "color": "#00A950",
+                    "color": config.color,
                     "margin": "xl",
                     "height": "sm"
                 }
