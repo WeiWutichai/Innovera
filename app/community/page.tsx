@@ -5,7 +5,12 @@ import { auth } from "@/auth";
 export const dynamic = 'force-dynamic';
 
 export default async function CommunityPage() {
-    const allProducts = await getProducts();
+    let allProducts: any[] = [];
+    try {
+        allProducts = await getProducts();
+    } catch (error) {
+        console.error("CommunityPage getProducts Error:", error);
+    }
     const allowedProducts = ["INNO ONE", "LAW FIRM", "PHYSICAL THERAPY", "DOMITORY"];
     const products = allProducts.filter((product: any) =>
         allowedProducts.some(allowed => product.name.toUpperCase().includes(allowed))
