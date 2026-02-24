@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: '25mb', // Increase limit for image uploads
     },
+    cpus: 1, // Limit Webpack/Turbopack to 1 core to prevent maxing out the 1 vCPU
+    memoryBasedWorkersCount: true, // Optimize memory allocation for the workers
   },
   images: {
     remotePatterns: [
