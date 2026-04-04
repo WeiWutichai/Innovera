@@ -27,10 +27,8 @@ const nextConfig: NextConfig = {
             key: 'X-DNS-Prefetch-Control',
             value: 'on'
           },
-          {
-            key: 'Strict-Transport-Security',
-            value: 'max-age=63072000; includeSubDomains; preload'
-          },
+          // Enable HSTS after SSL is configured:
+          // { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
           {
             key: 'X-Frame-Options',
             value: 'SAMEORIGIN'
@@ -65,8 +63,7 @@ const nextConfig: NextConfig = {
               "frame-src 'self' https://www.youtube.com https://player.vimeo.com",
               "base-uri 'self'",
               "form-action 'self'",
-              "frame-ancestors 'self'",
-              "upgrade-insecure-requests"
+              "frame-ancestors 'self'"
             ].join('; ')
           }
         ]

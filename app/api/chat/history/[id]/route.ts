@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { cookies } from "next/headers";
 
 export async function GET(
     request: NextRequest,
@@ -21,6 +22,16 @@ export async function GET(
             return NextResponse.json(
                 { success: false, error: "Session not found" },
                 { status: 404 }
+            );
+        }
+
+        // Verify ownership: check guestId cookie matches the session's guestId
+        const cookieStore = await cookies();
+        const guestIdCookie = cookieStore.get("guestId")?.value;
+        if (session.guestId && guestIdCookie !== session.guestId) {
+            return NextResponse.json(
+                { success: false, error: "Unauthorized" },
+                { status: 401 }
             );
         }
 

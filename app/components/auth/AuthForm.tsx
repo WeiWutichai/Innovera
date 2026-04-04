@@ -8,7 +8,8 @@ import SocialButton from "./SocialButton";
 export default function AuthForm({ type }: { type: "login" | "register" }) {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const callbackUrl = searchParams.get("callbackUrl") || "/";
+    const rawCallbackUrl = searchParams.get("callbackUrl") || "/";
+    const callbackUrl = rawCallbackUrl.startsWith('/') && !rawCallbackUrl.startsWith('//') ? rawCallbackUrl : '/';
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [showPassword, setShowPassword] = useState(false);

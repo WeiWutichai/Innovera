@@ -13,6 +13,11 @@ export async function createNotification(data: {
     link?: string;
 }) {
     try {
+        const session = await auth();
+        if (!session || !session.user) {
+            console.error("createNotification called without authentication");
+            return;
+        }
         await prisma.notification.create({
             data: {
                 userId: data.userId,

@@ -111,37 +111,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             }
             return session
         },
-        async signIn({ user, account, profile }) {
-            if (user) {
-                // If user is not created yet (first google login), we might look at the logic above...
-                // But here `user` object comes from provider or authorize return.
-                // If it's credentials, we already query DB.
-                // If google, it might be new.
+        async signIn({ user, account }) {
+            if (!user?.email) return true;
 
-                // We need to fetch user from DB to check approval status reliably particularly for OAuth
-                // because `user` object in signIn for OAuth might not have DB fields yet if it's new, 
-                // but if it's existing, we want to check DB.
+            // Fetch user from DB to check approval status
+            const dbUser = await prisma.user.findUnique({ where: { email: user.email } });
 
-                if (account?.provider === 'google') {
-                    const existingUser = await prisma.user.findUnique({ where: { email: user.email! } })
-                    if (existingUser) {
-                        return true
-                    }
-                    return true
-                }
-
-                // For credentials, we returned the user object from authorize, which should have isApproved
-                // But types might not match perfectly here if we didn't cast.
-                // safest is to allow here if we already checked in authorize? 
-                // In authorize we didn't check isApproved, so we return user. 
-                // Let's check here.
-
-                // Cast user to any or our type because NextAuth User type is generic
-                const u = user as any;
-                if (u.role === 'ADMIN') {
-                    // Admin logic if needed
-                }
+            if (account?.provider === 'google' && !dbUser) {
+                // New Google user — will be created in jwt callback with isApproved: false
+                // Block sign-in until admin approves
+                return false;
             }
+
+            if (dbUser) {
+                // Allow admins always; block unapproved users
+                if (dbUser.role === 'ADMIN' || dbUser.role === 'OWNER') return true;
+                if (!dbUser.isApproved) return false;
+            }
+
             return true;
         }
     },

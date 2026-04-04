@@ -31,8 +31,8 @@ export async function resetUserPassword(userId: number, newPassword: string) {
         throw new Error("Unauthorized");
     }
 
-    if (!newPassword || newPassword.length < 6) {
-        throw new Error("Password must be at least 6 characters");
+    if (!newPassword || newPassword.length < 8) {
+        throw new Error("Password must be at least 8 characters");
     }
 
     // Hash the new password

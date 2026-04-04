@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition, useRef } from "react";
+import { useEffect, useState, useTransition, useRef, useMemo } from "react";
 import { getIssueById, acceptIssue, completeIssue, closeIssue, rejectIssue, resubmitIssue, addIssueComment, getIssueComments, deleteIssue } from "@/app/actions/issue";
 import { markIssueNotificationsAsRead } from "@/app/actions/notification";
 import { uploadImage } from "@/app/actions/upload";
@@ -60,6 +60,10 @@ export default function IssueDetailPage() {
     const [showCommentForm, setShowCommentForm] = useState<'REJECTION' | 'RESUBMIT' | 'COMPLETE' | null>(null);
     const [commentText, setCommentText] = useState("");
     const [commentImages, setCommentImages] = useState<File[]>([]);
+    const commentImageUrls = useMemo(() => commentImages.map(f => URL.createObjectURL(f)), [commentImages]);
+    useEffect(() => {
+        return () => { commentImageUrls.forEach(url => URL.revokeObjectURL(url)); };
+    }, [commentImageUrls]);
     const [uploadingComment, setUploadingComment] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -71,7 +75,8 @@ export default function IssueDetailPage() {
     useEffect(() => {
         if (status === "unauthenticated") {
             const currentPath = window.location.pathname;
-            router.push(`/login?callbackUrl=${encodeURIComponent(currentPath)}`);
+            const safePath = currentPath.startsWith('/') && !currentPath.startsWith('//') ? currentPath : '/';
+            router.push(`/login?callbackUrl=${encodeURIComponent(safePath)}`);
             return;
         }
 
@@ -329,12 +334,7 @@ export default function IssueDetailPage() {
                                 {/* User Status */}
                                 <div className="flex items-center gap-3">
                                     <span className="text-sm text-indigo-200">User Status:</span>
-                                    <span className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-full shadow-lg backdrop-blur-sm ${issue.status === 'OPEN' ? 'bg-white/20 border border-white/30' :
-                                        issue.status === 'PENDING_REVIEW' ? 'bg-white/20 border border-white/30' :
-                                            issue.status === 'CLOSED' ? 'bg-white/20 border border-white/30' :
-                                                issue.status === 'REJECTED' ? 'bg-white/20 border border-white/30' :
-                                                    'bg-white/20 border border-white/30'
-                                        } text-white`}>
+                                    <span className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-full shadow-lg backdrop-blur-sm bg-white/20 border border-white/30 text-white">
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
@@ -599,7 +599,7 @@ export default function IssueDetailPage() {
                                                 {commentImages.map((file, idx) => (
                                                     <div key={idx} className="relative group">
                                                         <img
-                                                            src={URL.createObjectURL(file)}
+                                                            src={commentImageUrls[idx]}
                                                             alt={`Preview ${idx + 1}`}
                                                             className="w-20 h-20 object-cover rounded-xl border-2 border-gray-100 group-hover:border-indigo-300 transition-colors"
                                                         />

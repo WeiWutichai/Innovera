@@ -6,7 +6,8 @@ import { useSearchParams } from "next/navigation";
 
 export default function SocialButton({ provider, children }: { provider: string, children: React.ReactNode }) {
     const searchParams = useSearchParams();
-    const callbackUrl = searchParams.get("callbackUrl") || "/";
+    const rawCallbackUrl = searchParams.get("callbackUrl") || "/";
+    const callbackUrl = rawCallbackUrl.startsWith('/') && !rawCallbackUrl.startsWith('//') ? rawCallbackUrl : '/';
 
     return (
         <button

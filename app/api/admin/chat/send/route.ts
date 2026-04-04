@@ -71,10 +71,7 @@ export async function POST(request: NextRequest) {
             stack: error instanceof Error ? error.stack : undefined,
         });
         return NextResponse.json(
-            {
-                error: "Failed to send message",
-                details: error instanceof Error ? error.message : String(error)
-            },
+            { error: "Failed to send message" },
             { status: 500 }
         );
     }
