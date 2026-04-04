@@ -182,7 +182,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
                 // Load history
                 try {
-                    const response = await fetch(`/api/chat/history/${storedSessionId}`);
+                    const response = await fetch(`/api/chat/history/${storedSessionId}?guestId=${storedGuestId || ''}`);
                     const data = await response.json();
 
                     if (data.success) {
@@ -238,7 +238,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
         const pollMessages = async () => {
             try {
-                const response = await fetch(`/api/chat/history/${sessionId}`);
+                const response = await fetch(`/api/chat/history/${sessionId}?guestId=${guestId || ''}`);
                 const data = await response.json();
 
                 if (data.success) {

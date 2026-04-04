@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { cookies } from "next/headers";
+import { auth } from "@/auth";
 
 export async function GET(
     request: NextRequest,
@@ -25,14 +25,19 @@ export async function GET(
             );
         }
 
-        // Verify ownership: check guestId cookie matches the session's guestId
-        const cookieStore = await cookies();
-        const guestIdCookie = cookieStore.get("guestId")?.value;
-        if (session.guestId && guestIdCookie !== session.guestId) {
-            return NextResponse.json(
-                { success: false, error: "Unauthorized" },
-                { status: 401 }
-            );
+        // Allow admin access to any session
+        const authSession = await auth();
+        const isAdmin = authSession?.user && (authSession.user as any).role === 'ADMIN';
+
+        // For non-admin: verify guestId from query param matches session
+        if (!isAdmin) {
+            const guestId = request.nextUrl.searchParams.get("guestId");
+            if (session.guestId && guestId !== session.guestId) {
+                return NextResponse.json(
+                    { success: false, error: "Unauthorized" },
+                    { status: 401 }
+                );
+            }
         }
 
         return NextResponse.json({
