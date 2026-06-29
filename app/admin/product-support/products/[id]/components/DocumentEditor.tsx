@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Bold, Italic, List, Image as ImageIcon, Link as LinkIcon, Save, X, Upload, FileText } from 'lucide-react';
 import { getDocument, updateDocument } from '@/app/actions/document';
 import { uploadImage } from '@/app/actions/upload';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 interface DocumentEditorProps {
     documentId: string | null;
@@ -256,7 +257,7 @@ export default function DocumentEditor({ documentId, productId, onClose }: Docum
                         <label className="block text-sm font-medium text-gray-700 mb-2">ตัวอย่าง</label>
                         <div
                             className="bg-white border border-gray-200 text-gray-900 rounded-xl p-4 prose prose-sm max-w-none overflow-auto max-h-48"
-                            dangerouslySetInnerHTML={{ __html: content }}
+                            dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }}
                         />
                     </div>
                 )}

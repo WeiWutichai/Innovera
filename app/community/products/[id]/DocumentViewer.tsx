@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, FileText, Folder, FolderOpen, BookOpen, Play } from 'lucide-react';
+import { sanitizeHtml, youtubeEmbedUrl } from '@/lib/sanitize';
 
 interface Document {
     id: string;
@@ -72,6 +73,8 @@ export default function DocumentViewer({ product, categories, legacyDocuments }:
 
     const hasTreeMenu = categories.length > 0;
     const hasLegacyDocs = legacyDocuments.length > 0;
+    // Only embed a video when the URL is a recognized (safe) YouTube link.
+    const videoEmbedUrl = youtubeEmbedUrl(selectedDoc?.videoUrl);
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -222,10 +225,10 @@ export default function DocumentViewer({ product, categories, legacyDocuments }:
 
                             {/* Document Content */}
                             <div className="p-8">
-                                {selectedDoc.videoUrl && (
+                                {videoEmbedUrl && (
                                     <div className="mb-8 rounded-xl overflow-hidden shadow-md ring-1 ring-gray-200">
                                         <iframe
-                                            src={selectedDoc.videoUrl.replace("watch?v=", "embed/")}
+                                            src={videoEmbedUrl}
                                             className="w-full aspect-video"
                                             allowFullScreen
                                             title="Video"
@@ -235,7 +238,7 @@ export default function DocumentViewer({ product, categories, legacyDocuments }:
 
                                 <div
                                     className="prose prose-gray max-w-none prose-headings:text-gray-900 prose-p:text-gray-600 prose-a:text-indigo-600 prose-strong:text-gray-900 prose-img:rounded-xl prose-img:shadow-md"
-                                    dangerouslySetInnerHTML={{ __html: selectedDoc.content }}
+                                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(selectedDoc.content) }}
                                 />
                             </div>
                         </article>

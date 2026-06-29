@@ -181,6 +181,23 @@ describe('POST /api/user/update', () => {
         expect(json.error).toBe('Current password required');
     });
 
+    it('should return 400 when newPassword is too short (below policy)', async () => {
+        mockAuth.mockResolvedValue({ user: { email: DB_USER.email } } as any);
+        mockPrismaUser.findUnique.mockResolvedValue(DB_USER);
+
+        const res = await POST(makeRequest({
+            oldPassword: 'correctOldPass',
+            newPassword: 'short',
+        }));
+
+        expect(res.status).toBe(400);
+        const json = await res.json();
+        expect(json.error).toBe('Password must be at least 8 characters');
+        // Weak password is rejected before verifying the old password or updating.
+        expect(mockCompare).not.toHaveBeenCalled();
+        expect(mockPrismaUser.update).not.toHaveBeenCalled();
+    });
+
     // --- OAuth user cannot change password ---
 
     it('should return 400 when OAuth user tries to change password', async () => {

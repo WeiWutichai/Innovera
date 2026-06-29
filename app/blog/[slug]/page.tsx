@@ -78,7 +78,9 @@ export default async function BlogPostPage({ params }: BlogPostProps) {
         notFound();
     }
 
-    // Fetch other posts for the sidebar (Trending/Recent)
+    // Fetch other posts for the sidebar (Trending/Recent).
+    // Select only the fields BlogPostContent renders so we never serialize
+    // author credentials (password hash, email, role) to the client.
     const otherPosts = await prisma.post.findMany({
         where: {
             published: true,
@@ -88,8 +90,13 @@ export default async function BlogPostPage({ params }: BlogPostProps) {
         },
         orderBy: { createdAt: "desc" },
         take: 3,
-        include: {
-            author: true
+        select: {
+            id: true,
+            title: true,
+            title_th: true,
+            slug: true,
+            image: true,
+            createdAt: true,
         }
     });
 
@@ -98,7 +105,7 @@ export default async function BlogPostPage({ params }: BlogPostProps) {
             <Navbar />
 
             <div className="flex-grow pt-32 pb-16 px-6 md:px-12 max-w-7xl mx-auto w-full">
-                <BlogPostContent post={post as any} otherPosts={otherPosts as any[]} />
+                <BlogPostContent post={post} otherPosts={otherPosts} />
             </div>
 
             <Footer />

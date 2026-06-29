@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react";
 
 interface Message {
     id: string;
@@ -40,6 +40,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     const [adminAssigned, setAdminAssigned] = useState(false);
     const [captchaVerified, setCaptchaVerified] = useState(true); // Default true - CAPTCHA is optional
     const [captchaLoading, setCaptchaLoading] = useState(false);
+    // Tracks that a verification attempt has already run so a failed (fail-closed)
+    // attempt does not retry in a loop when captchaLoading flips back to false.
+    const [captchaAttempted, setCaptchaAttempted] = useState(false);
+
+    // Always-current snapshot of messages so polling can compare lengths
+    // without re-creating the interval on every new message.
+    const messagesRef = useRef<Message[]>([]);
+    useEffect(() => {
+        messagesRef.current = messages;
+    }, [messages]);
 
     // Load reCAPTCHA script
     useEffect(() => {
@@ -67,8 +77,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         };
 
         script.onerror = () => {
+            // Fail closed: do not mark CAPTCHA as verified if the script cannot load.
             console.error("Failed to load reCAPTCHA script");
-            setCaptchaVerified(true); // Allow chat if script fails to load
         };
 
         document.head.appendChild(script);
@@ -84,25 +94,22 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         };
     }, []);
 
-    // Verify CAPTCHA when chat opens
+    // Verify CAPTCHA when chat opens. Fails CLOSED: if verification cannot
+    // complete or is rejected, captchaVerified stays false and sending stays
+    // blocked. captchaAttempted prevents a retry loop once an attempt finishes.
     useEffect(() => {
-        if (!isOpen || captchaVerified || captchaLoading) return;
+        if (!isOpen || captchaVerified || captchaLoading || captchaAttempted) return;
 
         const verifyCaptcha = async () => {
             const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
             if (!siteKey) {
+                // CAPTCHA not configured: treat as verified (feature is optional).
                 setCaptchaVerified(true);
                 return;
             }
 
+            setCaptchaAttempted(true);
             setCaptchaLoading(true);
-
-            // Set timeout fallback - allow chat after 5 seconds even if CAPTCHA fails
-            const timeoutId = setTimeout(() => {
-                console.warn("CAPTCHA verification timeout - allowing chat anyway");
-                setCaptchaVerified(true);
-                setCaptchaLoading(false);
-            }, 5000);
 
             try {
                 // Wait for reCAPTCHA to be ready (max 3 seconds)
@@ -139,38 +146,33 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
                         const data = await response.json();
 
-                        clearTimeout(timeoutId);
-
                         if (data.success) {
                             console.log("CAPTCHA verified, score:", data.score);
                             setCaptchaVerified(true);
                         } else {
+                            // Fail closed: do not allow sending when verification fails.
                             console.warn("CAPTCHA verification failed:", data.error);
-                            // Allow chat anyway on failure
-                            setCaptchaVerified(true);
                         }
                     } catch (error) {
+                        // Fail closed.
                         console.error("CAPTCHA execution error:", error);
-                        clearTimeout(timeoutId);
-                        setCaptchaVerified(true); // Allow chat on error
                     } finally {
                         setCaptchaLoading(false);
                     }
                 });
             } catch (error) {
+                // Fail closed.
                 console.error("CAPTCHA error:", error);
-                clearTimeout(timeoutId);
                 setCaptchaLoading(false);
-                setCaptchaVerified(true); // Allow chat on error
             }
         };
 
         verifyCaptcha();
-    }, [isOpen, captchaVerified, captchaLoading]);
+    }, [isOpen, captchaVerified, captchaLoading, captchaAttempted]);
 
-    // Initialize session
+    // Initialize session (only after CAPTCHA passes, and only once).
     useEffect(() => {
-        if (!captchaVerified) return; // Wait for CAPTCHA verification
+        if (!captchaVerified || sessionId) return; // Wait for CAPTCHA; don't re-init
         const initSession = async () => {
             // Check for existing session in localStorage
             const storedSessionId = localStorage.getItem("chatSessionId");
@@ -230,7 +232,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         };
 
         initSession();
-    }, []);
+    }, [captchaVerified, sessionId]);
 
     // Poll for new messages when chat is open
     useEffect(() => {
@@ -250,12 +252,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                     // Always update messages to catch read status changes
                     setMessages(newMessages);
 
-                    // Mark admin messages as read when new messages arrive
-                    if (newMessages.length > messages.length) {
+                    // Mark admin messages as read when new messages arrive.
+                    // Compare against the live ref to avoid a stale closure.
+                    if (newMessages.length > messagesRef.current.length) {
                         fetch("/api/chat/mark-read", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ sessionId }),
+                            body: JSON.stringify({ sessionId, guestId }),
                         }).catch(err => console.error("Failed to mark as read:", err));
                     }
 
@@ -276,10 +279,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         const interval = setInterval(pollMessages, 1000);
 
         return () => clearInterval(interval);
-    }, [sessionId, isOpen]);
+    }, [sessionId, isOpen, guestId]);
 
     const sendMessage = async (message: string) => {
         if (!sessionId || !message.trim()) return;
+        // Fail closed: never send unless CAPTCHA verification succeeded.
+        if (!captchaVerified) return;
 
         const userMessage: Message = {
             id: `temp_${Date.now()}`,
@@ -357,6 +362,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
     const requestHumanSupport = async () => {
         if (!sessionId || humanSupportRequested) return;
+        // Fail closed: never send unless CAPTCHA verification succeeded.
+        if (!captchaVerified) return;
 
         try {
             const response = await fetch("/api/chat/send", {

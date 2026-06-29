@@ -27,8 +27,13 @@ const nextConfig: NextConfig = {
             key: 'X-DNS-Prefetch-Control',
             value: 'on'
           },
-          // Enable HSTS after SSL is configured:
-          // { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+          // HSTS — production serves over HTTPS (innovera.co.th). Conservative:
+          // 1 year, apex only. Add `; includeSubDomains; preload` once every
+          // subdomain is confirmed HTTPS-only (those are hard to roll back).
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000'
+          },
           {
             key: 'X-Frame-Options',
             value: 'SAMEORIGIN'

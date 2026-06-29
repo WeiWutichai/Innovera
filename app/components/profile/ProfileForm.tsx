@@ -20,6 +20,12 @@ export default function ProfileForm({ user }: { user: any }) {
         setError("");
         setLoading(true);
 
+        if (newPassword && newPassword.length < 8) {
+            setError("Password must be at least 8 characters");
+            setLoading(false);
+            return;
+        }
+
         if (newPassword && newPassword !== confirmPassword) {
             setError("New passwords do not match");
             setLoading(false);
@@ -101,6 +107,7 @@ export default function ProfileForm({ user }: { user: any }) {
                                     type="password"
                                     value={newPassword}
                                     onChange={(e) => setNewPassword(e.target.value)}
+                                    minLength={8}
                                     className="w-full h-10 px-3 rounded-lg bg-white/5 border border-white/10 text-white focus:border-white/30 focus:outline-none focus:ring-1 focus:ring-white/30 transition-all text-sm"
                                 />
                             </div>
