@@ -1,20 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { requireStaff, authErrorResponse } from "@/lib/auth-helpers";
 
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const session = await auth();
-
-        // Check admin authentication
-        if (!session || !session.user || session.user.role !== "ADMIN") {
-            return NextResponse.json(
-                { error: "Unauthorized" },
-                { status: 401 }
-            );
+        // Defense-in-depth: require staff even though middleware guards /api/admin.
+        try {
+            await requireStaff();
+        } catch (e) {
+            const r = authErrorResponse(e);
+            if (r) return r;
+            throw e;
         }
 
         const { id } = await params;

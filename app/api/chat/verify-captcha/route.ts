@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
                 },
-                body: `secret=${secretKey}&response=${token}`,
+                body: `secret=${encodeURIComponent(secretKey)}&response=${encodeURIComponent(token)}`,
             }
         );
 
