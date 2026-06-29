@@ -1,11 +1,9 @@
 /**
  * Tests for NextAuth callbacks and authorize function.
  *
- * The auth.ts file exports the result of calling NextAuth(), which makes it
- * difficult to test callbacks in isolation. Instead, we extract the callback
- * logic by re-importing the module config. Since NextAuth is called at module
- * level, we mock the NextAuth function itself to capture the config, then
- * test each callback directly.
+ * auth.ts exports the result of calling NextAuth(). We mock NextAuth to capture
+ * the merged config (auth.config.ts + the Node-only Credentials provider and
+ * jwt/signIn callbacks), then test each callback directly.
  */
 
 // Mock prisma before any imports
@@ -20,6 +18,8 @@ jest.mock('@/lib/prisma', () => ({
 
 jest.mock('bcryptjs', () => ({
     compare: jest.fn(),
+    // auth.ts precomputes a DUMMY_HASH at module load via hash()
+    hash: jest.fn().mockResolvedValue('dummy_hash'),
 }));
 
 // Capture the config passed to NextAuth
@@ -61,7 +61,7 @@ beforeAll(async () => {
 });
 
 // Helper to get the credentials provider's authorize function
-function getAuthorize(): (credentials: any) => Promise<any> {
+function getAuthorize(): (credentials: any, request?: any) => Promise<any> {
     const credProvider = capturedConfig.providers.find(
         (p: any) => p.id === 'credentials'
     );
@@ -85,7 +85,7 @@ describe('Credentials authorize', () => {
         expect(result).toBeNull();
     });
 
-    it('should return null when user is not found', async () => {
+    it('should return null when user is not found (and still runs a dummy compare)', async () => {
         mockPrismaUser.findUnique.mockResolvedValue(null);
 
         const authorize = getAuthorize();
@@ -95,6 +95,8 @@ describe('Credentials authorize', () => {
         });
 
         expect(result).toBeNull();
+        // timing-equalizer dummy compare
+        expect(mockCompare).toHaveBeenCalled();
     });
 
     it('should return null when user has no password (OAuth user)', async () => {
@@ -170,20 +172,45 @@ describe('jwt callback', () => {
 
     const jwtCallback = () => capturedConfig.callbacks.jwt;
 
-    it('should return token unchanged when no account/user (subsequent requests)', async () => {
+    it('refreshes claims from DB on subsequent requests (token not a frozen snapshot)', async () => {
+        // DB lookup by id returns the CURRENT claims, overriding stale token values.
+        mockPrismaUser.findUnique.mockResolvedValue({
+            role: 'ADMIN',
+            isApproved: true,
+            canReportIssues: false,
+        });
+
         const token = { id: '1', role: 'USER', sub: 'abc' };
         const result = await jwtCallback()({ token, user: undefined, account: undefined });
-        expect(result).toEqual(token);
+
+        expect(result.id).toBe('1');
+        expect(result.role).toBe('ADMIN');
+        expect(result.isApproved).toBe(true);
+        expect(result.canReportIssues).toBe(false);
+        expect(mockPrismaUser.findUnique).toHaveBeenCalledWith({
+            where: { id: 1 },
+            select: { role: true, isApproved: true, canReportIssues: true },
+        });
     });
 
-    it('should enrich token with credentials user fields on initial sign-in', async () => {
-        const token = { sub: 'abc' } as any;
-        const user = {
-            id: '10',
+    it('invalidates the session (returns null) when the user no longer exists', async () => {
+        mockPrismaUser.findUnique.mockResolvedValue(null);
+
+        const token = { id: '99' };
+        const result = await jwtCallback()({ token, user: undefined, account: undefined });
+
+        expect(result).toBeNull();
+    });
+
+    it('sets token.id and refreshes claims on credentials sign-in', async () => {
+        mockPrismaUser.findUnique.mockResolvedValue({
             role: 'ADMIN',
             isApproved: true,
             canReportIssues: true,
-        };
+        });
+
+        const token = { sub: 'abc' } as any;
+        const user = { id: '10' };
         const account = { provider: 'credentials' };
 
         const result = await jwtCallback()({ token, user, account });
@@ -194,63 +221,22 @@ describe('jwt callback', () => {
         expect(result.canReportIssues).toBe(true);
     });
 
-    it('should create new user in DB for first Google sign-in', async () => {
-        mockPrismaUser.findUnique.mockResolvedValue(null);
-        mockPrismaUser.create.mockResolvedValue({});
+    it('resolves the DB id for Google sign-in (not the OAuth profile id) then refreshes claims', async () => {
+        // First call: lookup by email -> DB id; second call: lookup by id -> claims.
+        mockPrismaUser.findUnique
+            .mockResolvedValueOnce({ id: 42 })
+            .mockResolvedValueOnce({ role: 'USER', isApproved: true, canReportIssues: false });
 
         const token = {} as any;
-        const user = {
-            id: 'google-id',
-            email: 'new@gmail.com',
-            name: 'New Google',
-            image: 'https://img.com/pic.jpg',
-        };
-        const account = {
-            provider: 'google',
-            type: 'oauth',
-            providerAccountId: 'goog-123',
-            access_token: 'at',
-            token_type: 'bearer',
-            scope: 'openid',
-            id_token: 'idt',
-        };
-
-        const result = await jwtCallback()({ token, user, account });
-
-        expect(mockPrismaUser.create).toHaveBeenCalledWith({
-            data: expect.objectContaining({
-                email: 'new@gmail.com',
-                name: 'New Google',
-                accounts: {
-                    create: expect.objectContaining({
-                        provider: 'google',
-                        providerAccountId: 'goog-123',
-                    }),
-                },
-            }),
-        });
-        expect(result.role).toBe('USER');
-        expect(result.isApproved).toBe(false);
-        expect(result.canReportIssues).toBe(false);
-    });
-
-    it('should use existing DB user fields for returning Google user', async () => {
-        mockPrismaUser.findUnique.mockResolvedValue({
-            role: 'ADMIN',
-            isApproved: true,
-            canReportIssues: true,
-        });
-
-        const token = {} as any;
-        const user = { id: 'google-id', email: 'existing@gmail.com' };
+        const user = { id: 'google-oauth-id', email: 'existing@gmail.com' };
         const account = { provider: 'google' };
 
         const result = await jwtCallback()({ token, user, account });
 
-        expect(result.role).toBe('ADMIN');
+        // token.id must be the DB id, NOT the Google OAuth id
+        expect(result.id).toBe('42');
+        expect(result.role).toBe('USER');
         expect(result.isApproved).toBe(true);
-        expect(result.canReportIssues).toBe(true);
-        expect(mockPrismaUser.create).not.toHaveBeenCalled();
     });
 });
 
@@ -326,20 +312,42 @@ describe('signIn callback', () => {
         });
 
         expect(result).toBe(true);
+        expect(mockPrismaUser.create).not.toHaveBeenCalled();
     });
 
-    it('should block Google sign-in for new user (needs approval)', async () => {
+    it('should CREATE a new Google user (unapproved) and block until approval', async () => {
         mockPrismaUser.findUnique.mockResolvedValue(null);
+        mockPrismaUser.create.mockResolvedValue({ id: 7 });
 
         const result = await signInCallback()({
-            user: { email: 'brand-new@gmail.com' },
-            account: { provider: 'google' },
+            user: { email: 'brand-new@gmail.com', name: 'New', image: null },
+            account: {
+                provider: 'google',
+                type: 'oauth',
+                providerAccountId: 'goog-123',
+                access_token: 'at',
+                token_type: 'bearer',
+                scope: 'openid',
+                id_token: 'idt',
+            },
         });
 
+        expect(mockPrismaUser.create).toHaveBeenCalledWith({
+            data: expect.objectContaining({
+                email: 'brand-new@gmail.com',
+                isApproved: false,
+                accounts: {
+                    create: expect.objectContaining({
+                        provider: 'google',
+                        providerAccountId: 'goog-123',
+                    }),
+                },
+            }),
+        });
         expect(result).toBe(false);
     });
 
-    it('should return true when user has no email', async () => {
+    it('should return true when there is no account (e.g. session refresh)', async () => {
         const result = await signInCallback()({
             user: { id: '1' },
             account: null,

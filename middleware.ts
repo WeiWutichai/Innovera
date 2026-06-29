@@ -1,24 +1,33 @@
-import { auth } from "@/auth"
+import NextAuth from "next-auth"
 import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
+import { authConfig } from "@/auth.config"
 
-export async function middleware(request: NextRequest) {
-    const { pathname } = request.nextUrl
+// Edge-safe auth instance (no Prisma/bcrypt) for middleware gating only.
+const { auth } = NextAuth(authConfig)
 
-    // Protect admin routes
-    if (pathname.startsWith('/admin')) {
-        const session = await auth()
+export default auth((req) => {
+    const { pathname } = req.nextUrl
 
-        if (!session || !session.user || session.user.role !== 'ADMIN') {
-            return NextResponse.redirect(new URL('/', request.url))
+    // Protect admin page routes and admin API routes. Both ADMIN and OWNER are
+    // staff; everyone else is rejected.
+    if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
+        const role = req.auth?.user?.role
+        const isStaff = role === "ADMIN" || role === "OWNER"
+
+        if (!isStaff) {
+            if (pathname.startsWith("/api/")) {
+                return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+            }
+            return NextResponse.redirect(new URL("/", req.nextUrl))
         }
     }
 
     return NextResponse.next()
-}
+})
 
 export const config = {
     matcher: [
-        '/admin/:path*',
-    ]
+        "/admin/:path*",
+        "/api/admin/:path*",
+    ],
 }
