@@ -4,11 +4,20 @@ on:
   push:
     branches: [main]
 
+# Least-privilege token: this workflow only deploys via SSH and never needs
+# write access to repository contents.
+permissions:
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy via SSH
+        # Supply-chain hardening: pin third-party actions to a full commit SHA
+        # (e.g. appleboy/ssh-action@<40-char-sha>) instead of a moving tag.
+        # Left as @v1 here to avoid guessing a SHA that could break deploy;
+        # replace with a verified pinned SHA when convenient.
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}

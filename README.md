@@ -92,16 +92,27 @@ npx prisma generate
 
 ### 5. Create Admin User
 
+The admin password is never hardcoded. Supply it via the `ADMIN_PASSWORD`
+environment variable when running the seed script (`ADMIN_EMAIL` is optional and
+defaults to `admin@innovera.com`):
+
 ```bash
-# Run the admin seed script
-node prisma/seed-admin.js
+# Run the admin seed script with a strong password
+ADMIN_PASSWORD='<choose-a-strong-password>' node prisma/seed-admin.js
+
+# Optionally override the admin email
+ADMIN_EMAIL='you@example.com' ADMIN_PASSWORD='<choose-a-strong-password>' node prisma/seed-admin.js
 ```
 
-Default admin credentials:
-- **Username**: Administrator
-- **Password**: M@karom0863208235
+The script aborts if `ADMIN_PASSWORD` is not set, and re-running it never resets
+an existing admin's password (only the initial `create` sets it).
 
-⚠️ **Change these credentials immediately after first login!**
+⚠️ **Change this password after first login, and store it only in a secrets
+manager — never commit it.**
+
+🔒 **Security note**: An admin password was previously committed to this file.
+That password must be considered compromised and rotated immediately wherever it
+was used.
 
 ## 🚀 Running the Application
 

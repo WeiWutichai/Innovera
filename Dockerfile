@@ -44,6 +44,10 @@ ENV NODE_ENV production
 # Install OpenSSL for Prisma
 RUN apk add --no-cache openssl
 
+# Bake the Prisma CLI into the image at build time so the container does not
+# fetch it over the network on every boot (entrypoint runs `prisma migrate deploy`).
+RUN npm install -g prisma@5.22.0
+
 # Don't run as root
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
