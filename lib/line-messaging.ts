@@ -22,7 +22,19 @@ export function verifyLineSignature(body: string, signature: string): boolean {
         .update(body)
         .digest('base64');
 
-    return hash === signature;
+    try {
+        const hashBuffer = Buffer.from(hash);
+        const signatureBuffer = Buffer.from(signature);
+
+        // timingSafeEqual throws if buffers differ in length
+        if (hashBuffer.length !== signatureBuffer.length) {
+            return false;
+        }
+
+        return crypto.timingSafeEqual(hashBuffer, signatureBuffer);
+    } catch {
+        return false;
+    }
 }
 
 /**
@@ -44,6 +56,7 @@ export async function getLineUserProfile(userId: string): Promise<{
             headers: {
                 'Authorization': `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}`,
             },
+            signal: AbortSignal.timeout(10000),
         });
 
         if (!response.ok) {
@@ -81,6 +94,7 @@ export async function sendLinePushMessage(
                 to: userId,
                 messages: messages.slice(0, 5), // LINE allows max 5 messages
             }),
+            signal: AbortSignal.timeout(10000),
         });
 
         if (!response.ok) {
@@ -130,6 +144,7 @@ export async function sendLineMulticastMessage(
                     to: chunk,
                     messages: messages.slice(0, 5),
                 }),
+                signal: AbortSignal.timeout(10000),
             });
 
             if (!response.ok) {
