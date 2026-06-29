@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { requireUser, sessionUserId } from "@/lib/auth-helpers";
 
 export async function createNotification(data: {
     userId: number;
@@ -52,11 +53,10 @@ export async function markIssueNotificationsAsRead(issueId: string) {
 }
 
 export async function getUnreadCountsByProduct() {
-    const session = await auth();
-    if (!session || !session.user) return {};
+    const user = await requireUser();
 
     try {
-        const userId = parseInt(session.user.id!);
+        const userId = sessionUserId(user);
 
         const notifications = await prisma.notification.findMany({
             where: {
@@ -84,11 +84,10 @@ export async function getUnreadCountsByProduct() {
 }
 
 export async function markNotificationsAsRead(productId: string) {
-    const session = await auth();
-    if (!session || !session.user) return;
+    const user = await requireUser();
 
     try {
-        const userId = parseInt(session.user.id!);
+        const userId = sessionUserId(user);
         await prisma.notification.updateMany({
             where: {
                 userId: userId,

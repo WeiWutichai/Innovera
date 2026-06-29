@@ -2,51 +2,47 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
 import { Role } from "@prisma/client";
 import { sendApprovalEmail } from "@/lib/email";
+import { requireAdmin } from "@/lib/auth-helpers";
 
 export async function getPendingUsers() {
-    const session = await auth();
-    if (session?.user?.role !== 'ADMIN') {
-        throw new Error("Unauthorized");
-    }
+    await requireAdmin();
 
-    return await prisma.user.findMany({
+    const users = await prisma.user.findMany({
         where: { isApproved: false },
         orderBy: { createdAt: 'desc' }
     });
+
+    return users.map(({ password, ...rest }) => rest);
 }
 
 export async function getAllUsers() {
-    const session = await auth();
-    if (session?.user?.role !== 'ADMIN') {
-        throw new Error("Unauthorized");
-    }
+    await requireAdmin();
 
-    return await prisma.user.findMany({
+    const users = await prisma.user.findMany({
         orderBy: { createdAt: 'desc' },
         include: { products: true }
     });
+
+    return users.map(({ password, ...rest }) => rest);
 }
 
 export async function getUser(userId: number) {
-    const session = await auth();
-    if (session?.user?.role !== 'ADMIN') {
-        throw new Error("Unauthorized");
-    }
+    await requireAdmin();
 
-    return await prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
         where: { id: userId },
         include: { products: true }
     });
+
+    if (!user) return null;
+    const { password, ...rest } = user;
+    return rest;
 }
 
 export async function approveUser(userId: number) {
-    const session = await auth();
-    if (session?.user?.role !== 'ADMIN') {
-        throw new Error("Unauthorized");
-    }
+    await requireAdmin();
 
     const user = await prisma.user.update({
         where: { id: userId },
@@ -57,14 +53,12 @@ export async function approveUser(userId: number) {
     await sendApprovalEmail(user.email, user.name || 'User');
 
     revalidatePath('/admin/users');
-    return user;
+    const { password, ...rest } = user;
+    return rest;
 }
 
 export async function updateUserRole(userId: number, role: Role, canReportIssues: boolean) {
-    const session = await auth();
-    if (session?.user?.role !== 'ADMIN') {
-        throw new Error("Unauthorized");
-    }
+    await requireAdmin();
 
     const user = await prisma.user.update({
         where: { id: userId },
@@ -72,14 +66,12 @@ export async function updateUserRole(userId: number, role: Role, canReportIssues
     });
 
     revalidatePath('/admin/users');
-    return user;
+    const { password, ...rest } = user;
+    return rest;
 }
 
 export async function assignProductToUser(userId: number, productId: string) {
-    const session = await auth();
-    if (session?.user?.role !== 'ADMIN') {
-        throw new Error("Unauthorized");
-    }
+    await requireAdmin();
 
     const user = await prisma.user.update({
         where: { id: userId },
@@ -91,14 +83,12 @@ export async function assignProductToUser(userId: number, productId: string) {
     });
 
     revalidatePath('/admin/users');
-    return user;
+    const { password, ...rest } = user;
+    return rest;
 }
 
 export async function removeProductFromUser(userId: number, productId: string) {
-    const session = await auth();
-    if (session?.user?.role !== 'ADMIN') {
-        throw new Error("Unauthorized");
-    }
+    await requireAdmin();
 
     const user = await prisma.user.update({
         where: { id: userId },
@@ -110,14 +100,12 @@ export async function removeProductFromUser(userId: number, productId: string) {
     });
 
     revalidatePath('/admin/users');
-    return user;
+    const { password, ...rest } = user;
+    return rest;
 }
 
 export async function assignAllProductsToUser(userId: number) {
-    const session = await auth();
-    if (session?.user?.role !== 'ADMIN') {
-        throw new Error("Unauthorized");
-    }
+    await requireAdmin();
 
     const allProducts = await prisma.product.findMany({ select: { id: true } });
     const productIds = allProducts.map(p => ({ id: p.id }));
@@ -132,5 +120,6 @@ export async function assignAllProductsToUser(userId: number) {
     });
 
     revalidatePath('/admin/users');
-    return user;
+    const { password, ...rest } = user;
+    return rest;
 }

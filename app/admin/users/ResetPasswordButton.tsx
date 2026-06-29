@@ -31,8 +31,8 @@ export default function ResetPasswordButton({ userId, userEmail }: Props) {
     };
 
     const handleReset = () => {
-        if (newPassword.length < 6) {
-            setError("Password must be at least 6 characters");
+        if (newPassword.length < 8) {
+            setError("Password must be at least 8 characters");
             return;
         }
 
@@ -103,7 +103,7 @@ export default function ResetPasswordButton({ userId, userEmail }: Props) {
                                             type="password"
                                             value={newPassword}
                                             onChange={(e) => setNewPassword(e.target.value)}
-                                            placeholder="Min 6 characters"
+                                            placeholder="Min 8 characters"
                                             className="w-full bg-gray-50 border border-gray-200 text-gray-900 py-3 px-4 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-400"
                                             autoFocus
                                         />
@@ -118,7 +118,7 @@ export default function ResetPasswordButton({ userId, userEmail }: Props) {
                                         </button>
                                         <button
                                             onClick={handleReset}
-                                            disabled={isPending || newPassword.length < 6}
+                                            disabled={isPending || newPassword.length < 8}
                                             className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 px-4 font-bold rounded-xl hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-500/25 transition-all disabled:opacity-50 disabled:shadow-none active:scale-95"
                                         >
                                             {isPending ? "Resetting..." : "Update Password"}

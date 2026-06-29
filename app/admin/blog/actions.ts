@@ -1,16 +1,13 @@
 
 "use server";
 
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { requireAdmin, sessionUserId } from "@/lib/auth-helpers";
 
 export async function createPost(formData: FormData) {
-    const session = await auth();
-    if (!session || !session.user || (session.user as any).role !== "ADMIN") {
-        throw new Error("Unauthorized");
-    }
+    const user = await requireAdmin();
 
     const title = formData.get("title") as string;
     const slug = formData.get("slug") as string;
@@ -49,7 +46,7 @@ export async function createPost(formData: FormData) {
             metaDescription_th,
             metaKeywords_th,
             published: true, // Auto publish for now
-            authorId: Number(session.user.id),
+            authorId: sessionUserId(user),
         },
     });
 
@@ -58,10 +55,7 @@ export async function createPost(formData: FormData) {
 }
 
 export async function updatePost(postId: number, formData: FormData) {
-    const session = await auth();
-    if (!session || !session.user || (session.user as any).role !== "ADMIN") {
-        throw new Error("Unauthorized");
-    }
+    await requireAdmin();
 
     const title = formData.get("title") as string;
     const slug = formData.get("slug") as string;
@@ -108,10 +102,7 @@ export async function updatePost(postId: number, formData: FormData) {
 }
 
 export async function deletePost(postId: number) {
-    const session = await auth();
-    if (!session || !session.user || (session.user as any).role !== "ADMIN") {
-        throw new Error("Unauthorized");
-    }
+    await requireAdmin();
 
     await prisma.post.delete({
         where: { id: postId },
