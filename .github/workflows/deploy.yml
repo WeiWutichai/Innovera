@@ -12,11 +12,12 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # Manual approval gate: pushing to main starts this job but it PAUSES until a
-    # required reviewer approves in the GitHub "production" Environment, so a merge
-    # never reaches the VPS until env/secrets/TLS prep is confirmed.
-    environment:
-      name: production
+    # NOTE: the manual approval gate (GitHub "production" Environment) was removed
+    # because a single-reviewer gate deadlocks when the only reviewer is also the
+    # person who pushes (GitHub blocks self-approval). To re-enable a working gate,
+    # add a SECOND reviewer to the "production" environment and restore:
+    #   environment:
+    #     name: production
     steps:
       - name: Deploy via SSH
         # Supply-chain hardening: third-party action pinned to a full commit SHA
