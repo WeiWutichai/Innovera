@@ -12,6 +12,11 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Manual approval gate: pushing to main starts this job but it PAUSES until a
+    # required reviewer approves in the GitHub "production" Environment, so a merge
+    # never reaches the VPS until env/secrets/TLS prep is confirmed.
+    environment:
+      name: production
     steps:
       - name: Deploy via SSH
         # Supply-chain hardening: pin third-party actions to a full commit SHA
