@@ -5,16 +5,25 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
-    const email = 'admin@innovera.com';
-    const password = '123456';
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const email = process.env.ADMIN_EMAIL || 'admin@innovera.com';
+    const password = process.env.ADMIN_PASSWORD;
+
+    if (!password) {
+        console.error(
+            'ERROR: ADMIN_PASSWORD environment variable is required.\n' +
+            "Run with: ADMIN_PASSWORD='<strong-password>' node prisma/seed-admin.js"
+        );
+        process.exit(1);
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
 
     console.log('Seeding admin user...');
 
     const user = await prisma.user.upsert({
         where: { email },
+        // Do NOT reset the password on re-run; only ensure name/role.
         update: {
-            password: hashedPassword,
             name: 'Admin',
             role: 'ADMIN',
         },
@@ -23,6 +32,7 @@ async function main() {
             password: hashedPassword,
             name: 'Admin',
             role: 'ADMIN',
+            isApproved: true,
         },
     });
 

@@ -9,7 +9,9 @@ export class UsersService {
     }
 
     async findAll() {
-        return this.prisma.user.findMany();
+        // Never expose password hashes to callers.
+        const users = await this.prisma.user.findMany();
+        return users.map(({ password, ...rest }) => rest);
     }
 
     async create(name: string, email: string) {

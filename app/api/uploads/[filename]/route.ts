@@ -40,12 +40,21 @@ export async function GET(
             contentType = 'application/pdf';
         }
 
+        const headers: Record<string, string> = {
+            'Content-Type': contentType,
+            'Cache-Control': 'public, max-age=31536000, immutable',
+        };
+
+        // Images may render inline; force everything else (PDFs and the
+        // octet-stream fallback) to download so unexpected file types are not
+        // rendered in-origin.
+        if (!contentType.startsWith('image/')) {
+            headers['Content-Disposition'] = `attachment; filename="${filename}"`;
+        }
+
         return new NextResponse(fileBuffer, {
             status: 200,
-            headers: {
-                'Content-Type': contentType,
-                'Cache-Control': 'public, max-age=31536000, immutable',
-            },
+            headers,
         });
     } catch (error) {
         console.error('Error reading file:', error);

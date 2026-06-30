@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
+import { requireStaff } from "@/lib/auth-helpers";
 
 // ============ Categories ============
 
@@ -40,10 +40,7 @@ export async function getCategory(id: string) {
 }
 
 export async function createCategory(data: { name: string; productId: string; order?: number }) {
-    const session = await auth();
-    if (session?.user?.role !== 'ADMIN') {
-        throw new Error("Unauthorized");
-    }
+    await requireStaff();
 
     const category = await prisma.docCategory.create({
         data
@@ -55,10 +52,7 @@ export async function createCategory(data: { name: string; productId: string; or
 }
 
 export async function updateCategory(id: string, data: { name?: string; order?: number }) {
-    const session = await auth();
-    if (session?.user?.role !== 'ADMIN') {
-        throw new Error("Unauthorized");
-    }
+    await requireStaff();
 
     const category = await prisma.docCategory.update({
         where: { id },
@@ -71,10 +65,7 @@ export async function updateCategory(id: string, data: { name?: string; order?: 
 }
 
 export async function deleteCategory(id: string) {
-    const session = await auth();
-    if (session?.user?.role !== 'ADMIN') {
-        throw new Error("Unauthorized");
-    }
+    await requireStaff();
 
     const category = await prisma.docCategory.delete({
         where: { id }
@@ -99,10 +90,7 @@ export async function getSubcategory(id: string) {
 }
 
 export async function createSubcategory(data: { name: string; categoryId: string; order?: number }) {
-    const session = await auth();
-    if (session?.user?.role !== 'ADMIN') {
-        throw new Error("Unauthorized");
-    }
+    await requireStaff();
 
     const subcategory = await prisma.docSubcategory.create({
         data,
@@ -115,10 +103,7 @@ export async function createSubcategory(data: { name: string; categoryId: string
 }
 
 export async function updateSubcategory(id: string, data: { name?: string; order?: number }) {
-    const session = await auth();
-    if (session?.user?.role !== 'ADMIN') {
-        throw new Error("Unauthorized");
-    }
+    await requireStaff();
 
     const subcategory = await prisma.docSubcategory.update({
         where: { id },
@@ -132,10 +117,7 @@ export async function updateSubcategory(id: string, data: { name?: string; order
 }
 
 export async function deleteSubcategory(id: string) {
-    const session = await auth();
-    if (session?.user?.role !== 'ADMIN') {
-        throw new Error("Unauthorized");
-    }
+    await requireStaff();
 
     const subcategory = await prisma.docSubcategory.delete({
         where: { id },

@@ -1,26 +1,38 @@
 import NextAuth from "next-auth"
-import { Role } from "@prisma/client"
 import Credentials from "next-auth/providers/credentials"
-import Google from "next-auth/providers/google"
-import { compare } from "bcryptjs"
+import { compare, hash } from "bcryptjs"
 import { prisma } from "@/lib/prisma"
+import { BCRYPT_ROUNDS } from "@/lib/constants"
+import { rateLimit, getClientIp } from "@/lib/rate-limit"
+import { authConfig } from "@/auth.config"
+
+// Precompute a dummy hash once at startup so failed logins for a non-existent
+// user take the same time as a real bcrypt comparison (defeats user
+// enumeration via timing).
+const DUMMY_HASH = hash("invalid-account-timing-equalizer", BCRYPT_ROUNDS)
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+    ...authConfig,
     providers: [
-        Google({
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        }),
+        ...authConfig.providers,
         Credentials({
             credentials: {
                 email: {},
                 password: {},
             },
-            authorize: async (credentials) => {
+            authorize: async (credentials, request) => {
                 const email = credentials?.email as string
                 const password = credentials?.password as string
 
                 if (!email || !password) {
+                    return null
+                }
+
+                // Rate limit by IP + email to slow brute force / credential stuffing.
+                const ip = getClientIp(request as Request)
+                const rl = rateLimit(`login:${ip}:${email.toLowerCase()}`, 5, 15 * 60 * 1000)
+                if (!rl.success) {
+                    // Treat as invalid credentials (generic) to avoid leaking the lockout.
                     return null
                 }
 
@@ -29,6 +41,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 })
 
                 if (!user || !user.password) {
+                    // Equalize timing for unknown accounts.
+                    await compare(password, await DUMMY_HASH)
                     return null
                 }
 
@@ -50,86 +64,93 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             },
         }),
     ],
-    pages: {
-        signIn: "/login",
-    },
     callbacks: {
+        ...authConfig.callbacks,
         async jwt({ token, user, account }) {
+            // On initial sign-in, resolve the canonical DATABASE user id.
             if (account && user) {
-                // Persist the OAuth access_token to the token right after signin
-                // Save user to database if google login
-                if (account.provider === 'google') {
-                    const existingUser = await prisma.user.findUnique({ where: { email: user.email! } })
-                    if (!existingUser) {
-                        await prisma.user.create({
-                            data: {
-                                email: user.email!,
-                                name: user.name,
-                                image: user.image,
-                                accounts: {
-                                    create: {
-                                        type: account.type,
-                                        provider: account.provider,
-                                        providerAccountId: account.providerAccountId,
-                                        access_token: account.access_token,
-                                        token_type: account.token_type,
-                                        scope: account.scope,
-                                        id_token: account.id_token
-                                    }
-                                }
-                            }
-                        })
-                        token.role = "USER"
-                        token.isApproved = false
-                        token.canReportIssues = false
-                    } else {
-                        token.role = existingUser.role
-                        token.isApproved = existingUser.isApproved
-                        token.canReportIssues = existingUser.canReportIssues
-                    }
+                if (account.provider === "google") {
+                    // user.id from Google is the OAuth profile id, NOT our DB id.
+                    // Look up the DB row (created in the signIn callback) by email.
+                    const dbUser = await prisma.user.findUnique({
+                        where: { email: user.email! },
+                        select: { id: true },
+                    })
+                    if (dbUser) token.id = String(dbUser.id)
                 } else {
-                    token.role = user.role
-                    token.isApproved = user.isApproved
-                    token.canReportIssues = user.canReportIssues
+                    // Credentials: user.id is already String(dbUser.id).
+                    token.id = user.id
                 }
-
-                // Block sign in if not approved (except for existing Google users who might be auto-approved or handled differently? 
-                // For now, let's enforce approval for everyone newly logging in or existing users)
-                // Actually, if we return false/throw error here, it might be better?
-                // But signIn callback is where we usually block.
-                // Let's use the `signIn` callback for blocking.
-                token.id = user.id
             }
+
+            // On EVERY request, re-read authorization claims from the DB so that
+            // role changes, approval, and de-provisioning take effect immediately
+            // (the JWT is not a frozen snapshot of privileges). Runs only in the
+            // Node runtime; the Edge middleware uses auth.config.ts (no DB).
+            if (token.id) {
+                const dbUser = await prisma.user.findUnique({
+                    where: { id: Number(token.id) },
+                    select: { role: true, isApproved: true, canReportIssues: true },
+                })
+                if (!dbUser) {
+                    // User was deleted — invalidate the session.
+                    return null
+                }
+                token.role = dbUser.role
+                token.isApproved = dbUser.isApproved
+                token.canReportIssues = dbUser.canReportIssues
+            }
+
             return token
         },
-        async session({ session, token }) {
-            if (token?.id) {
-                session.user.id = String(token.id)
-                session.user.role = token.role as Role
-                session.user.isApproved = token.isApproved as boolean
-                session.user.canReportIssues = token.canReportIssues as boolean
-            }
-            return session
-        },
         async signIn({ user, account }) {
-            if (!user?.email) return true;
+            // Google: create the DB user on first sign-in (unapproved), then
+            // block until an admin approves. This must happen HERE because the
+            // jwt callback does not run when signIn returns false.
+            if (account?.provider === "google") {
+                if (!user?.email) return false
 
-            // Fetch user from DB to check approval status
-            const dbUser = await prisma.user.findUnique({ where: { email: user.email } });
+                const dbUser = await prisma.user.findUnique({ where: { email: user.email } })
 
-            if (account?.provider === 'google' && !dbUser) {
-                // New Google user — will be created in jwt callback with isApproved: false
-                // Block sign-in until admin approves
-                return false;
+                if (!dbUser) {
+                    await prisma.user.create({
+                        data: {
+                            email: user.email,
+                            name: user.name,
+                            image: user.image,
+                            isApproved: false,
+                            accounts: {
+                                create: {
+                                    type: account.type,
+                                    provider: account.provider,
+                                    providerAccountId: account.providerAccountId,
+                                    access_token: account.access_token,
+                                    token_type: account.token_type,
+                                    scope: account.scope,
+                                    id_token: account.id_token,
+                                },
+                            },
+                        },
+                    })
+                    // New account — pending approval.
+                    return false
+                }
+
+                if (dbUser.role === "ADMIN" || dbUser.role === "OWNER") return true
+                return dbUser.isApproved
             }
 
-            if (dbUser) {
-                // Allow admins always; block unapproved users
-                if (dbUser.role === 'ADMIN' || dbUser.role === 'OWNER') return true;
-                if (!dbUser.isApproved) return false;
+            // Credentials: authorize() already verified the password; enforce
+            // the approval gate against the live DB state.
+            if (account?.provider === "credentials") {
+                if (!user?.email) return false
+                const dbUser = await prisma.user.findUnique({ where: { email: user.email } })
+                if (!dbUser) return false
+                if (dbUser.role === "ADMIN" || dbUser.role === "OWNER") return true
+                return dbUser.isApproved
             }
 
-            return true;
-        }
+            return true
+        },
     },
 })

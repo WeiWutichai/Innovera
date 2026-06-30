@@ -5,6 +5,9 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { createNotification, markIssueNotificationsAsRead } from "./notification";
 import { sendLineMulticastMessage, createIssueNotification } from "@/lib/line-messaging";
+import { requireUser, requireStaff, requireAdmin, isStaff, sessionUserId } from "@/lib/auth-helpers";
+import { ISSUE_STATUS_VALUES } from "@/lib/constants";
+import { issueCommentSchema, issueCreateSchema } from "@/lib/validation";
 
 // Helper to send LINE notifications to product-assigned LINE users
 async function sendLineNotificationForIssue(
@@ -53,6 +56,26 @@ async function sendLineNotificationForIssue(
     }
 }
 
+// Builds the data payload for an IssueActivity row. Used both standalone
+// (prisma.issueActivity.create) and inside transactions (tx.issueActivity.create)
+// so the audit log can be written atomically with the status mutation it records.
+function buildActivity(data: {
+    issueId: string;
+    userId?: number;
+    actorName?: string;
+    type: string;
+    description: string;
+}) {
+    return {
+        issueId: data.issueId,
+        userId: data.userId,
+        actorName: data.actorName,
+        type: data.type,
+        description: data.description,
+    };
+}
+
+// Standalone activity log (non-transactional call sites).
 async function logActivity(data: {
     issueId: string;
     userId?: number;
@@ -60,101 +83,81 @@ async function logActivity(data: {
     type: string;
     description: string;
 }) {
-    // Using nested write to avoid direct accessor issues
-    return await prisma.issue.update({
-        where: { id: data.issueId },
-        data: {
-            activities: {
-                create: {
-                    userId: data.userId,
-                    actorName: data.actorName,
-                    type: data.type,
-                    description: data.description,
-                }
-            }
-        } as any
+    return await prisma.issueActivity.create({ data: buildActivity(data) });
+}
+
+// Display name used in activity descriptions.
+function actorLabel(user: { name?: string | null; email?: string | null }): string {
+    return user.name || user.email || 'Unknown';
+}
+
+// True if the product with `productId` has an owner (UserProducts M2M) matching `userId`.
+async function ownsProduct(userId: number, productId: string | null): Promise<boolean> {
+    if (!productId) return false;
+    const product = await prisma.product.findFirst({
+        where: { id: productId, owners: { some: { id: userId } } },
+        select: { id: true },
     });
+    return !!product;
 }
 
 export async function getIssues(productId?: string) {
-    const session = await auth();
-    if (!session?.user) {
-        throw new Error("Unauthorized");
-    }
+    const user = await requireUser();
+    const self = sessionUserId(user);
 
-    // ADMIN and OWNER see all issues for the product
-    // Regular users only see their own issues
-    const userRole = session.user.role;
-    const isOwnerOrAdmin = userRole === 'ADMIN' || userRole === 'OWNER';
-
-    console.log('[getIssues] User role:', userRole, 'isOwnerOrAdmin:', isOwnerOrAdmin);
-
-    let issues;
-    if (isOwnerOrAdmin) {
-        // Admin/Owner sees all issues
-        issues = await prisma.issue.findMany({
-            include: {
-                user: { select: { name: true, email: true } },
-            },
-            orderBy: { createdAt: 'desc' }
-        });
-    } else {
-        // Regular user sees only their own issues
-        issues = await prisma.issue.findMany({
-            where: {
-                userId: parseInt(session.user.id),
-            },
-            include: {
-                user: { select: { name: true, email: true } },
-            },
-            orderBy: { createdAt: 'desc' }
-        });
-    }
-
-    // Manual relation stitching (workaround)
-    const products = await prisma.product.findMany({
-        select: { id: true, name: true }
-    });
-
-    let mappedIssues = issues.map(issue => ({
-        ...issue,
-        product: products.find(p => p.id === (issue as any).productId) || null
-    }));
-
-    // In-memory filter for productId
+    // Scope the query by role at the database layer (no in-memory filtering):
+    // - ADMIN: every issue
+    // - OWNER: only issues for products they own
+    // - regular user: only their own issues
+    const where: any = {};
     if (productId) {
-        mappedIssues = mappedIssues.filter(issue => (issue as any).productId === productId);
+        where.productId = productId;
+    }
+    if (user.role === 'ADMIN') {
+        // No extra constraint - admins see everything.
+    } else if (user.role === 'OWNER') {
+        where.product = { owners: { some: { id: self } } };
+    } else {
+        where.userId = self;
     }
 
-    return mappedIssues;
+    return await prisma.issue.findMany({
+        where,
+        include: {
+            user: { select: { name: true, email: true } },
+            product: { select: { id: true, name: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+    });
 }
 
 
 export async function createIssue(data: { title: string; description: string; productId?: string; imageUrls?: string[] }) {
-    const session = await auth();
-    if (!session?.user) {
-        throw new Error("Unauthorized");
-    }
+    const user = await requireUser();
 
-    if (!session.user.canReportIssues && session.user.role !== 'ADMIN') {
+    if (!user.canReportIssues && user.role !== 'ADMIN') {
         throw new Error("Permission denied. You need approval to report issues.");
     }
+
+    // Validate untrusted input (length limits, array bounds, etc.).
+    const parsed = issueCreateSchema.parse(data);
+    const selfId = sessionUserId(user);
 
     try {
         // 1. Create Issue without images first (to check if basic create works)
         const newIssue = await prisma.issue.create({
             data: {
-                title: data.title,
-                description: data.description,
-                userId: parseInt(session.user.id),
-                productId: data.productId,
+                title: parsed.title,
+                description: parsed.description,
+                userId: selfId,
+                productId: parsed.productId,
             }
         });
 
         // 2. Create Images if any
-        if (data.imageUrls && data.imageUrls.length > 0) {
+        if (parsed.imageUrls && parsed.imageUrls.length > 0) {
             await prisma.issueImage.createMany({
-                data: data.imageUrls.map(url => ({
+                data: parsed.imageUrls.map(url => ({
                     url,
                     issueId: newIssue.id
                 }))
@@ -164,59 +167,65 @@ export async function createIssue(data: { title: string; description: string; pr
         // 3. Log Activity
         await logActivity({
             issueId: newIssue.id,
-            userId: parseInt(session.user.id),
-            actorName: (session.user.name || session.user.email || 'Unknown'),
+            userId: selfId,
+            actorName: actorLabel(user),
             type: 'CREATED',
             description: `Issue created: ${newIssue.title}`
         });
 
         // Notify product owners and admins
-        if (data.productId) {
+        if (parsed.productId) {
             const product = await prisma.product.findUnique({
-                where: { id: data.productId },
+                where: { id: parsed.productId },
                 include: { owners: true }
             });
 
             const admins = await prisma.user.findMany({
-                where: { role: 'ADMIN' }
+                where: { role: 'ADMIN' },
+                select: { id: true },
             });
 
-            // Combine owners and admins, remove duplicates and current user
-            const currentUserId = parseInt(session.user.id);
-            const notifyUsers = new Map<number, { id: number }>();
+            // De-dupe owners + admins, excluding the creator.
+            const notifyIds = new Set<number>();
+            product?.owners?.forEach(owner => notifyIds.add(owner.id));
+            admins.forEach(admin => notifyIds.add(admin.id));
+            notifyIds.delete(selfId);
 
-            if (product && product.owners) {
-                product.owners.forEach(owner => notifyUsers.set(owner.id, owner));
-            }
-            admins.forEach(admin => notifyUsers.set(admin.id, admin));
-
-            // Remove current user (creator)
-            notifyUsers.delete(currentUserId);
-
-            for (const user of notifyUsers.values()) {
-                await createNotification({
-                    userId: user.id,
-                    productId: data.productId,
-                    issueId: newIssue.id,
-                    type: "ISSUE_CREATED",
-                    title: "New Issue Reported",
-                    message: `New issue "${data.title}" reported for ${product?.name || 'Product'}`,
-                    link: `/community/issues/view/${newIssue.id}`
-                });
+            // Batch the notifications in a single insert (was an N+1 loop of
+            // createNotification). createNotification only adds a redundant
+            // session check + per-row error swallow, so a guarded createMany is
+            // equivalent and keeps notification failures from breaking creation.
+            if (notifyIds.size > 0) {
+                try {
+                    await prisma.notification.createMany({
+                        data: Array.from(notifyIds).map(uid => ({
+                            userId: uid,
+                            productId: parsed.productId,
+                            issueId: newIssue.id,
+                            type: "ISSUE_CREATED",
+                            title: "New Issue Reported",
+                            message: `New issue "${parsed.title}" reported for ${product?.name || 'Product'}`,
+                            link: `/community/issues/view/${newIssue.id}`,
+                            isRead: false,
+                        })),
+                    });
+                } catch (err) {
+                    console.error("Failed to create issue notifications:", err);
+                }
             }
         }
 
         revalidatePath("/community/issues");
-        if (data.productId) {
-            revalidatePath(`/community/issues/product/${data.productId}`);
+        if (parsed.productId) {
+            revalidatePath(`/community/issues/product/${parsed.productId}`);
         }
 
         // Send LINE notification
         await sendLineNotificationForIssue('create', {
             id: newIssue.id,
             title: newIssue.title,
-            productId: data.productId,
-        }, session.user.name || session.user.email || undefined);
+            productId: parsed.productId,
+        }, user.name || user.email || undefined);
 
         return newIssue;
     } catch (error: any) {
@@ -226,23 +235,30 @@ export async function createIssue(data: { title: string; description: string; pr
 }
 
 export async function updateIssueStatus(id: string, status: string) {
-    const session = await auth();
-    if (session?.user?.role !== 'ADMIN') {
-        throw new Error("Unauthorized");
+    const user = await requireAdmin();
+
+    // Validate the status against the allowed user-facing values.
+    if (!ISSUE_STATUS_VALUES.includes(status)) {
+        throw new Error(`Invalid status: ${status}`);
     }
 
-    const issue = await prisma.issue.update({
-        where: { id },
-        data: { status }
-    });
-
-    await logActivity({
-        issueId: id,
-        userId: parseInt(session.user.id),
-        actorName: (session.user.name || session.user.email || 'Unknown'),
-        type: 'STATUS_CHANGE',
-        description: `Issue status updated to ${status}`
-    });
+    // Atomic: status mutation + activity log share one transaction so the
+    // audit trail cannot diverge from the issue state.
+    const [issue] = await prisma.$transaction([
+        prisma.issue.update({
+            where: { id },
+            data: { status },
+        }),
+        prisma.issueActivity.create({
+            data: buildActivity({
+                issueId: id,
+                userId: sessionUserId(user),
+                actorName: actorLabel(user),
+                type: 'STATUS_CHANGE',
+                description: `Issue status updated to ${status}`,
+            }),
+        }),
+    ]);
 
     revalidatePath('/community/issues');
     return issue;
@@ -271,8 +287,18 @@ export async function getIssueById(id: string) {
         throw new Error("Issue not found");
     }
 
-    const isOwner = session.user.role === 'OWNER' || session.user.role === 'ADMIN';
-    if (!isOwner && issue.userId !== parseInt(session.user.id)) {
+    // Authorization: ADMIN sees any issue; OWNER only issues for products they
+    // own (or that they reported); regular users only their own.
+    const role = session.user.role;
+    const selfId = parseInt(session.user.id);
+    if (role === 'ADMIN') {
+        // admins can view any issue
+    } else if (role === 'OWNER') {
+        const owns = issue.productId ? await ownsProduct(selfId, issue.productId) : false;
+        if (!owns && issue.userId !== selfId) {
+            throw new Error("Unauthorized");
+        }
+    } else if (issue.userId !== selfId) {
         throw new Error("Unauthorized");
     }
 
@@ -298,152 +324,175 @@ export async function getIssueById(id: string) {
 }
 
 export async function acceptIssue(id: string) {
-    const session = await auth();
-    if (!session?.user) throw new Error("Unauthorized");
+    const user = await requireStaff();
 
-    const isOwner = session.user.role === 'OWNER' || session.user.role === 'ADMIN';
-    if (!isOwner) throw new Error("Only Owners can accept issues");
-
-    const issue = await prisma.issue.update({
+    const existingIssue = await prisma.issue.findUnique({
         where: { id },
-        data: { supportStatus: 'IN_PROGRESS' }
+        select: { id: true, title: true, productId: true, userId: true },
     });
+    if (!existingIssue) throw new Error("Issue not found");
 
-    await logActivity({
-        issueId: id,
-        userId: parseInt(session.user.id),
-        actorName: (session.user.name || session.user.email || 'Unknown'),
-        type: 'STATUS_CHANGE',
-        description: `Issue accepted by support. Support status: IN_PROGRESS`
-    });
+    // OWNER is scoped to products they own; ADMIN is global.
+    if (user.role !== 'ADMIN' && !(await ownsProduct(sessionUserId(user), existingIssue.productId))) {
+        throw new Error("Unauthorized");
+    }
+
+    // Atomic: status mutation + activity log.
+    const [issue] = await prisma.$transaction([
+        prisma.issue.update({
+            where: { id },
+            data: { supportStatus: 'IN_PROGRESS' },
+        }),
+        prisma.issueActivity.create({
+            data: buildActivity({
+                issueId: id,
+                userId: sessionUserId(user),
+                actorName: actorLabel(user),
+                type: 'STATUS_CHANGE',
+                description: `Issue accepted by support. Support status: IN_PROGRESS`,
+            }),
+        }),
+    ]);
+
+    // --- side effects (kept outside the transaction) ---
 
     // Clear previous notifications (e.g. New Issue Reported) for the owner
     await markIssueNotificationsAsRead(id);
 
-    // Fetch issue details for notification
-    const updatedIssue = await prisma.issue.findUnique({ where: { id } });
-    if (updatedIssue) {
-        await createNotification({
-            userId: updatedIssue.userId,
-            productId: updatedIssue.productId || undefined,
-            issueId: id,
-            type: "ISSUE_STATUS_UPDATE",
-            title: "Issue Accepted",
-            message: `Your issue "${updatedIssue.title}" has been accepted and is now In Progress.`,
-            link: `/community/issues/view/${id}`
-        });
-    }
+    await createNotification({
+        userId: existingIssue.userId,
+        productId: existingIssue.productId || undefined,
+        issueId: id,
+        type: "ISSUE_STATUS_UPDATE",
+        title: "Issue Accepted",
+        message: `Your issue "${existingIssue.title}" has been accepted and is now In Progress.`,
+        link: `/community/issues/view/${id}`
+    });
 
     revalidatePath('/community/issues');
 
     // Send LINE notification for accept
-    const issueForLine = await prisma.issue.findUnique({ where: { id }, select: { id: true, title: true, productId: true } });
-    if (issueForLine) {
-        await sendLineNotificationForIssue('accept', issueForLine, session.user.name || session.user.email || undefined);
-    }
+    await sendLineNotificationForIssue('accept', {
+        id: existingIssue.id,
+        title: existingIssue.title,
+        productId: existingIssue.productId,
+    }, user.name || user.email || undefined);
 
     return issue;
 }
 
 export async function completeIssue(id: string, data?: { message?: string; imageUrls?: string[] }) {
-    const session = await auth();
-    if (!session?.user) throw new Error("Unauthorized");
+    const user = await requireStaff();
 
-    const isOwner = session.user.role === 'OWNER' || session.user.role === 'ADMIN';
-    if (!isOwner) throw new Error("Only Owners can complete issues");
-
-    const issue = await prisma.issue.update({
+    const existingIssue = await prisma.issue.findUnique({
         where: { id },
-        data: {
-            supportStatus: 'COMPLETE',
-            status: 'PENDING_REVIEW'
-        }
+        select: { id: true, title: true, productId: true, userId: true },
     });
+    if (!existingIssue) throw new Error("Issue not found");
 
-    // Save resolution comment if message provided
-    if (data?.message) {
-        const comment = await prisma.issueComment.create({
+    // OWNER is scoped to products they own; ADMIN is global.
+    if (user.role !== 'ADMIN' && !(await ownsProduct(sessionUserId(user), existingIssue.productId))) {
+        throw new Error("Unauthorized");
+    }
+
+    // Atomic: status mutation + optional resolution comment (+ images) + activity
+    // log share one interactive transaction (the comment images depend on the
+    // generated comment id, so an array transaction is not sufficient here).
+    const issue = await prisma.$transaction(async (tx) => {
+        const updated = await tx.issue.update({
+            where: { id },
             data: {
-                content: data.message,
-                type: 'COMPLETE',
-                issueId: id,
-                userId: parseInt(session.user.id),
-            }
+                supportStatus: 'COMPLETE',
+                status: 'PENDING_REVIEW',
+            },
         });
 
-        if (data.imageUrls && data.imageUrls.length > 0) {
-            for (const url of data.imageUrls) {
-                await prisma.issueCommentImage.create({
-                    data: {
-                        url,
-                        commentId: comment.id
-                    }
+        // Save resolution comment if message provided
+        if (data?.message) {
+            const comment = await tx.issueComment.create({
+                data: {
+                    content: data.message,
+                    type: 'COMPLETE',
+                    issueId: id,
+                    userId: sessionUserId(user),
+                },
+            });
+
+            if (data.imageUrls && data.imageUrls.length > 0) {
+                await tx.issueCommentImage.createMany({
+                    data: data.imageUrls.map(url => ({ url, commentId: comment.id })),
                 });
             }
         }
-    }
 
-    await logActivity({
-        issueId: id,
-        userId: parseInt(session.user.id),
-        actorName: (session.user.name || session.user.email || 'Unknown'),
-        type: 'STATUS_CHANGE',
-        description: `Issue marked as complete by support.${data?.message ? ` Note: ${data.message.substring(0, 50)}${data.message.length > 50 ? '...' : ''}` : ''}`
+        await tx.issueActivity.create({
+            data: buildActivity({
+                issueId: id,
+                userId: sessionUserId(user),
+                actorName: actorLabel(user),
+                type: 'STATUS_CHANGE',
+                description: `Issue marked as complete by support.${data?.message ? ` Note: ${data.message.substring(0, 50)}${data.message.length > 50 ? '...' : ''}` : ''}`,
+            }),
+        });
+
+        return updated;
     });
+
+    // --- side effects (kept outside the transaction) ---
 
     // Clear previous notifications (e.g. New Issue for owner)
     await markIssueNotificationsAsRead(id);
 
-    // Fetch issue details for notification
-    const updatedIssue = await prisma.issue.findUnique({ where: { id } });
-    if (updatedIssue) {
-        await createNotification({
-            userId: updatedIssue.userId,
-            productId: updatedIssue.productId || undefined,
-            issueId: id,
-            type: "ISSUE_COMPLETE",
-            title: "Issue Completed",
-            message: `Support has marked your issue "${updatedIssue.title}" as Complete. Please review the fix.`,
-            link: `/community/issues/view/${id}`
-        });
-    }
+    await createNotification({
+        userId: existingIssue.userId,
+        productId: existingIssue.productId || undefined,
+        issueId: id,
+        type: "ISSUE_COMPLETE",
+        title: "Issue Completed",
+        message: `Support has marked your issue "${existingIssue.title}" as Complete. Please review the fix.`,
+        link: `/community/issues/view/${id}`
+    });
 
     revalidatePath('/community/issues');
 
     // Send LINE notification for complete
-    const issueForLine = await prisma.issue.findUnique({ where: { id }, select: { id: true, title: true, productId: true } });
-    if (issueForLine) {
-        await sendLineNotificationForIssue('complete', issueForLine, session.user.name || session.user.email || undefined);
-    }
+    await sendLineNotificationForIssue('complete', {
+        id: existingIssue.id,
+        title: existingIssue.title,
+        productId: existingIssue.productId,
+    }, user.name || user.email || undefined);
 
     return issue;
 }
 
 export async function closeIssue(id: string) {
-    const session = await auth();
-    if (!session?.user) throw new Error("Unauthorized");
+    const user = await requireUser();
 
     const existingIssue = await prisma.issue.findUnique({ where: { id } });
     if (!existingIssue) throw new Error("Issue not found");
-    if (existingIssue.userId !== parseInt(session.user.id) && session.user.role !== 'ADMIN') {
+    if (existingIssue.userId !== sessionUserId(user) && user.role !== 'ADMIN') {
         throw new Error("Unauthorized");
     }
 
-    const issue = await prisma.issue.update({
-        where: { id },
-        data: {
-            status: 'CLOSED',
-            supportStatus: 'COMPLETED'
-        }
-    });
-
-    await logActivity({
-        issueId: id,
-        userId: parseInt(session.user.id),
-        actorName: (session.user.name || session.user.email || 'Unknown'),
-        type: 'STATUS_CHANGE',
-        description: `Issue closed and accepted by user.`
-    });
+    // Atomic: status mutation + activity log.
+    const [issue] = await prisma.$transaction([
+        prisma.issue.update({
+            where: { id },
+            data: {
+                status: 'CLOSED',
+                supportStatus: 'COMPLETED',
+            },
+        }),
+        prisma.issueActivity.create({
+            data: buildActivity({
+                issueId: id,
+                userId: sessionUserId(user),
+                actorName: actorLabel(user),
+                type: 'STATUS_CHANGE',
+                description: `Issue closed and accepted by user.`,
+            }),
+        }),
+    ]);
 
     // Clear all notifications for this issue as it is closed
     await markIssueNotificationsAsRead(id);
@@ -477,36 +526,39 @@ export async function closeIssue(id: string) {
         id,
         title: existingIssue.title,
         productId: existingIssue.productId,
-    }, session.user.name || session.user.email || undefined);
+    }, user.name || user.email || undefined);
 
     return issue;
 }
 
 export async function rejectIssue(id: string) {
-    const session = await auth();
-    if (!session?.user) throw new Error("Unauthorized");
+    const user = await requireUser();
 
     const existingIssue = await prisma.issue.findUnique({ where: { id } });
     if (!existingIssue) throw new Error("Issue not found");
-    if (existingIssue.userId !== parseInt(session.user.id) && session.user.role !== 'ADMIN') {
+    if (existingIssue.userId !== sessionUserId(user) && user.role !== 'ADMIN') {
         throw new Error("Unauthorized");
     }
 
-    const issue = await prisma.issue.update({
-        where: { id },
-        data: {
-            status: 'REJECTED',
-            supportStatus: 'REJECTED'
-        }
-    });
-
-    await logActivity({
-        issueId: id,
-        userId: parseInt(session.user.id),
-        actorName: (session.user.name || session.user.email || 'Unknown'),
-        type: 'STATUS_CHANGE',
-        description: `Issue rejected by user with feedback.`
-    });
+    // Atomic: status mutation + activity log.
+    const [issue] = await prisma.$transaction([
+        prisma.issue.update({
+            where: { id },
+            data: {
+                status: 'REJECTED',
+                supportStatus: 'REJECTED',
+            },
+        }),
+        prisma.issueActivity.create({
+            data: buildActivity({
+                issueId: id,
+                userId: sessionUserId(user),
+                actorName: actorLabel(user),
+                type: 'STATUS_CHANGE',
+                description: `Issue rejected by user with feedback.`,
+            }),
+        }),
+    ]);
 
     // Clear user's "Complete" notification
     await markIssueNotificationsAsRead(id);
@@ -541,33 +593,44 @@ export async function rejectIssue(id: string) {
         id,
         title: existingIssue.title,
         productId: existingIssue.productId,
-    }, session.user.name || session.user.email || undefined);
+    }, user.name || user.email || undefined);
 
     return issue;
 }
 
 export async function resubmitIssue(id: string) {
-    const session = await auth();
-    if (!session?.user) throw new Error("Unauthorized");
+    const user = await requireStaff();
 
-    const isOwner = session.user.role === 'OWNER' || session.user.role === 'ADMIN';
-    if (!isOwner) throw new Error("Only Owners can resubmit issues");
-
-    const issue = await prisma.issue.update({
+    const existingIssue = await prisma.issue.findUnique({
         where: { id },
-        data: {
-            supportStatus: 'COMPLETE',
-            status: 'PENDING_REVIEW'
-        }
+        select: { id: true, productId: true },
     });
+    if (!existingIssue) throw new Error("Issue not found");
 
-    await logActivity({
-        issueId: id,
-        userId: parseInt(session.user.id),
-        actorName: (session.user.name || session.user.email || 'Unknown'),
-        type: 'STATUS_CHANGE',
-        description: `Issue resubmitted by support after fix.`
-    });
+    // OWNER is scoped to products they own; ADMIN is global.
+    if (user.role !== 'ADMIN' && !(await ownsProduct(sessionUserId(user), existingIssue.productId))) {
+        throw new Error("Unauthorized");
+    }
+
+    // Atomic: status mutation + activity log.
+    const [issue] = await prisma.$transaction([
+        prisma.issue.update({
+            where: { id },
+            data: {
+                supportStatus: 'COMPLETE',
+                status: 'PENDING_REVIEW',
+            },
+        }),
+        prisma.issueActivity.create({
+            data: buildActivity({
+                issueId: id,
+                userId: sessionUserId(user),
+                actorName: actorLabel(user),
+                type: 'STATUS_CHANGE',
+                description: `Issue resubmitted by support after fix.`,
+            }),
+        }),
+    ]);
 
     revalidatePath('/community/issues');
     return issue;
@@ -579,72 +642,78 @@ export async function addIssueComment(data: {
     type: 'REJECTION' | 'RESUBMIT' | 'COMPLETE';
     imageUrls?: string[];
 }) {
-    const session = await auth();
-    if (!session?.user) throw new Error("Unauthorized");
+    const user = await requireUser();
+
+    // Validate untrusted input (content length + type allowlist).
+    const parsed = issueCommentSchema.parse(data);
+    const self = sessionUserId(user);
+
+    // Load the issue (with product owners) for authorization.
+    const issue = await prisma.issue.findUnique({
+        where: { id: parsed.issueId },
+        include: { product: { include: { owners: true } } }
+    });
+    if (!issue) throw new Error("Issue not found");
+
+    // Authorize: the reporter, an ADMIN, or an OWNER of this product may comment.
+    const isReporter = issue.userId === self;
+    const isAdmin = user.role === 'ADMIN';
+    const isOwnerOfProduct = user.role === 'OWNER'
+        && (issue.product?.owners?.some(owner => owner.id === self) ?? false);
+    if (!isReporter && !isAdmin && !isOwnerOfProduct) {
+        throw new Error("Unauthorized");
+    }
 
     const comment = await prisma.issueComment.create({
         data: {
-            content: data.content,
-            type: data.type,
-            issueId: data.issueId,
-            userId: parseInt(session.user.id),
+            content: parsed.content,
+            type: parsed.type,
+            issueId: parsed.issueId,
+            userId: self,
         }
     });
 
-    if (data.imageUrls && data.imageUrls.length > 0) {
-        for (const url of data.imageUrls) {
-            await prisma.issueCommentImage.create({
-                data: {
-                    url,
-                    commentId: comment.id
-                }
-            });
-        }
+    if (parsed.imageUrls && parsed.imageUrls.length > 0) {
+        await prisma.issueCommentImage.createMany({
+            data: parsed.imageUrls.map(url => ({ url, commentId: comment.id })),
+        });
     }
 
     await logActivity({
-        issueId: data.issueId,
-        userId: parseInt(session.user.id),
-        actorName: (session.user.name || session.user.email || 'Unknown'),
+        issueId: parsed.issueId,
+        userId: self,
+        actorName: actorLabel(user),
         type: 'COMMENTED',
-        description: `Added a ${data.type.toLowerCase()} comment: ${data.content.substring(0, 50)}${data.content.length > 50 ? '...' : ''}`
+        description: `Added a ${parsed.type.toLowerCase()} comment: ${parsed.content.substring(0, 50)}${parsed.content.length > 50 ? '...' : ''}`
     });
 
     // Notify the other party
-    const issue = await prisma.issue.findUnique({
-        where: { id: data.issueId },
-        include: { product: { include: { owners: true } } }
-    });
+    const isSupport = user.role === 'OWNER' || user.role === 'ADMIN';
 
-    if (issue) {
-        const userRole = session.user.role;
-        const isSupport = userRole === 'OWNER' || userRole === 'ADMIN';
-
-        if (isSupport) {
-            // Notify Issue Reporter
-            await createNotification({
-                userId: issue.userId,
-                productId: issue.productId || undefined,
-                issueId: issue.id,
-                type: "ISSUE_COMMENT",
-                title: "New Comment",
-                message: `Support commented on your issue "${issue.title}": ${data.content}`,
-                link: `/community/issues/view/${issue.id}`
-            });
-        } else {
-            // Notify Product Owners
-            if (issue.product && issue.product.owners) {
-                for (const owner of issue.product.owners) {
-                    await createNotification({
-                        userId: owner.id,
-                        productId: issue.productId || undefined,
-                        issueId: issue.id,
-                        type: "ISSUE_COMMENT",
-                        title: "New Comment",
-                        message: `User commented on issue "${issue.title}": ${data.content}`,
-                        link: `/community/issues/view/${issue.id}`
-                    });
-                }
+    if (isSupport) {
+        // Notify Issue Reporter
+        await createNotification({
+            userId: issue.userId,
+            productId: issue.productId || undefined,
+            issueId: issue.id,
+            type: "ISSUE_COMMENT",
+            title: "New Comment",
+            message: `Support commented on your issue "${issue.title}": ${parsed.content}`,
+            link: `/community/issues/view/${issue.id}`
+        });
+    } else {
+        // Notify Product Owners
+        if (issue.product && issue.product.owners) {
+            for (const owner of issue.product.owners) {
+                await createNotification({
+                    userId: owner.id,
+                    productId: issue.productId || undefined,
+                    issueId: issue.id,
+                    type: "ISSUE_COMMENT",
+                    title: "New Comment",
+                    message: `User commented on issue "${issue.title}": ${parsed.content}`,
+                    link: `/community/issues/view/${issue.id}`
+                });
             }
         }
     }
@@ -652,18 +721,35 @@ export async function addIssueComment(data: {
     revalidatePath('/community/issues');
 
     // Send LINE notification for comment
-    if (issue) {
-        await sendLineNotificationForIssue('comment', {
-            id: issue.id,
-            title: issue.title,
-            productId: issue.productId,
-        }, session.user.name || session.user.email || undefined);
-    }
+    await sendLineNotificationForIssue('comment', {
+        id: issue.id,
+        title: issue.title,
+        productId: issue.productId,
+    }, user.name || user.email || undefined);
 
     return comment;
 }
 
 export async function getIssueComments(issueId: string) {
+    const user = await requireUser();
+
+    const issue = await prisma.issue.findUnique({
+        where: { id: issueId },
+        select: { userId: true, productId: true },
+    });
+    if (!issue) throw new Error("Issue not found");
+
+    const self = sessionUserId(user);
+
+    // Reporter or staff may view. OWNER (non-admin) must own the product.
+    let authorized = issue.userId === self;
+    if (!authorized && isStaff(user.role)) {
+        authorized = user.role === 'ADMIN' || await ownsProduct(self, issue.productId);
+    }
+    if (!authorized) {
+        throw new Error("Unauthorized");
+    }
+
     const comments = await prisma.issueComment.findMany({
         where: { issueId },
         include: {
@@ -675,14 +761,7 @@ export async function getIssueComments(issueId: string) {
     return comments;
 }
 export async function deleteIssue(id: string) {
-    const session = await auth();
-    const userRole = session?.user?.role;
-
-    console.log(`[deleteIssue] Attempting to delete ID: ${id} by user role: ${userRole}`);
-
-    if (userRole !== 'ADMIN') {
-        throw new Error("Unauthorized: Only Admins can delete issues");
-    }
+    await requireAdmin();
 
     try {
         await prisma.issue.delete({

@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { requireStaff, authErrorResponse } from "@/lib/auth-helpers";
 
 export async function POST(request: NextRequest) {
     try {
-        const session = await auth();
-
-        // Check admin authentication
-        if (!session || !session.user || session.user.role !== "ADMIN") {
-            return NextResponse.json(
-                { error: "Unauthorized" },
-                { status: 401 }
-            );
+        // Defense-in-depth: require staff even though middleware guards /api/admin.
+        let staff;
+        try {
+            staff = await requireStaff();
+        } catch (e) {
+            const r = authErrorResponse(e);
+            if (r) return r;
+            throw e;
         }
 
         const body = await request.json();
@@ -54,8 +54,8 @@ export async function POST(request: NextRequest) {
             lastAdminReplyAt: new Date(), // Track when admin last replied
         };
 
-        if (assignToMe && session.user.id) {
-            updateData.assignedAdminId = parseInt(session.user.id as string);
+        if (assignToMe && staff.id) {
+            updateData.assignedAdminId = parseInt(staff.id);
         }
 
         await prisma.chatSession.update({

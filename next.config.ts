@@ -27,8 +27,13 @@ const nextConfig: NextConfig = {
             key: 'X-DNS-Prefetch-Control',
             value: 'on'
           },
-          // Enable HSTS after SSL is configured:
-          // { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+          // HSTS — production serves over HTTPS (innovera.co.th). Conservative:
+          // 1 year, apex only. Add `; includeSubDomains; preload` once every
+          // subdomain is confirmed HTTPS-only (those are hard to roll back).
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000'
+          },
           {
             key: 'X-Frame-Options',
             value: 'SAMEORIGIN'
@@ -48,24 +53,9 @@ const nextConfig: NextConfig = {
           {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=()'
-          },
-          {
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "img-src 'self' data: https: blob:",
-              "font-src 'self' data: https://fonts.gstatic.com",
-              "connect-src 'self' https://innovera.co.th",
-              "media-src 'self' blob: data:",
-              "object-src 'none'",
-              "frame-src 'self' https://www.youtube.com https://player.vimeo.com",
-              "base-uri 'self'",
-              "form-action 'self'",
-              "frame-ancestors 'self'"
-            ].join('; ')
           }
+          // Content-Security-Policy is set per-request (with a nonce +
+          // strict-dynamic) in middleware.ts, not statically here.
         ]
       }
     ]

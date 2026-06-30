@@ -4,12 +4,25 @@ on:
   push:
     branches: [main]
 
+# Least-privilege token: this workflow only deploys via SSH and never needs
+# write access to repository contents.
+permissions:
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Manual approval gate: pushing to main starts this job but it PAUSES until a
+    # required reviewer approves in the GitHub "production" Environment, so a merge
+    # never reaches the VPS until env/secrets/TLS prep is confirmed.
+    environment:
+      name: production
     steps:
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
+        # Supply-chain hardening: third-party action pinned to a full commit SHA
+        # (immutable) instead of a moving tag. SHA = appleboy/ssh-action v1.2.5.
+        # To update: pick a newer release's commit SHA and bump the trailing tag.
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}

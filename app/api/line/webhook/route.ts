@@ -29,17 +29,34 @@ export async function POST(request: NextRequest) {
         const body = await request.text();
         const signature = request.headers.get('x-line-signature') || '';
 
-        // Verify signature (skip in development if no secret configured)
+        // Verify signature by default in ALL environments.
+        // Only skip when explicitly opted out for local dev.
         const isValid = verifyLineSignature(body, signature);
-        if (!isValid && process.env.NODE_ENV === 'production') {
+        if (!isValid && process.env.ALLOW_UNSIGNED_LINE_WEBHOOK !== 'true') {
             console.warn('Invalid LINE webhook signature');
             return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
         }
 
         const webhookBody: LineWebhookBody = JSON.parse(body);
 
+        // Guard against malformed payloads
+        if (!Array.isArray(webhookBody.events)) {
+            return NextResponse.json({ status: 'ok' });
+        }
+
+        // Replay guard: ignore events older than ~5 minutes (timestamps are epoch ms)
+        const MAX_EVENT_AGE_MS = 5 * 60 * 1000;
+        const now = Date.now();
+
         // Process events
         for (const event of webhookBody.events) {
+            if (
+                typeof event.timestamp === 'number' &&
+                now - event.timestamp > MAX_EVENT_AGE_MS
+            ) {
+                console.warn('Skipping stale LINE event:', event.type, event.timestamp);
+                continue;
+            }
             await handleLineEvent(event);
         }
 

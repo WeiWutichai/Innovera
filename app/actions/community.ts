@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
+import { AuthError, isStaff, requireUser, sessionUserId } from "@/lib/auth-helpers";
 
 export async function getPosts() {
     return await prisma.communityPost.findMany({
@@ -28,15 +28,12 @@ export async function getPost(id: string) {
 }
 
 export async function createPost(data: { title: string; content: string }) {
-    const session = await auth();
-    if (!session?.user) {
-        throw new Error("Unauthorized");
-    }
+    const user = await requireUser();
 
     const post = await prisma.communityPost.create({
         data: {
             ...data,
-            userId: parseInt(session.user.id)
+            userId: sessionUserId(user)
         }
     });
 
@@ -45,16 +42,13 @@ export async function createPost(data: { title: string; content: string }) {
 }
 
 export async function createComment(postId: string, content: string) {
-    const session = await auth();
-    if (!session?.user) {
-        throw new Error("Unauthorized");
-    }
+    const user = await requireUser();
 
     const comment = await prisma.comment.create({
         data: {
             content,
             postId,
-            userId: parseInt(session.user.id)
+            userId: sessionUserId(user)
         }
     });
 
@@ -63,9 +57,20 @@ export async function createComment(postId: string, content: string) {
 }
 
 export async function deletePost(postId: string) {
-    const session = await auth();
-    if (!session?.user || session.user.role !== 'ADMIN') {
-        throw new Error("Unauthorized");
+    const user = await requireUser();
+
+    const post = await prisma.communityPost.findUnique({
+        where: { id: postId },
+        select: { userId: true }
+    });
+
+    if (!post) {
+        throw new Error("Post not found");
+    }
+
+    // Only the post author or staff (ADMIN/OWNER) may delete a post.
+    if (post.userId !== sessionUserId(user) && !isStaff(user.role)) {
+        throw new AuthError("Forbidden", 403);
     }
 
     await prisma.communityPost.delete({

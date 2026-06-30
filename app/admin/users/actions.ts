@@ -1,19 +1,17 @@
 
 "use server";
 
-import { auth } from "@/auth";
 import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
+import { requireAdmin } from "@/lib/auth-helpers";
+import { passwordSchema } from "@/lib/validation";
+import { BCRYPT_ROUNDS } from "@/lib/constants";
 
 export async function updateUserRole(userId: number, newRole: Role) {
-    const session = await auth();
-
     // Security check: only admins can update roles
-    if (!session || !session.user || (session.user as any).role !== "ADMIN") {
-        throw new Error("Unauthorized");
-    }
+    await requireAdmin();
 
     await prisma.user.update({
         where: { id: userId },
@@ -24,19 +22,16 @@ export async function updateUserRole(userId: number, newRole: Role) {
 }
 
 export async function resetUserPassword(userId: number, newPassword: string) {
-    const session = await auth();
-
     // Security check: only admins can reset passwords
-    if (!session || !session.user || (session.user as any).role !== "ADMIN") {
-        throw new Error("Unauthorized");
-    }
+    await requireAdmin();
 
-    if (!newPassword || newPassword.length < 8) {
-        throw new Error("Password must be at least 8 characters");
+    const parsed = passwordSchema.safeParse(newPassword);
+    if (!parsed.success) {
+        throw new Error(parsed.error.issues[0].message);
     }
 
     // Hash the new password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await bcrypt.hash(parsed.data, BCRYPT_ROUNDS);
 
     await prisma.user.update({
         where: { id: userId },

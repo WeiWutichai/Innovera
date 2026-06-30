@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireStaff, authErrorResponse } from "@/lib/auth-helpers";
 
 export async function POST(request: NextRequest) {
     try {
+        try {
+            await requireStaff();
+        } catch (e) {
+            const r = authErrorResponse(e);
+            if (r) return r;
+            throw e;
+        }
+
         const { sessionId } = await request.json();
 
         if (!sessionId) {
