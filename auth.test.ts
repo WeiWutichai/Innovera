@@ -99,6 +99,21 @@ describe('Credentials authorize', () => {
         expect(mockCompare).toHaveBeenCalled();
     });
 
+    it('should return null when the user lookup fails', async () => {
+        const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+        mockPrismaUser.findUnique.mockRejectedValue(new Error('database unavailable'));
+
+        const authorize = getAuthorize();
+        const result = await authorize({
+            email: 'user@example.com',
+            password: 'pass123',
+        });
+
+        expect(result).toBeNull();
+        expect(consoleError).toHaveBeenCalledWith('Credentials authorize error:', expect.any(Error));
+        consoleError.mockRestore();
+    });
+
     it('should return null when user has no password (OAuth user)', async () => {
         mockPrismaUser.findUnique.mockResolvedValue({
             id: 1,
@@ -354,5 +369,19 @@ describe('signIn callback', () => {
         });
 
         expect(result).toBe(true);
+    });
+
+    it('should block sign-in when approval lookup fails', async () => {
+        const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+        mockPrismaUser.findUnique.mockRejectedValue(new Error('database unavailable'));
+
+        const result = await signInCallback()({
+            user: { id: '1', email: 'user@test.com' },
+            account: { provider: 'credentials' },
+        });
+
+        expect(result).toBe(false);
+        expect(consoleError).toHaveBeenCalledWith('Sign-in approval check error:', expect.any(Error));
+        consoleError.mockRestore();
     });
 });

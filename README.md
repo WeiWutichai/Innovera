@@ -52,6 +52,7 @@ GOOGLE_CLIENT_SECRET="your-google-client-secret"
 POSTGRES_USER=user
 POSTGRES_PASSWORD=password
 POSTGRES_DB=innovera
+POSTGRES_PORT=5432
 
 # Ports
 APP_PORT=3000
@@ -265,6 +266,7 @@ npx prisma generate
 
 - Check that PostgreSQL is running
 - Verify `DATABASE_URL` in `.env`
+- If another PostgreSQL service already uses port `5432`, set `POSTGRES_PORT=5433` and update `DATABASE_URL` to use port `5433`
 - Ensure database exists: `createdb innovera`
 
 ### Port Already in Use

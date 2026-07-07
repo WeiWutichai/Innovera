@@ -5,6 +5,18 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SocialButton from "./SocialButton";
 
+function getAuthErrorMessage(error: string) {
+    if (error === "AccessDenied") {
+        return "Your account is pending approval";
+    }
+
+    if (error === "Configuration" || error === "CallbackRouteError") {
+        return "Unable to sign in right now. Please try again later";
+    }
+
+    return "Invalid email or password";
+}
+
 export default function AuthForm({ type }: { type: "login" | "register" }) {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -45,7 +57,7 @@ export default function AuthForm({ type }: { type: "login" | "register" }) {
                 });
 
                 if (result?.error) {
-                    setError(result.error);
+                    setError(getAuthErrorMessage(result.error));
                 } else {
                     router.push(callbackUrl);
                     router.refresh();
@@ -59,14 +71,14 @@ export default function AuthForm({ type }: { type: "login" | "register" }) {
                 });
 
                 if (result?.error) {
-                    setError("Invalid email or password");
+                    setError(getAuthErrorMessage(result.error));
                 } else {
                     router.push(callbackUrl);
                     router.refresh();
                 }
             }
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Unable to complete request");
         } finally {
             setLoading(false);
         }

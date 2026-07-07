@@ -36,9 +36,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     return null
                 }
 
-                const user = await prisma.user.findUnique({
-                    where: { email },
-                })
+                let user
+                try {
+                    user = await prisma.user.findUnique({
+                        where: { email },
+                    })
+                } catch (error) {
+                    console.error("Credentials authorize error:", error)
+                    return null
+                }
 
                 if (!user || !user.password) {
                     // Equalize timing for unknown accounts.
@@ -110,7 +116,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if (account?.provider === "google") {
                 if (!user?.email) return false
 
-                const dbUser = await prisma.user.findUnique({ where: { email: user.email } })
+                let dbUser
+                try {
+                    dbUser = await prisma.user.findUnique({ where: { email: user.email } })
+                } catch (error) {
+                    console.error("Sign-in approval check error:", error)
+                    return false
+                }
 
                 if (!dbUser) {
                     await prisma.user.create({
@@ -144,7 +156,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             // the approval gate against the live DB state.
             if (account?.provider === "credentials") {
                 if (!user?.email) return false
-                const dbUser = await prisma.user.findUnique({ where: { email: user.email } })
+                let dbUser
+                try {
+                    dbUser = await prisma.user.findUnique({ where: { email: user.email } })
+                } catch (error) {
+                    console.error("Sign-in approval check error:", error)
+                    return false
+                }
                 if (!dbUser) return false
                 if (dbUser.role === "ADMIN" || dbUser.role === "OWNER") return true
                 return dbUser.isApproved

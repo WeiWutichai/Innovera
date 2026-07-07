@@ -76,4 +76,34 @@ describe('AuthForm', () => {
             expect(screen.getByText(/invalid email or password/i)).toBeInTheDocument();
         });
     });
+
+    it('displays service error message for auth configuration failures', async () => {
+        mockSignIn.mockResolvedValue({ error: 'Configuration' });
+
+        render(<AuthForm type="login" />);
+
+        fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: 'test@example.com' } });
+        fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
+
+        fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+        await waitFor(() => {
+            expect(screen.getByText(/unable to sign in right now/i)).toBeInTheDocument();
+        });
+    });
+
+    it('displays approval message for access denied errors', async () => {
+        mockSignIn.mockResolvedValue({ error: 'AccessDenied' });
+
+        render(<AuthForm type="login" />);
+
+        fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: 'pending@example.com' } });
+        fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
+
+        fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+        await waitFor(() => {
+            expect(screen.getByText(/pending approval/i)).toBeInTheDocument();
+        });
+    });
 });
