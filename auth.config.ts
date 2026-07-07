@@ -11,6 +11,9 @@ import Google from "next-auth/providers/google"
  * the `signIn` callback live in auth.ts and are merged on top of this.
  */
 export const authConfig = {
+    // Production runs behind nginx. Trust the forwarded host/proto headers so
+    // Auth.js can resolve its public URL correctly.
+    trustHost: true,
     session: {
         strategy: "jwt" as const,
         maxAge: 7 * 24 * 60 * 60, // 7 days

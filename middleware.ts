@@ -20,16 +20,13 @@ export default auth((req) => {
         }
     }
 
-    // --- Per-request CSP with a nonce ---
-    // 'strict-dynamic' lets scripts loaded by the nonced bundle run (covers
-    // Next's chunks and the runtime-injected reCAPTCHA loader) WITHOUT
-    // 'unsafe-inline'/'unsafe-eval'. `https:` is a fallback for older browsers
-    // that ignore strict-dynamic. Next.js reads the nonce from the request
-    // header and applies it to its own inline scripts automatically.
-    const nonce = btoa(crypto.randomUUID())
+    // --- Content Security Policy ---
+    // This app has statically prerendered pages, so per-request nonces cannot be
+    // applied reliably to the prerendered Next.js script tags. Keep the policy
+    // compatible with static output while still avoiding unsafe-eval.
     const csp = [
         "default-src 'self'",
-        `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https:`,
+        "script-src 'self' 'unsafe-inline' https:",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "img-src 'self' data: https: blob:",
         "font-src 'self' data: https://fonts.gstatic.com",
@@ -42,11 +39,7 @@ export default auth((req) => {
         "frame-ancestors 'self'",
     ].join("; ")
 
-    const requestHeaders = new Headers(req.headers)
-    requestHeaders.set("x-nonce", nonce)
-    requestHeaders.set("Content-Security-Policy", csp)
-
-    const response = NextResponse.next({ request: { headers: requestHeaders } })
+    const response = NextResponse.next()
     response.headers.set("Content-Security-Policy", csp)
     return response
 })
