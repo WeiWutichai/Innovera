@@ -8,9 +8,13 @@ echo "📥 Fetching latest changes..."
 git fetch origin
 git reset --hard origin/main
 
-# Rebuild and restart containers
-echo "🔄 Rebuilding and restarting containers..."
-docker compose up -d --build
+# Build new image first (without stopping the running container)
+echo "🔨 Building new image..."
+docker compose build
+
+# Replace containers with new image (minimal downtime)
+echo "🔄 Restarting with new image..."
+docker compose up -d
 
 # Clean up unused images to save space
 echo "🧹 Cleaning up old images..."
