@@ -101,6 +101,66 @@ async function ownsProduct(userId: number, productId: string | null): Promise<bo
     return !!product;
 }
 
+// Notify the whole Dev team about an issue event: every product OWNER plus every
+// ADMIN, minus the actor. Used for all reporter-side feedback (comment, reject,
+// close) so a reply/action is never silently dropped when the handler is an admin
+// who isn't a product owner, or when the issue has no product / no owners.
+async function notifyDevTeam(
+    issue: { id: string; title: string; productId: string | null },
+    excludeUserId: number,
+    payload: { type: string; title: string; message: string }
+) {
+    const notifyIds = new Set<number>();
+    if (issue.productId) {
+        const product = await prisma.product.findUnique({
+            where: { id: issue.productId },
+            include: { owners: { select: { id: true } } },
+        });
+        product?.owners?.forEach(o => notifyIds.add(o.id));
+    }
+    const admins = await prisma.user.findMany({
+        where: { role: 'ADMIN' },
+        select: { id: true },
+    });
+    admins.forEach(a => notifyIds.add(a.id));
+    notifyIds.delete(excludeUserId);
+
+    if (notifyIds.size === 0) return;
+    try {
+        await prisma.notification.createMany({
+            data: Array.from(notifyIds).map(uid => ({
+                userId: uid,
+                productId: issue.productId || undefined,
+                issueId: issue.id,
+                type: payload.type,
+                title: payload.title,
+                message: payload.message,
+                isRead: false,
+                link: `/community/issues/view/${issue.id}`,
+            })),
+        });
+    } catch (err) {
+        console.error("Failed to create dev-team notifications:", err);
+    }
+}
+
+// Notify the issue reporter about an issue event. Used for all support-side
+// feedback (accept, complete, resubmit, status change).
+async function notifyReporter(
+    issue: { id: string; title: string; userId: number; productId: string | null },
+    payload: { type: string; title: string; message: string }
+) {
+    await createNotification({
+        userId: issue.userId,
+        productId: issue.productId || undefined,
+        issueId: issue.id,
+        type: payload.type,
+        title: payload.title,
+        message: payload.message,
+        link: `/community/issues/view/${issue.id}`,
+    });
+}
+
 export async function getIssues(productId?: string) {
     const user = await requireUser();
     const self = sessionUserId(user);
@@ -173,47 +233,16 @@ export async function createIssue(data: { title: string; description: string; pr
             description: `Issue created: ${newIssue.title}`
         });
 
-        // Notify product owners and admins
-        if (parsed.productId) {
-            const product = await prisma.product.findUnique({
-                where: { id: parsed.productId },
-                include: { owners: true }
-            });
-
-            const admins = await prisma.user.findMany({
-                where: { role: 'ADMIN' },
-                select: { id: true },
-            });
-
-            // De-dupe owners + admins, excluding the creator.
-            const notifyIds = new Set<number>();
-            product?.owners?.forEach(owner => notifyIds.add(owner.id));
-            admins.forEach(admin => notifyIds.add(admin.id));
-            notifyIds.delete(selfId);
-
-            // Batch the notifications in a single insert (was an N+1 loop of
-            // createNotification). createNotification only adds a redundant
-            // session check + per-row error swallow, so a guarded createMany is
-            // equivalent and keeps notification failures from breaking creation.
-            if (notifyIds.size > 0) {
-                try {
-                    await prisma.notification.createMany({
-                        data: Array.from(notifyIds).map(uid => ({
-                            userId: uid,
-                            productId: parsed.productId,
-                            issueId: newIssue.id,
-                            type: "ISSUE_CREATED",
-                            title: "New Issue Reported",
-                            message: `New issue "${parsed.title}" reported for ${product?.name || 'Product'}`,
-                            link: `/community/issues/view/${newIssue.id}`,
-                            isRead: false,
-                        })),
-                    });
-                } catch (err) {
-                    console.error("Failed to create issue notifications:", err);
-                }
-            }
-        }
+        // Notify the Dev team (product owners + all admins). notifyDevTeam also
+        // covers the productless case, so a new report is never silent.
+        const product = parsed.productId
+            ? await prisma.product.findUnique({ where: { id: parsed.productId }, select: { name: true } })
+            : null;
+        await notifyDevTeam(newIssue, selfId, {
+            type: "ISSUE_CREATED",
+            title: "New Issue Reported",
+            message: `New issue "${parsed.title}" reported${product?.name ? ` for ${product.name}` : ''}`,
+        });
 
         revalidatePath("/community/issues");
         if (parsed.productId) {
@@ -259,6 +288,15 @@ export async function updateIssueStatus(id: string, status: string) {
             }),
         }),
     ]);
+
+    // Tell the reporter their issue's status changed (unless they changed it).
+    if (issue.userId !== sessionUserId(user)) {
+        await notifyReporter(issue, {
+            type: "ISSUE_STATUS_UPDATE",
+            title: "Issue Status Updated",
+            message: `Your issue "${issue.title}" status was updated to ${status}.`,
+        });
+    }
 
     revalidatePath('/community/issues');
     return issue;
@@ -497,27 +535,12 @@ export async function closeIssue(id: string) {
     // Clear all notifications for this issue as it is closed
     await markIssueNotificationsAsRead(id);
 
-    // Notify Product Owner that User Closed/Accepted the issue
-    if (existingIssue.productId) {
-        const product = await prisma.product.findUnique({
-            where: { id: existingIssue.productId },
-            include: { owners: true }
-        });
-
-        if (product && product.owners) {
-            for (const owner of product.owners) {
-                await createNotification({
-                    userId: owner.id,
-                    productId: existingIssue.productId,
-                    issueId: id,
-                    type: "ISSUE_CLOSED",
-                    title: "Issue Closed by User",
-                    message: `User accepted and closed issue "${existingIssue.title}".`,
-                    link: `/community/issues/view/${id}`
-                });
-            }
-        }
-    }
+    // Notify the Dev team (owners + admins) that the user accepted & closed it.
+    await notifyDevTeam(existingIssue, sessionUserId(user), {
+        type: "ISSUE_CLOSED",
+        title: "Issue Closed by User",
+        message: `User accepted and closed issue "${existingIssue.title}".`,
+    });
 
     revalidatePath('/community/issues');
 
@@ -560,31 +583,17 @@ export async function rejectIssue(id: string) {
         }),
     ]);
 
-    // Clear user's "Complete" notification
-    await markIssueNotificationsAsRead(id);
+    // Clear the user's "please review" reminder, but preserve any unread comment
+    // notifications — including the rejection reason the paired REJECTION comment
+    // just created for the Dev team.
+    await markIssueNotificationsAsRead(id, ['ISSUE_COMMENT']);
 
-    // Notify support/owners
-    // Since we don't easily know WHICH owner to notify, we might skip or notify all.
-    // Ideally we notify the owners of the product.
-    if (existingIssue.productId) {
-        const product = await prisma.product.findUnique({
-            where: { id: existingIssue.productId },
-            include: { owners: true }
-        });
-        if (product && product.owners) {
-            for (const owner of product.owners) {
-                await createNotification({
-                    userId: owner.id,
-                    productId: existingIssue.productId,
-                    issueId: id,
-                    type: "ISSUE_REJECTED",
-                    title: "Issue Rejected by User",
-                    message: `User rejected fix for issue "${existingIssue.title}".`,
-                    link: `/community/issues/view/${id}`
-                });
-            }
-        }
-    }
+    // Notify the Dev team (owners + admins) that the user rejected the fix.
+    await notifyDevTeam(existingIssue, sessionUserId(user), {
+        type: "ISSUE_REJECTED",
+        title: "Issue Rejected by User",
+        message: `User rejected fix for issue "${existingIssue.title}".`,
+    });
 
     revalidatePath('/community/issues');
 
@@ -631,6 +640,18 @@ export async function resubmitIssue(id: string) {
             }),
         }),
     ]);
+
+    // Tell the reporter the fix is ready to review again. No markIssueNotificationsAsRead
+    // here: the paired RESUBMIT comment just created a notification carrying the
+    // support's response, and clearing would wipe its unread signal. No extra LINE
+    // push either — that paired addIssueComment already sends the LINE notification.
+    if (issue.userId !== sessionUserId(user)) {
+        await notifyReporter(issue, {
+            type: "ISSUE_COMPLETE",
+            title: "Fix Resubmitted",
+            message: `Support resubmitted a fix for your issue "${issue.title}". Please review it.`,
+        });
+    }
 
     revalidatePath('/community/issues');
     return issue;
@@ -695,47 +716,18 @@ export async function addIssueComment(data: {
 
     if (!authorIsReporter) {
         // Dev/support replied → notify the reporter.
-        await createNotification({
-            userId: issue.userId,
-            productId: issue.productId || undefined,
-            issueId: issue.id,
+        await notifyReporter(issue, {
             type: "ISSUE_COMMENT",
             title: "New Comment",
             message: `Support commented on your issue "${issue.title}": ${parsed.content}`,
-            link: `/community/issues/view/${issue.id}`
         });
     } else {
-        // Reporter replied → notify the whole Dev team: product owners AND all
-        // admins (mirrors createIssue). This guarantees the reply reaches whoever
-        // is handling the issue even when the handler is an admin who is not a
-        // product owner, or when the issue has no product / no owners.
-        const notifyIds = new Set<number>();
-        issue.product?.owners?.forEach(owner => notifyIds.add(owner.id));
-        const admins = await prisma.user.findMany({
-            where: { role: 'ADMIN' },
-            select: { id: true },
+        // Reporter replied → notify the whole Dev team (owners + admins).
+        await notifyDevTeam(issue, self, {
+            type: "ISSUE_COMMENT",
+            title: "New Comment",
+            message: `User commented on issue "${issue.title}": ${parsed.content}`,
         });
-        admins.forEach(a => notifyIds.add(a.id));
-        notifyIds.delete(self);
-
-        if (notifyIds.size > 0) {
-            try {
-                await prisma.notification.createMany({
-                    data: Array.from(notifyIds).map(uid => ({
-                        userId: uid,
-                        productId: issue.productId || undefined,
-                        issueId: issue.id,
-                        type: "ISSUE_COMMENT",
-                        title: "New Comment",
-                        message: `User commented on issue "${issue.title}": ${parsed.content}`,
-                        isRead: false,
-                        link: `/community/issues/view/${issue.id}`,
-                    })),
-                });
-            } catch (err) {
-                console.error("Failed to create issue comment notifications:", err);
-            }
-        }
     }
 
     revalidatePath('/community/issues');
