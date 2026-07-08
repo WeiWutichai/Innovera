@@ -7,6 +7,7 @@ import { uploadImage } from "@/app/actions/upload";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { sanitizeClientHtml } from "@/lib/sanitize-client";
 
 interface IssueImage {
     id: string;
@@ -70,6 +71,10 @@ export default function IssueDetailPage() {
 
     const isOwner = session?.user?.role === 'OWNER' || session?.user?.role === 'ADMIN';
     const isIssueOwner = issue?.userId === parseInt(session?.user?.id || "0");
+    const sanitizedDescription = useMemo(() => {
+        const html = sanitizeClientHtml(issue?.description || "");
+        return /<[a-z][\s\S]*>/i.test(html) ? html : html.replace(/\n/g, "<br>");
+    }, [issue?.description]);
 
     // Handle authentication and fetching
     useEffect(() => {
@@ -371,9 +376,10 @@ export default function IssueDetailPage() {
                                 </svg>
                                 Description
                             </h2>
-                            <div className="bg-gradient-to-br from-gray-50 to-slate-50 p-5 rounded-2xl text-gray-700 whitespace-pre-wrap border border-gray-100">
-                                {issue.description}
-                            </div>
+                            <div
+                                className="rich-content bg-gradient-to-br from-gray-50 to-slate-50 p-5 rounded-2xl text-gray-700 border border-gray-100"
+                                dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
+                            />
                         </div>
 
                         {/* Images */}
@@ -848,7 +854,7 @@ export default function IssueDetailPage() {
             {/* Lightbox Modal */}
             {lightboxIndex !== null && issue.images && issue.images[lightboxIndex] && (
                 <div
-                    className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex items-center justify-center p-4"
+                    className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex items-center justify-center p-1 sm:p-2"
                     onClick={() => setLightboxIndex(null)}
                 >
                     {/* Close Button */}
@@ -877,12 +883,16 @@ export default function IssueDetailPage() {
                     )}
 
                     {/* Image */}
-                    <img
-                        src={issue.images[lightboxIndex].url}
-                        alt={`Attachment ${lightboxIndex + 1}`}
-                        className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl"
+                    <div
+                        className="flex h-[94vh] w-[98vw] items-center justify-center"
                         onClick={(e) => e.stopPropagation()}
-                    />
+                    >
+                        <img
+                            src={issue.images[lightboxIndex].url}
+                            alt={`Attachment ${lightboxIndex + 1}`}
+                            className="h-full w-full object-contain shadow-2xl"
+                        />
+                    </div>
 
                     {/* Navigation - Next */}
                     {issue.images.length > 1 && (

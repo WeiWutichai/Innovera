@@ -1,13 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createIssue } from "@/app/actions/issue";
 import { uploadImage } from "@/app/actions/upload";
 import { useRouter } from "next/navigation";
+import RichTextEditor from "@/app/components/RichTextEditor";
+import { sanitizeClientHtml } from "@/lib/sanitize-client";
 
 interface Product {
     id: string;
     name: string;
+}
+
+function getHtmlText(html: string) {
+    if (typeof document === "undefined") {
+        return html.replace(/<[^>]*>/g, "");
+    }
+
+    const element = document.createElement("div");
+    element.innerHTML = html;
+    return element.textContent || "";
+}
+
+function hasRichTextContent(html: string) {
+    return getHtmlText(html).trim().length > 0 || /<img[\s>]/i.test(html);
 }
 
 export default function IssueFormModal({
@@ -23,8 +39,21 @@ export default function IssueFormModal({
     const [description, setDescription] = useState("");
     const [selectedImages, setSelectedImages] = useState<File[]>([]);
     const [previews, setPreviews] = useState<string[]>([]);
+    const previewsRef = useRef<string[]>([]);
+    const [previewLightboxIndex, setPreviewLightboxIndex] = useState<number | null>(null);
     const [uploading, setUploading] = useState(false);
     const [success, setSuccess] = useState(false);
+    const descriptionTextLength = getHtmlText(description).trim().length;
+
+    useEffect(() => {
+        previewsRef.current = previews;
+    }, [previews]);
+
+    useEffect(() => {
+        return () => {
+            previewsRef.current.forEach((url) => URL.revokeObjectURL(url));
+        };
+    }, []);
 
     function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
         if (e.target.files) {
@@ -39,12 +68,26 @@ export default function IssueFormModal({
             // Create previews
             const newPreviews = files.map(file => URL.createObjectURL(file));
             setPreviews(prev => [...prev, ...newPreviews]);
+            e.target.value = "";
         }
     }
 
     function removeImage(index: number) {
+        URL.revokeObjectURL(previews[index]);
         setSelectedImages(prev => prev.filter((_, i) => i !== index));
         setPreviews(prev => prev.filter((_, i) => i !== index));
+        setPreviewLightboxIndex(current => {
+            if (current === null) return null;
+            if (current === index) return null;
+            if (current > index) return current - 1;
+            return current;
+        });
+    }
+
+    async function uploadEditorImage(file: File) {
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', file);
+        return uploadImage(uploadFormData);
     }
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -55,10 +98,18 @@ export default function IssueFormModal({
 
         const formData = new FormData(e.currentTarget);
         const title = formData.get('title') as string;
+        const sanitizedDescription = sanitizeClientHtml(description);
 
         // Basic validation
-        if (!description.trim()) {
+        if (!hasRichTextContent(sanitizedDescription)) {
             setError("Description is required");
+            setLoading(false);
+            setUploading(false);
+            return;
+        }
+
+        if (sanitizedDescription.length > 10000) {
+            setError("Description is too long");
             setLoading(false);
             setUploading(false);
             return;
@@ -77,7 +128,7 @@ export default function IssueFormModal({
             // 2. Create Issue
             await createIssue({
                 title,
-                description,
+                description: sanitizedDescription,
                 productId: product.id,
                 imageUrls
             });
@@ -91,8 +142,8 @@ export default function IssueFormModal({
                 onClose();
             }, 2000); // Close after 2 seconds
 
-        } catch (err: any) {
-            setError(err.message || "Failed to submit issue");
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to submit issue");
             setLoading(false);
             setUploading(false); // Only stop uploading state on error
         } finally {
@@ -148,32 +199,44 @@ export default function IssueFormModal({
                     <div>
                         <div className="flex justify-between items-center mb-1">
                             <label className="block text-sm font-bold text-gray-700">Description</label>
-                            <span className={`text-xs ${description.length >= 250 ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
-                                {description.length}/250
+                            <span className="text-xs text-gray-400">
+                                {descriptionTextLength} chars
                             </span>
                         </div>
-                        <textarea
-                            name="description"
-                            required
-                            rows={8}
-                            maxLength={250}
+                        <RichTextEditor
                             value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            className="w-full border-2 border-gray-200 rounded-lg p-3 focus:border-[#4B286D] outline-none transition resize-none text-gray-900"
-                            placeholder="Detailed description of the problem (max 250 characters)..."
-                        ></textarea>
+                            onChange={setDescription}
+                            placeholder="Detailed description of the problem..."
+                            minHeight="220px"
+                            onImageUpload={uploadEditorImage}
+                        />
                     </div>
 
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-2">Attachments (Max 6)</label>
                         <div className="flex flex-wrap gap-4">
                             {previews.map((src, index) => (
-                                <div key={index} className="relative w-24 h-24 rounded border border-gray-200 overflow-hidden group">
-                                    <img src={src} alt="Preview" className="w-full h-full object-cover" />
+                                <div key={src} className="relative w-24 h-24 rounded border border-gray-200 overflow-hidden group">
                                     <button
                                         type="button"
-                                        onClick={() => removeImage(index)}
+                                        onClick={() => setPreviewLightboxIndex(index)}
+                                        className="block w-full h-full focus:outline-none focus:ring-2 focus:ring-[#4B286D]"
+                                        aria-label={`Preview attachment ${index + 1}`}
+                                    >
+                                        <img src={src} alt={`Preview ${index + 1}`} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                                        <span className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                                        <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                                            Zoom
+                                        </span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={(event) => {
+                                            event.stopPropagation();
+                                            removeImage(index);
+                                        }}
                                         className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition shadow-sm"
+                                        aria-label={`Remove attachment ${index + 1}`}
                                     >
                                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                     </button>
@@ -219,6 +282,65 @@ export default function IssueFormModal({
                     </div>
                 </form>
             </div>
+
+            {previewLightboxIndex !== null && previews[previewLightboxIndex] && (
+                <div
+                    className="fixed inset-0 z-[60] bg-black/95 backdrop-blur-sm flex items-center justify-center p-1 sm:p-2"
+                    onClick={() => setPreviewLightboxIndex(null)}
+                >
+                    <button
+                        type="button"
+                        onClick={() => setPreviewLightboxIndex(null)}
+                        className="absolute top-6 right-6 text-white/70 hover:text-white transition z-10 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
+                        aria-label="Close image preview"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+
+                    {previews.length > 1 && (
+                        <button
+                            type="button"
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                setPreviewLightboxIndex((previewLightboxIndex - 1 + previews.length) % previews.length);
+                            }}
+                            className="absolute left-6 top-1/2 -translate-y-1/2 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-3 transition"
+                            aria-label="Previous attachment"
+                        >
+                            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                        </button>
+                    )}
+
+                    <div
+                        className="flex h-[94vh] w-[98vw] items-center justify-center"
+                        onClick={(event) => event.stopPropagation()}
+                    >
+                        <img
+                            src={previews[previewLightboxIndex]}
+                            alt={`Attachment preview ${previewLightboxIndex + 1}`}
+                            className="h-full w-full object-contain shadow-2xl"
+                        />
+                    </div>
+
+                    {previews.length > 1 && (
+                        <button
+                            type="button"
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                setPreviewLightboxIndex((previewLightboxIndex + 1) % previews.length);
+                            }}
+                            className="absolute right-6 top-1/2 -translate-y-1/2 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-3 transition"
+                            aria-label="Next attachment"
+                        >
+                            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                        </button>
+                    )}
+
+                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/80 text-sm font-medium bg-white/10 px-4 py-2 rounded-full">
+                        {previewLightboxIndex + 1} / {previews.length}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

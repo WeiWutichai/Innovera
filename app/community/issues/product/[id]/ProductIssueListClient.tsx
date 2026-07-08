@@ -19,16 +19,9 @@ interface Issue {
     createdAt: Date;
 }
 
-const getStatusColor = (status: string) => {
-    switch (status) {
-        case 'OPEN': case 'TODO': return 'bg-blue-100 text-blue-800';
-        case 'IN_PROGRESS': return 'bg-yellow-100 text-yellow-800';
-        case 'PENDING_REVIEW': case 'COMPLETE': return 'bg-purple-100 text-purple-800';
-        case 'CLOSED': case 'COMPLETED': return 'bg-green-100 text-green-800';
-        case 'REJECTED': return 'bg-red-100 text-red-800';
-        default: return 'bg-gray-100 text-gray-800';
-    }
-};
+interface CurrentUser {
+    role?: string | null;
+}
 
 const STATUS_TABS = [
     { key: 'ALL', label: 'All' },
@@ -39,7 +32,17 @@ const STATUS_TABS = [
     { key: 'REJECTED', label: 'Rejected' },
 ];
 
-export default function ProductIssueListClient({ product, issues, user }: { product: Product, issues: any[], user: any }) {
+function htmlToText(html: string) {
+    if (typeof document === 'undefined') {
+        return html.replace(/<[^>]*>/g, '');
+    }
+
+    const element = document.createElement('div');
+    element.innerHTML = html;
+    return element.textContent || '';
+}
+
+export default function ProductIssueListClient({ product, issues, user }: { product: Product, issues: Issue[], user: CurrentUser | null }) {
     const router = useRouter();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('ALL');
@@ -59,9 +62,10 @@ export default function ProductIssueListClient({ product, issues, user }: { prod
     // Filter issues based on active tab and search query
     const filteredIssues = issues.filter(issue => {
         const matchesTab = activeTab === 'ALL' || issue.status === activeTab || issue.supportStatus === activeTab;
+        const descriptionText = htmlToText(issue.description);
         const matchesSearch = searchQuery === '' ||
             issue.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            issue.description.toLowerCase().includes(searchQuery.toLowerCase());
+            descriptionText.toLowerCase().includes(searchQuery.toLowerCase());
         return matchesTab && matchesSearch;
     });
 
@@ -155,7 +159,7 @@ export default function ProductIssueListClient({ product, issues, user }: { prod
                                             {issue.title}
                                         </h3>
                                         {/* Description */}
-                                        <p className="text-gray-500 text-sm mt-1 line-clamp-1">{issue.description}</p>
+                                        <p className="text-gray-500 text-sm mt-1 line-clamp-1">{htmlToText(issue.description)}</p>
                                     </div>
 
                                     <div className="flex gap-2 shrink-0">
