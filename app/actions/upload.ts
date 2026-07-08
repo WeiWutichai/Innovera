@@ -6,7 +6,7 @@ import { randomUUID } from 'crypto'
 import sharp from 'sharp'
 import { requireUser } from '@/lib/auth-helpers'
 
-const MAX_WIDTH = 420; // Max width in pixels
+const MAX_WIDTH = 1280; // Max width in pixels — large enough to stay sharp when zoomed
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
 
@@ -42,7 +42,7 @@ export async function uploadImage(formData: FormData): Promise<string> {
                 fit: 'inside',
                 withoutEnlargement: true
             })
-            .jpeg({ quality: 80 }) // Normalize everything to JPEG
+            .jpeg({ quality: 85 }) // Normalize everything to JPEG
             .toBuffer()
     } catch (err) {
         console.error('Image processing failed, rejecting upload:', err)
