@@ -18,6 +18,7 @@ interface IssueComment {
     id: string;
     content: string;
     type: string;
+    userId: number;
     createdAt: Date;
     user: { name: string | null; email: string };
     images: { id: string; url: string }[];
@@ -69,6 +70,16 @@ export default function IssueDetailPage() {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Free-form message composer (two-way Q&A, available at any status)
+    const [messageText, setMessageText] = useState("");
+    const [messageImages, setMessageImages] = useState<File[]>([]);
+    const messageImageUrls = useMemo(() => messageImages.map(f => URL.createObjectURL(f)), [messageImages]);
+    useEffect(() => {
+        return () => { messageImageUrls.forEach(url => URL.revokeObjectURL(url)); };
+    }, [messageImageUrls]);
+    const [sendingMessage, setSendingMessage] = useState(false);
+    const messageFileRef = useRef<HTMLInputElement>(null);
+
     const isOwner = session?.user?.role === 'OWNER' || session?.user?.role === 'ADMIN';
     const isIssueOwner = issue?.userId === parseInt(session?.user?.id || "0");
     const sanitizedDescription = useMemo(() => {
@@ -115,21 +126,23 @@ export default function IssueDetailPage() {
         }
     }
 
-    // Mark notifications as read when viewing the issue
+    // Mark notifications as read when viewing the issue.
     useEffect(() => {
         if (!id || !issue || !session) return;
 
-        // If Owner/Admin hasn't accepted the task yet (status TODO), keep notification
+        // Preserve the single "action needed" reminder (keep it unread) until the
+        // user takes that action, but always clear message/comment notifications so
+        // a back-and-forth conversation doesn't leave a stale unread badge.
+        let exceptTypes: string[] | undefined;
         if (isOwner && issue.supportStatus === 'TODO') {
-            return;
+            // Dev hasn't accepted the task yet — keep the "New Issue Reported" reminder.
+            exceptTypes = ['ISSUE_CREATED'];
+        } else if (isIssueOwner && issue.status === 'PENDING_REVIEW') {
+            // Reporter hasn't reviewed the fix yet — keep the "Issue Completed" reminder.
+            exceptTypes = ['ISSUE_COMPLETE'];
         }
 
-        // If User hasn't verified the task yet (status PENDING_REVIEW), keep notification
-        if (isIssueOwner && issue.status === 'PENDING_REVIEW') {
-            return;
-        }
-
-        markIssueNotificationsAsRead(id)
+        markIssueNotificationsAsRead(id, exceptTypes)
             .catch(err => console.error("Failed to mark notifications as read:", err));
     }, [id, issue, isOwner, isIssueOwner, session]);
 
@@ -221,6 +234,48 @@ export default function IssueDetailPage() {
             setError(err.message);
         } finally {
             setUploadingComment(false);
+        }
+    };
+
+    const handleSendMessage = async () => {
+        if (!messageText.trim()) {
+            setError("Please enter a message");
+            return;
+        }
+
+        setSendingMessage(true);
+        try {
+            // Upload any attached images first
+            const imageUrls: string[] = [];
+            for (const file of messageImages) {
+                const formData = new FormData();
+                formData.append('file', file);
+                const url = await uploadImage(formData);
+                if (url) imageUrls.push(url);
+            }
+
+            await addIssueComment({
+                issueId: id,
+                content: messageText,
+                type: 'MESSAGE',
+                imageUrls,
+            });
+
+            // Reset composer
+            setMessageText("");
+            setMessageImages([]);
+            setActionSuccess("Message sent");
+
+            // Refresh conversation + activity log
+            const commentsData = await getIssueComments(id);
+            setComments(commentsData as unknown as IssueComment[]);
+            const data = await getIssueById(id);
+            setIssue(data as unknown as IssueDetail);
+            setTimeout(() => setActionSuccess(""), 3000);
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setSendingMessage(false);
         }
     };
 
@@ -670,6 +725,98 @@ export default function IssueDetailPage() {
                             </div>
                         )}
 
+                        {/* Message Composer — free-form two-way replies, available at any time */}
+                        {(isOwner || isIssueOwner) && (
+                            <div className="border-t border-gray-100 pt-6">
+                                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                                    </svg>
+                                    {isOwner ? 'Reply to Reporter' : 'Reply to Dev Team'}
+                                </h3>
+                                <div className="space-y-4 bg-gradient-to-br from-indigo-50/50 to-purple-50/40 p-5 rounded-2xl border border-indigo-100">
+                                    <textarea
+                                        value={messageText}
+                                        onChange={(e) => setMessageText(e.target.value)}
+                                        placeholder="Write a message — ask a question or reply to the other side..."
+                                        className="w-full p-4 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent min-h-[100px] text-gray-900 placeholder-gray-400 transition-all duration-200"
+                                    />
+
+                                    {/* Image Upload */}
+                                    <div>
+                                        <input
+                                            ref={messageFileRef}
+                                            type="file"
+                                            accept="image/*"
+                                            multiple
+                                            onChange={(e) => {
+                                                const files = Array.from(e.target.files || []);
+                                                setMessageImages(prev => [...prev, ...files]);
+                                            }}
+                                            className="hidden"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => messageFileRef.current?.click()}
+                                            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            Attach Images
+                                        </button>
+
+                                        {messageImages.length > 0 && (
+                                            <div className="flex gap-3 mt-3 flex-wrap">
+                                                {messageImages.map((file, idx) => (
+                                                    <div key={idx} className="relative group">
+                                                        <img
+                                                            src={messageImageUrls[idx]}
+                                                            alt={`Preview ${idx + 1}`}
+                                                            className="w-20 h-20 object-cover rounded-xl border-2 border-gray-100 group-hover:border-indigo-300 transition-colors"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setMessageImages(prev => prev.filter((_, i) => i !== idx))}
+                                                            className="absolute -top-2 -right-2 w-6 h-6 bg-rose-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Send */}
+                                    <div className="flex justify-end pt-1">
+                                        <button
+                                            onClick={handleSendMessage}
+                                            disabled={sendingMessage || !messageText.trim()}
+                                            className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                        >
+                                            {sendingMessage ? (
+                                                <>
+                                                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                    Sending...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                                    </svg>
+                                                    Send Message
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Comments Thread - Modern Design */}
                         {comments.length > 0 && (
                             <div className="border-t border-gray-100 pt-6">
@@ -680,68 +827,82 @@ export default function IssueDetailPage() {
                                     Conversation History ({comments.length})
                                 </h3>
                                 <div className="space-y-4">
-                                    {comments.map((comment) => (
-                                        <div
-                                            key={comment.id}
-                                            className={`relative p-5 rounded-2xl transition-all duration-300 hover:shadow-md ${comment.type === 'REJECTION'
-                                                ? 'bg-gradient-to-br from-rose-50 to-red-50/50 border border-rose-100'
-                                                : 'bg-gradient-to-br from-orange-50 to-amber-50/50 border border-orange-100'
-                                                }`}
-                                        >
-                                            {/* Accent Line */}
-                                            <div className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-full ${comment.type === 'REJECTION' ? 'bg-gradient-to-b from-rose-400 to-red-500' : 'bg-gradient-to-b from-orange-400 to-amber-500'
-                                                }`}></div>
+                                    {comments.map((comment) => {
+                                        // Attribute each message by its author's side, not its type,
+                                        // so free-form replies from either party render correctly.
+                                        const fromReporter = comment.userId === issue.userId;
+                                        const senderName = comment.user?.name || comment.user?.email || (fromReporter ? 'Reporter' : 'Dev Team');
+                                        const roleLabel = fromReporter ? 'Reporter' : 'Dev Team';
+                                        const side = fromReporter
+                                            ? { card: 'from-blue-50 to-indigo-50/50 border-blue-100', accent: 'from-blue-400 to-indigo-500', avatar: 'from-blue-400 to-indigo-500', chip: 'bg-blue-100 text-blue-700' }
+                                            : { card: 'from-emerald-50 to-green-50/50 border-emerald-100', accent: 'from-emerald-400 to-green-500', avatar: 'from-emerald-400 to-green-500', chip: 'bg-emerald-100 text-emerald-700' };
+                                        const typeChip =
+                                            comment.type === 'REJECTION' ? { text: 'Rejected', cls: 'bg-rose-100 text-rose-700' } :
+                                                comment.type === 'COMPLETE' ? { text: 'Marked complete', cls: 'bg-violet-100 text-violet-700' } :
+                                                    comment.type === 'RESUBMIT' ? { text: 'Resubmitted', cls: 'bg-orange-100 text-orange-700' } :
+                                                        null;
+                                        return (
+                                            <div
+                                                key={comment.id}
+                                                className={`relative p-5 rounded-2xl transition-all duration-300 hover:shadow-md bg-gradient-to-br border ${side.card}`}
+                                            >
+                                                {/* Accent Line */}
+                                                <div className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-full bg-gradient-to-b ${side.accent}`}></div>
 
-                                            <div className="pl-4">
-                                                <div className="flex justify-between items-start mb-3">
-                                                    <div className="flex items-center gap-3">
-                                                        {/* Avatar */}
-                                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm ${comment.type === 'REJECTION' ? 'bg-gradient-to-br from-rose-400 to-red-500' : 'bg-gradient-to-br from-orange-400 to-amber-500'
-                                                            }`}>
-                                                            {(comment.user?.name || comment.user?.email || '?')[0].toUpperCase()}
+                                                <div className="pl-4">
+                                                    <div className="flex justify-between items-start mb-3">
+                                                        <div className="flex items-center gap-3">
+                                                            {/* Avatar */}
+                                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm bg-gradient-to-br ${side.avatar}`}>
+                                                                {(comment.user?.name || comment.user?.email || '?')[0].toUpperCase()}
+                                                            </div>
+                                                            <div>
+                                                                <div className="flex items-center gap-2 flex-wrap">
+                                                                    <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${side.chip}`}>
+                                                                        {roleLabel}
+                                                                    </span>
+                                                                    {typeChip && (
+                                                                        <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${typeChip.cls}`}>
+                                                                            {typeChip.text}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <p className="text-sm text-gray-600 mt-1 font-medium">
+                                                                    {senderName}
+                                                                </p>
+                                                            </div>
                                                         </div>
-                                                        <div>
-                                                            <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${comment.type === 'REJECTION'
-                                                                ? 'bg-rose-100 text-rose-700'
-                                                                : 'bg-orange-100 text-orange-700'
-                                                                }`}>
-                                                                {comment.type === 'REJECTION' ? 'User Rejection' : 'Support Response'}
-                                                            </span>
-                                                            <p className="text-sm text-gray-600 mt-1 font-medium">
-                                                                {comment.user?.name || comment.user?.email}
-                                                            </p>
-                                                        </div>
+                                                        <span className="text-xs text-gray-400 bg-white/50 px-2 py-1 rounded-lg" suppressHydrationWarning>
+                                                            {new Date(comment.createdAt).toLocaleString('th-TH', {
+                                                                year: 'numeric',
+                                                                month: '2-digit',
+                                                                day: '2-digit',
+                                                                hour: '2-digit',
+                                                                minute: '2-digit',
+                                                                hour12: false
+                                                            })}
+                                                        </span>
                                                     </div>
-                                                    <span className="text-xs text-gray-400 bg-white/50 px-2 py-1 rounded-lg" suppressHydrationWarning>
-                                                        {new Date(comment.createdAt).toLocaleString('th-TH', {
-                                                            year: 'numeric',
-                                                            month: '2-digit',
-                                                            day: '2-digit',
-                                                            hour: '2-digit',
-                                                            minute: '2-digit',
-                                                            hour12: false
-                                                        })}
-                                                    </span>
+                                                    <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{comment.content}</p>
+
+                                                    {/* Comment Images */}
+                                                    {comment.images && comment.images.length > 0 && (
+                                                        <div className="flex gap-3 mt-4 flex-wrap">
+                                                            {comment.images.map((img) => (
+                                                                <img
+                                                                    key={img.id}
+                                                                    src={img.url}
+                                                                    alt="Attachment"
+                                                                    className="w-24 h-24 object-cover rounded-xl border-2 border-white shadow-sm cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-300"
+                                                                    onClick={() => window.open(img.url, '_blank')}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                 </div>
-                                                <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{comment.content}</p>
-
-                                                {/* Comment Images */}
-                                                {comment.images && comment.images.length > 0 && (
-                                                    <div className="flex gap-3 mt-4 flex-wrap">
-                                                        {comment.images.map((img) => (
-                                                            <img
-                                                                key={img.id}
-                                                                src={img.url}
-                                                                alt="Attachment"
-                                                                className="w-24 h-24 object-cover rounded-xl border-2 border-white shadow-sm cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-300"
-                                                                onClick={() => window.open(img.url, '_blank')}
-                                                            />
-                                                        ))}
-                                                    </div>
-                                                )}
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
                         )}

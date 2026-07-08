@@ -36,12 +36,15 @@ export async function createNotification(data: {
     }
 }
 
-export async function markIssueNotificationsAsRead(issueId: string) {
+export async function markIssueNotificationsAsRead(issueId: string, exceptTypes?: string[]) {
     try {
         await prisma.notification.updateMany({
             where: {
                 issueId: issueId,
-                isRead: false
+                isRead: false,
+                // Optionally preserve certain notification types (e.g. an
+                // "action needed" reminder) while clearing everything else.
+                ...(exceptTypes && exceptTypes.length > 0 ? { type: { notIn: exceptTypes } } : {}),
             },
             data: {
                 isRead: true

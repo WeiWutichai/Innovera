@@ -639,7 +639,7 @@ export async function resubmitIssue(id: string) {
 export async function addIssueComment(data: {
     issueId: string;
     content: string;
-    type: 'REJECTION' | 'RESUBMIT' | 'COMPLETE';
+    type: 'REJECTION' | 'RESUBMIT' | 'COMPLETE' | 'MESSAGE';
     imageUrls?: string[];
 }) {
     const user = await requireUser();
@@ -679,19 +679,22 @@ export async function addIssueComment(data: {
         });
     }
 
+    const activityVerb = parsed.type === 'MESSAGE' ? 'Sent a message' : `Added a ${parsed.type.toLowerCase()} comment`;
     await logActivity({
         issueId: parsed.issueId,
         userId: self,
         actorName: actorLabel(user),
         type: 'COMMENTED',
-        description: `Added a ${parsed.type.toLowerCase()} comment: ${parsed.content.substring(0, 50)}${parsed.content.length > 50 ? '...' : ''}`
+        description: `${activityVerb}: ${parsed.content.substring(0, 50)}${parsed.content.length > 50 ? '...' : ''}`
     });
 
-    // Notify the other party
-    const isSupport = user.role === 'OWNER' || user.role === 'ADMIN';
+    // Notify the other party. Route by who the author is *relative to this issue*
+    // (not their global role): an admin who reported the issue counts as the
+    // reporter, so a reply always reaches the opposite side.
+    const authorIsReporter = self === issue.userId;
 
-    if (isSupport) {
-        // Notify Issue Reporter
+    if (!authorIsReporter) {
+        // Dev/support replied → notify the reporter.
         await createNotification({
             userId: issue.userId,
             productId: issue.productId || undefined,
@@ -702,18 +705,35 @@ export async function addIssueComment(data: {
             link: `/community/issues/view/${issue.id}`
         });
     } else {
-        // Notify Product Owners
-        if (issue.product && issue.product.owners) {
-            for (const owner of issue.product.owners) {
-                await createNotification({
-                    userId: owner.id,
-                    productId: issue.productId || undefined,
-                    issueId: issue.id,
-                    type: "ISSUE_COMMENT",
-                    title: "New Comment",
-                    message: `User commented on issue "${issue.title}": ${parsed.content}`,
-                    link: `/community/issues/view/${issue.id}`
+        // Reporter replied → notify the whole Dev team: product owners AND all
+        // admins (mirrors createIssue). This guarantees the reply reaches whoever
+        // is handling the issue even when the handler is an admin who is not a
+        // product owner, or when the issue has no product / no owners.
+        const notifyIds = new Set<number>();
+        issue.product?.owners?.forEach(owner => notifyIds.add(owner.id));
+        const admins = await prisma.user.findMany({
+            where: { role: 'ADMIN' },
+            select: { id: true },
+        });
+        admins.forEach(a => notifyIds.add(a.id));
+        notifyIds.delete(self);
+
+        if (notifyIds.size > 0) {
+            try {
+                await prisma.notification.createMany({
+                    data: Array.from(notifyIds).map(uid => ({
+                        userId: uid,
+                        productId: issue.productId || undefined,
+                        issueId: issue.id,
+                        type: "ISSUE_COMMENT",
+                        title: "New Comment",
+                        message: `User commented on issue "${issue.title}": ${parsed.content}`,
+                        isRead: false,
+                        link: `/community/issues/view/${issue.id}`,
+                    })),
                 });
+            } catch (err) {
+                console.error("Failed to create issue comment notifications:", err);
             }
         }
     }

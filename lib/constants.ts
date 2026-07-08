@@ -27,6 +27,8 @@ export const SUPPORT_STATUS = {
 export type SupportStatus = (typeof SUPPORT_STATUS)[keyof typeof SUPPORT_STATUS];
 export const SUPPORT_STATUS_VALUES = Object.values(SUPPORT_STATUS) as string[];
 
-// Issue comment types.
-export const ISSUE_COMMENT_TYPES = ["REJECTION", "RESUBMIT", "COMPLETE"] as const;
+// Issue comment types. MESSAGE is a free-form reply either party can post at
+// any time (two-way Q&A), independent of a status transition; the others are
+// tied to specific workflow actions.
+export const ISSUE_COMMENT_TYPES = ["REJECTION", "RESUBMIT", "COMPLETE", "MESSAGE"] as const;
 export type IssueCommentType = (typeof ISSUE_COMMENT_TYPES)[number];
