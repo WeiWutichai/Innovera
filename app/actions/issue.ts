@@ -7,7 +7,7 @@ import { createNotification, markIssueNotificationsAsRead } from "./notification
 import { sendLineMulticastMessage, createIssueNotification } from "@/lib/line-messaging";
 import { requireUser, requireStaff, requireAdmin, isStaff, sessionUserId } from "@/lib/auth-helpers";
 import { ISSUE_STATUS_VALUES, ISSUE_PRIORITY_VALUES, formatTicketNumber } from "@/lib/constants";
-import { issueCommentSchema, issueCreateSchema, issueDueDateSchema } from "@/lib/validation";
+import { issueCommentSchema, issueCreateSchema, issueDateSchema } from "@/lib/validation";
 
 // Helper to send LINE notifications to product-assigned LINE users
 async function sendLineNotificationForIssue(
@@ -354,15 +354,20 @@ export async function updateIssuePriority(id: string, priority: string) {
     return issue;
 }
 
-export async function setIssueDueDate(id: string, dueDate: string | null) {
+export async function setIssueSchedule(id: string, schedule: { startDate: string | null; dueDate: string | null }) {
     const user = await requireStaff();
 
-    // "" or null clears the date; anything else must coerce to a valid Date.
-    const parsedDueDate = issueDueDateSchema.parse(dueDate);
+    // "" or null clears a date; anything else must be a valid "YYYY-MM-DD".
+    const parsedStartDate = issueDateSchema.parse(schedule.startDate);
+    const parsedDueDate = issueDateSchema.parse(schedule.dueDate);
+
+    if (parsedStartDate && parsedDueDate && parsedStartDate > parsedDueDate) {
+        throw new Error("Start date must be on or before the due date");
+    }
 
     const existingIssue = await prisma.issue.findUnique({
         where: { id },
-        select: { id: true, title: true, productId: true, userId: true, dueDate: true },
+        select: { id: true, title: true, productId: true, userId: true, startDate: true, dueDate: true },
     });
     if (!existingIssue) throw new Error("Issue not found");
 
@@ -371,35 +376,44 @@ export async function setIssueDueDate(id: string, dueDate: string | null) {
         throw new Error("Unauthorized");
     }
 
-    const dueDateLabel = parsedDueDate ? parsedDueDate.toISOString().split('T')[0] : null;
+    // Describe only what actually changed, comparing date-only values.
+    const toLabel = (d: Date | null) => (d ? d.toISOString().split('T')[0] : null);
+    const changes: string[] = [];
+    if (toLabel(existingIssue.startDate) !== toLabel(parsedStartDate)) {
+        changes.push(parsedStartDate ? `start date set to ${toLabel(parsedStartDate)}` : 'start date removed');
+    }
+    if (toLabel(existingIssue.dueDate) !== toLabel(parsedDueDate)) {
+        changes.push(parsedDueDate ? `due date set to ${toLabel(parsedDueDate)}` : 'due date removed');
+    }
+    if (changes.length === 0) {
+        return existingIssue;
+    }
+    const changeSummary = changes.join(', ');
+    const description = `Schedule updated: ${changeSummary}`;
 
-    // Atomic: due date mutation + activity log.
+    // Atomic: schedule mutation + activity log.
     const [issue] = await prisma.$transaction([
         prisma.issue.update({
             where: { id },
-            data: { dueDate: parsedDueDate },
+            data: { startDate: parsedStartDate, dueDate: parsedDueDate },
         }),
         prisma.issueActivity.create({
             data: buildActivity({
                 issueId: id,
                 userId: sessionUserId(user),
                 actorName: actorLabel(user),
-                type: 'DUE_DATE_CHANGE',
-                description: dueDateLabel
-                    ? `Due date set to ${dueDateLabel}`
-                    : `Due date removed`,
+                type: 'SCHEDULE_CHANGE',
+                description,
             }),
         }),
     ]);
 
-    // Tell the reporter a target completion date was set (unless they set it).
+    // Tell the reporter the schedule changed (unless they changed it).
     if (issue.userId !== sessionUserId(user)) {
         await notifyReporter(issue, {
-            type: "ISSUE_DUE_DATE_UPDATE",
-            title: "Due Date Updated",
-            message: dueDateLabel
-                ? `A target completion date of ${dueDateLabel} was set for your issue "${issue.title}".`
-                : `The target completion date for your issue "${issue.title}" was removed.`,
+            type: "ISSUE_SCHEDULE_UPDATE",
+            title: "Schedule Updated",
+            message: `The schedule for your issue "${issue.title}" was updated: ${changeSummary}.`,
         });
     }
 

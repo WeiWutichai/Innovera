@@ -51,11 +51,12 @@ export const issueCreateSchema = z.object({
 
 export type IssueCreateInput = z.infer<typeof issueCreateSchema>;
 
-// Issue due date validation. Arrives from <input type="date"> as "YYYY-MM-DD";
-// empty string or null clears the date. Only the picker's exact format is
-// accepted (z.iso.date also bounds the year to 4 digits); the string parses
-// as UTC midnight, which is the canonical form for this date-only value.
-export const issueDueDateSchema = z
+// Issue schedule date validation (start date / due date). Arrives from
+// <input type="date"> as "YYYY-MM-DD"; empty string or null clears the date.
+// Only the picker's exact format is accepted (z.iso.date also bounds the year
+// to 4 digits); the string parses as UTC midnight, which is the canonical
+// form for these date-only values.
+export const issueDateSchema = z
     .union([z.null(), z.literal(""), z.iso.date()])
     .transform((v) => (v ? new Date(v) : null));
 
