@@ -60,3 +60,29 @@ export function isDueDatePast(dueDate: Date | string): boolean {
 // tied to specific workflow actions.
 export const ISSUE_COMMENT_TYPES = ["REJECTION", "RESUBMIT", "COMPLETE", "MESSAGE"] as const;
 export type IssueCommentType = (typeof ISSUE_COMMENT_TYPES)[number];
+
+// Tag badge palette. Keys are stored in Tag.color; classes must be full static
+// strings (Tailwind can't see dynamically-built class names at build time).
+export const TAG_COLORS: Record<string, string> = {
+    slate: "bg-slate-100 text-slate-700 border border-slate-200",
+    red: "bg-red-100 text-red-700 border border-red-200",
+    orange: "bg-orange-100 text-orange-700 border border-orange-200",
+    amber: "bg-amber-100 text-amber-800 border border-amber-200",
+    lime: "bg-lime-100 text-lime-700 border border-lime-200",
+    green: "bg-green-100 text-green-700 border border-green-200",
+    teal: "bg-teal-100 text-teal-700 border border-teal-200",
+    cyan: "bg-cyan-100 text-cyan-700 border border-cyan-200",
+    sky: "bg-sky-100 text-sky-700 border border-sky-200",
+    blue: "bg-blue-100 text-blue-700 border border-blue-200",
+    indigo: "bg-indigo-100 text-indigo-700 border border-indigo-200",
+    violet: "bg-violet-100 text-violet-700 border border-violet-200",
+    fuchsia: "bg-fuchsia-100 text-fuchsia-700 border border-fuchsia-200",
+    pink: "bg-pink-100 text-pink-700 border border-pink-200",
+    rose: "bg-rose-100 text-rose-700 border border-rose-200",
+};
+export const TAG_COLOR_KEYS = Object.keys(TAG_COLORS) as [string, ...string[]];
+
+// Badge classes for a tag color, falling back to the neutral slate palette.
+export function tagBadgeClasses(color: string | null | undefined): string {
+    return TAG_COLORS[color || "slate"] || TAG_COLORS.slate;
+}

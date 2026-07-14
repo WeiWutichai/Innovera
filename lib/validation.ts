@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ISSUE_COMMENT_TYPES, ISSUE_PRIORITY } from "./constants";
+import { ISSUE_COMMENT_TYPES, ISSUE_PRIORITY, TAG_COLOR_KEYS } from "./constants";
 
 // Demo Request Validation Schema
 export const demoRequestSchema = z.object({
@@ -40,6 +40,9 @@ export const chatMessageSchema = z.object({
 
 export type ChatMessageInput = z.infer<typeof chatMessageSchema>;
 
+// Reusable list of tag ids attached to an issue (create + update paths).
+export const tagIdsSchema = z.array(z.string().min(1).max(100)).max(20);
+
 // Issue creation validation.
 export const issueCreateSchema = z.object({
     title: z.string().min(1, "Title is required").max(200),
@@ -47,9 +50,18 @@ export const issueCreateSchema = z.object({
     productId: z.string().max(100).optional(),
     imageUrls: z.array(z.string().max(500)).max(20).optional(),
     priority: z.enum(ISSUE_PRIORITY).optional(),
+    tagIds: tagIdsSchema.optional(),
 });
 
 export type IssueCreateInput = z.infer<typeof issueCreateSchema>;
+
+// Admin tag management.
+export const tagCreateSchema = z.object({
+    name: z.string().min(1, "Tag name is required").max(40),
+    color: z.enum(TAG_COLOR_KEYS).optional(),
+});
+
+export type TagCreateInput = z.infer<typeof tagCreateSchema>;
 
 // Issue schedule date validation (start date / due date). Arrives from
 // <input type="date"> as "YYYY-MM-DD"; empty string or null clears the date.
@@ -69,6 +81,14 @@ export const issueCommentSchema = z.object({
 });
 
 export type IssueCommentInput = z.infer<typeof issueCommentSchema>;
+
+// Editing a comment: only the free-text body can change.
+export const issueCommentEditSchema = z.object({
+    commentId: z.string().min(1).max(100),
+    content: z.string().min(1, "Comment is required").max(10000),
+});
+
+export type IssueCommentEditInput = z.infer<typeof issueCommentEditSchema>;
 
 // Profile update validation (password optional; if present must meet policy).
 export const profileUpdateSchema = z.object({

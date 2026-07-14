@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useState, useTransition, useRef, useMemo } from "react";
-import { getIssueById, acceptIssue, completeIssue, closeIssue, rejectIssue, resubmitIssue, addIssueComment, getIssueComments, deleteIssue, updateIssuePriority, setIssueSchedule } from "@/app/actions/issue";
+import { getIssueById, acceptIssue, completeIssue, closeIssue, rejectIssue, resubmitIssue, addIssueComment, getIssueComments, deleteIssue, updateIssuePriority, setIssueSchedule, updateIssueTags, updateIssueComment, deleteIssueComment } from "@/app/actions/issue";
+import { getTags, createTag } from "@/app/actions/tag";
 import { markIssueNotificationsAsRead } from "@/app/actions/notification";
 import { uploadImage } from "@/app/actions/upload";
-import { formatTicketNumber, isDueDatePast, DUE_DATE_LOCALE_OPTIONS } from "@/lib/constants";
+import { formatTicketNumber, isDueDatePast, DUE_DATE_LOCALE_OPTIONS, tagBadgeClasses, TAG_COLORS } from "@/lib/constants";
+
+const TAG_COLOR_OPTIONS = Object.keys(TAG_COLORS);
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -15,12 +18,19 @@ interface IssueImage {
     url: string;
 }
 
+interface Tag {
+    id: string;
+    name: string;
+    color: string;
+}
+
 interface IssueComment {
     id: string;
     content: string;
     type: string;
     userId: number;
     createdAt: Date;
+    updatedAt?: Date | string | null;
     user: { name: string | null; email: string };
     images: { id: string; url: string }[];
 }
@@ -35,6 +45,7 @@ interface IssueDetail {
     priority: string;
     startDate: Date | string | null;
     dueDate: Date | string | null;
+    tags: Tag[];
     userId: number;
     createdAt: Date;
     user: { name: string | null; email: string };
@@ -102,6 +113,57 @@ export default function IssueDetailPage() {
     const scheduleChanged = startDateInput !== storedStartDate || dueDateInput !== storedDueDate;
     const scheduleInvalid = !!startDateInput && !!dueDateInput && startDateInput > dueDateInput;
 
+    // Tag editor (support/admin control). The catalogue is fetched once; the
+    // selection is seeded from the issue and kept in sync via the string key so
+    // an unsaved selection isn't reset by unrelated refetches.
+    const [allTags, setAllTags] = useState<Tag[]>([]);
+    const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+    const storedTagKey = (issue?.tags || []).map(t => t.id).sort().join(',');
+    useEffect(() => {
+        setSelectedTagIds(storedTagKey ? storedTagKey.split(',') : []);
+    }, [storedTagKey]);
+    const tagsChanged = selectedTagIds.slice().sort().join(',') !== storedTagKey;
+    function toggleTag(tagId: string) {
+        setSelectedTagIds(prev =>
+            prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
+        );
+    }
+
+    // New-tag creation (admin only): add a tag to the shared catalogue.
+    const [showNewTag, setShowNewTag] = useState(false);
+    const [newTagName, setNewTagName] = useState("");
+    const [newTagColor, setNewTagColor] = useState("slate");
+    const [creatingTag, setCreatingTag] = useState(false);
+
+    const handleCreateTag = async () => {
+        const name = newTagName.trim();
+        if (!name) return;
+        setCreatingTag(true);
+        try {
+            const created = await createTag({ name, color: newTagColor });
+            const fresh = await getTags();
+            setAllTags(fresh);
+            // Pre-select the new tag so a following "Save Tags" attaches it.
+            setSelectedTagIds(prev => (prev.includes(created.id) ? prev : [...prev, created.id]));
+            setNewTagName("");
+            setNewTagColor("slate");
+            setShowNewTag(false);
+            setActionSuccess(`Tag "${created.name}" created`);
+            setTimeout(() => setActionSuccess(""), 3000);
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setCreatingTag(false);
+        }
+    };
+
+    // Comment edit state: which comment is open for editing, and its draft body.
+    const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+    const [editingCommentText, setEditingCommentText] = useState("");
+    const [savingComment, setSavingComment] = useState(false);
+    const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
+    const [confirmDeleteCommentId, setConfirmDeleteCommentId] = useState<string | null>(null);
+
     // Free-form message composer (two-way Q&A, available at any status)
     const [messageText, setMessageText] = useState("");
     const [messageImages, setMessageImages] = useState<File[]>([]);
@@ -114,10 +176,18 @@ export default function IssueDetailPage() {
 
     const isOwner = session?.user?.role === 'OWNER' || session?.user?.role === 'ADMIN';
     const isIssueOwner = issue?.userId === parseInt(session?.user?.id || "0");
+    const selfUserId = parseInt(session?.user?.id || "0");
+    const isAdmin = session?.user?.role === 'ADMIN';
     const sanitizedDescription = useMemo(() => {
         const html = sanitizeClientHtml(issue?.description || "");
         return /<[a-z][\s\S]*>/i.test(html) ? html : html.replace(/\n/g, "<br>");
     }, [issue?.description]);
+
+    // Staff need the full tag catalogue to edit an issue's tags.
+    useEffect(() => {
+        if (!isOwner) return;
+        getTags().then(setAllTags).catch(() => setAllTags([]));
+    }, [isOwner]);
 
     // Handle authentication and fetching
     useEffect(() => {
@@ -311,6 +381,51 @@ export default function IssueDetailPage() {
         }
     };
 
+    const startEditingComment = (comment: IssueComment) => {
+        setEditingCommentId(comment.id);
+        setEditingCommentText(comment.content);
+    };
+
+    const cancelEditingComment = () => {
+        setEditingCommentId(null);
+        setEditingCommentText("");
+    };
+
+    const saveEditedComment = async () => {
+        if (!editingCommentId || !editingCommentText.trim()) {
+            setError("Comment cannot be empty");
+            return;
+        }
+        setSavingComment(true);
+        try {
+            await updateIssueComment({ commentId: editingCommentId, content: editingCommentText });
+            cancelEditingComment();
+            setActionSuccess("Comment updated");
+            const commentsData = await getIssueComments(id);
+            setComments(commentsData as unknown as IssueComment[]);
+            setTimeout(() => setActionSuccess(""), 3000);
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setSavingComment(false);
+        }
+    };
+
+    const removeComment = async (commentId: string) => {
+        setDeletingCommentId(commentId);
+        try {
+            await deleteIssueComment(commentId);
+            setActionSuccess("Comment deleted");
+            const commentsData = await getIssueComments(id);
+            setComments(commentsData as unknown as IssueComment[]);
+            setTimeout(() => setActionSuccess(""), 3000);
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setDeletingCommentId(null);
+        }
+    };
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'OPEN': case 'TODO': return 'bg-blue-500';
@@ -422,6 +537,18 @@ export default function IssueDetailPage() {
                             <div className="min-w-0 flex-1">
                                 <p className="font-mono text-sm font-bold text-indigo-200 mb-1">{formatTicketNumber(issue.ticketNumber)}</p>
                                 <h1 className="text-3xl font-bold mb-2 text-white drop-shadow-sm">{issue.title}</h1>
+                                {issue.dueDate && (
+                                    <div
+                                        className={`inline-flex items-center gap-2 px-4 py-2 mb-2 rounded-xl text-base font-extrabold shadow-lg ${overdue ? 'bg-red-600 text-white ring-2 ring-red-300' : 'bg-white text-indigo-700'}`}
+                                        suppressHydrationWarning
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        Due: {new Date(issue.dueDate).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', ...DUE_DATE_LOCALE_OPTIONS })}
+                                        {overdue && <span className="uppercase tracking-wide">— Overdue</span>}
+                                    </div>
+                                )}
                                 {issue.product && (
                                     <p className="text-indigo-200 text-base flex items-center gap-2">
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -429,6 +556,15 @@ export default function IssueDetailPage() {
                                         </svg>
                                         Product: {issue.product.name}
                                     </p>
+                                )}
+                                {issue.tags && issue.tags.length > 0 && (
+                                    <div className="flex flex-wrap gap-1.5 mt-3">
+                                        {issue.tags.map(tag => (
+                                            <span key={tag.id} className={`px-2.5 py-1 text-xs font-bold rounded-full ${tagBadgeClasses(tag.color)}`}>
+                                                {tag.name}
+                                            </span>
+                                        ))}
+                                    </div>
                                 )}
                             </div>
                             <div className="flex flex-col gap-3 items-end shrink-0">
@@ -477,18 +613,6 @@ export default function IssueDetailPage() {
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                                             </svg>
                                             {new Date(issue.startDate).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', ...DUE_DATE_LOCALE_OPTIONS })}
-                                        </span>
-                                    </div>
-                                )}
-                                {/* Due Date */}
-                                {issue.dueDate && (
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-sm text-indigo-200">Due Date:</span>
-                                        <span className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-full shadow-lg text-white ${overdue ? 'bg-red-600' : 'bg-white/20 border border-white/30 backdrop-blur-sm'}`} suppressHydrationWarning>
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                            </svg>
-                                            {new Date(issue.dueDate).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', ...DUE_DATE_LOCALE_OPTIONS })}{overdue ? ' — OVERDUE' : ''}
                                         </span>
                                     </div>
                                 )}
@@ -716,6 +840,86 @@ export default function IssueDetailPage() {
                                             <p className="mt-1.5 text-xs font-semibold text-rose-500">Start date must be on or before the due date.</p>
                                         )}
                                     </div>
+                                    {(allTags.length > 0 || isAdmin) && (
+                                        <div className="w-full">
+                                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Tags</label>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                {allTags.map(tag => {
+                                                    const selected = selectedTagIds.includes(tag.id);
+                                                    return (
+                                                        <button
+                                                            key={tag.id}
+                                                            onClick={() => toggleTag(tag.id)}
+                                                            disabled={isPending}
+                                                            aria-pressed={selected}
+                                                            className={`px-3 py-1.5 text-xs font-bold rounded-full transition-all duration-150 disabled:opacity-50 ${selected
+                                                                ? `${tagBadgeClasses(tag.color)} ring-2 ring-offset-1 ring-indigo-500`
+                                                                : 'bg-white text-gray-500 border border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                                                }`}
+                                                        >
+                                                            {tag.name}
+                                                        </button>
+                                                    );
+                                                })}
+                                                {isAdmin && !showNewTag && (
+                                                    <button
+                                                        onClick={() => setShowNewTag(true)}
+                                                        disabled={isPending}
+                                                        className="px-3 py-1.5 text-xs font-bold rounded-full border border-dashed border-gray-300 text-gray-400 hover:border-indigo-400 hover:text-indigo-500 transition-all duration-150 disabled:opacity-50"
+                                                    >
+                                                        + New Tag
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={() => handleAction(() => updateIssueTags(issue.id, selectedTagIds), "Tags updated.")}
+                                                    disabled={isPending || !tagsChanged}
+                                                    className="px-4 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-bold rounded-full shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                                >
+                                                    Save Tags
+                                                </button>
+                                            </div>
+
+                                            {/* Admin: create a new tag in the shared catalogue */}
+                                            {isAdmin && showNewTag && (
+                                                <div className="mt-3 flex flex-wrap items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                                                    <input
+                                                        type="text"
+                                                        value={newTagName}
+                                                        onChange={(e) => setNewTagName(e.target.value)}
+                                                        maxLength={40}
+                                                        placeholder="Tag name"
+                                                        className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent outline-none"
+                                                    />
+                                                    <div className="flex items-center gap-1.5">
+                                                        {TAG_COLOR_OPTIONS.map(color => (
+                                                            <button
+                                                                key={color}
+                                                                type="button"
+                                                                onClick={() => setNewTagColor(color)}
+                                                                aria-label={color}
+                                                                aria-pressed={newTagColor === color}
+                                                                className={`w-6 h-6 rounded-full ${tagBadgeClasses(color)} ${newTagColor === color ? 'ring-2 ring-offset-1 ring-indigo-500' : ''}`}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                    <button
+                                                        onClick={handleCreateTag}
+                                                        disabled={creatingTag || !newTagName.trim()}
+                                                        className="px-4 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-bold rounded-lg shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        {creatingTag ? "Creating..." : "Create"}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => { setShowNewTag(false); setNewTagName(""); setNewTagColor("slate"); }}
+                                                        disabled={creatingTag}
+                                                        className="px-4 py-1.5 bg-white text-gray-600 text-xs font-bold rounded-lg border border-gray-200 hover:bg-gray-50 transition-all duration-200 disabled:opacity-50"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -990,6 +1194,14 @@ export default function IssueDetailPage() {
                                                 comment.type === 'COMPLETE' ? { text: 'Marked complete', cls: 'bg-violet-100 text-violet-700' } :
                                                     comment.type === 'RESUBMIT' ? { text: 'Resubmitted', cls: 'bg-orange-100 text-orange-700' } :
                                                         null;
+                                        // Only free-form MESSAGE comments are editable/deletable; workflow
+                                        // records (rejection/resubmit/complete) stay immutable for the audit trail.
+                                        const isMessage = comment.type === 'MESSAGE';
+                                        const canEdit = isMessage && comment.userId === selfUserId;
+                                        const canDelete = isMessage && (comment.userId === selfUserId || isAdmin);
+                                        const isEditing = editingCommentId === comment.id;
+                                        const edited = !!comment.updatedAt
+                                            && new Date(comment.updatedAt).getTime() - new Date(comment.createdAt).getTime() > 2000;
                                         return (
                                             <div
                                                 key={comment.id}
@@ -1032,10 +1244,39 @@ export default function IssueDetailPage() {
                                                             })}
                                                         </span>
                                                     </div>
-                                                    <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{comment.content}</p>
+                                                    {isEditing ? (
+                                                        <div className="space-y-3">
+                                                            <textarea
+                                                                value={editingCommentText}
+                                                                onChange={(e) => setEditingCommentText(e.target.value)}
+                                                                className="w-full p-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent min-h-[90px] text-gray-900 transition-all duration-200"
+                                                            />
+                                                            <div className="flex gap-2">
+                                                                <button
+                                                                    onClick={saveEditedComment}
+                                                                    disabled={savingComment || !editingCommentText.trim()}
+                                                                    className="px-4 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-bold rounded-lg shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                >
+                                                                    {savingComment ? "Saving..." : "Save"}
+                                                                </button>
+                                                                <button
+                                                                    onClick={cancelEditingComment}
+                                                                    disabled={savingComment}
+                                                                    className="px-4 py-1.5 bg-white text-gray-600 text-xs font-bold rounded-lg border border-gray-200 hover:bg-gray-50 transition-all duration-200 disabled:opacity-50"
+                                                                >
+                                                                    Cancel
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                                                            {comment.content}
+                                                            {edited && <span className="ml-2 text-xs text-gray-400 font-medium">(edited)</span>}
+                                                        </p>
+                                                    )}
 
                                                     {/* Comment Images */}
-                                                    {comment.images && comment.images.length > 0 && (
+                                                    {!isEditing && comment.images && comment.images.length > 0 && (
                                                         <div className="flex gap-3 mt-4 flex-wrap">
                                                             {comment.images.map((img) => (
                                                                 <img
@@ -1046,6 +1287,47 @@ export default function IssueDetailPage() {
                                                                     onClick={() => window.open(img.url, '_blank')}
                                                                 />
                                                             ))}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Edit / Delete controls */}
+                                                    {!isEditing && (canEdit || canDelete) && (
+                                                        <div className="flex items-center gap-3 mt-3">
+                                                            {canEdit && (
+                                                                <button
+                                                                    onClick={() => startEditingComment(comment)}
+                                                                    className="text-xs font-semibold text-gray-400 hover:text-indigo-600 transition-colors"
+                                                                >
+                                                                    Edit
+                                                                </button>
+                                                            )}
+                                                            {canDelete && confirmDeleteCommentId !== comment.id && (
+                                                                <button
+                                                                    onClick={() => setConfirmDeleteCommentId(comment.id)}
+                                                                    className="text-xs font-semibold text-gray-400 hover:text-rose-600 transition-colors"
+                                                                >
+                                                                    Delete
+                                                                </button>
+                                                            )}
+                                                            {canDelete && confirmDeleteCommentId === comment.id && (
+                                                                <span className="inline-flex items-center gap-2">
+                                                                    <span className="text-xs font-bold text-rose-600">Delete?</span>
+                                                                    <button
+                                                                        onClick={() => { setConfirmDeleteCommentId(null); removeComment(comment.id); }}
+                                                                        disabled={deletingCommentId === comment.id}
+                                                                        className="text-xs font-bold text-rose-600 hover:text-rose-700 disabled:opacity-50"
+                                                                    >
+                                                                        {deletingCommentId === comment.id ? "Deleting..." : "Yes"}
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => setConfirmDeleteCommentId(null)}
+                                                                        disabled={deletingCommentId === comment.id}
+                                                                        className="text-xs font-semibold text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                                                                    >
+                                                                        No
+                                                                    </button>
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>
@@ -1078,7 +1360,8 @@ export default function IssueDetailPage() {
                                                         activity.type === 'COMMENTED' ? 'bg-gradient-to-br from-violet-400 to-purple-500' :
                                                             activity.type === 'PRIORITY_CHANGE' ? 'bg-gradient-to-br from-orange-400 to-amber-500' :
                                                                 (activity.type === 'DUE_DATE_CHANGE' || activity.type === 'SCHEDULE_CHANGE') ? 'bg-gradient-to-br from-teal-400 to-cyan-500' :
-                                                                    'bg-gradient-to-br from-gray-300 to-gray-400'
+                                                                    activity.type === 'TAG_CHANGE' ? 'bg-gradient-to-br from-pink-400 to-fuchsia-500' :
+                                                                        'bg-gradient-to-br from-gray-300 to-gray-400'
                                                     }`}>
                                                     {activity.type === 'CREATED' && (
                                                         <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1103,6 +1386,11 @@ export default function IssueDetailPage() {
                                                     {(activity.type === 'DUE_DATE_CHANGE' || activity.type === 'SCHEDULE_CHANGE') && (
                                                         <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                        </svg>
+                                                    )}
+                                                    {activity.type === 'TAG_CHANGE' && (
+                                                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-5 5a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 8V3a2 2 0 012-2z" />
                                                         </svg>
                                                     )}
                                                 </div>

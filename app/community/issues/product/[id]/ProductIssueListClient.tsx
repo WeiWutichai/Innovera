@@ -3,12 +3,18 @@
 import { useState, useEffect } from "react";
 import IssueFormModal from "../../IssueFormModal";
 import { useRouter } from "next/navigation";
-import { formatTicketNumber, isDueDatePast, DUE_DATE_LOCALE_OPTIONS } from "@/lib/constants";
+import { formatTicketNumber, isDueDatePast, DUE_DATE_LOCALE_OPTIONS, tagBadgeClasses } from "@/lib/constants";
 
 
 interface Product {
     id: string;
     name: string;
+}
+
+interface Tag {
+    id: string;
+    name: string;
+    color: string;
 }
 
 interface Issue {
@@ -21,6 +27,7 @@ interface Issue {
     priority: string;
     startDate: Date | string | null;
     dueDate: Date | string | null;
+    tags: Tag[];
     createdAt: Date;
 }
 
@@ -64,6 +71,18 @@ export default function ProductIssueListClient({ product, issues, user }: { prod
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('ALL');
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+
+    // Distinct tags present across the current issue set, for the filter row.
+    const availableTags = Array.from(
+        new Map(issues.flatMap(i => i.tags || []).map(t => [t.id, t])).values()
+    ).sort((a, b) => a.name.localeCompare(b.name));
+
+    function toggleTagFilter(tagId: string) {
+        setSelectedTagIds(prev =>
+            prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
+        );
+    }
 
     // Auto-refresh logic: refresh data every 5 seconds
     useEffect(() => {
@@ -76,9 +95,12 @@ export default function ProductIssueListClient({ product, issues, user }: { prod
 
     const isOwnerOrAdmin = user?.role === 'ADMIN' || user?.role === 'OWNER';
 
-    // Filter issues based on active tab and search query
+    // Filter issues based on active tab, tag filter, and search query.
     const filteredIssues = issues.filter(issue => {
         const matchesTab = activeTab === 'ALL' || issue.status === activeTab || issue.supportStatus === activeTab;
+        // Tag filter is OR across selected tags: show issues carrying any of them.
+        const matchesTags = selectedTagIds.length === 0
+            || (issue.tags || []).some(t => selectedTagIds.includes(t.id));
         const descriptionText = htmlToText(issue.description);
         const query = searchQuery.toLowerCase();
         // Match on the ticket number only when the query looks like a ticket
@@ -90,8 +112,9 @@ export default function ProductIssueListClient({ product, issues, user }: { prod
         const matchesSearch = searchQuery === '' ||
             issue.title.toLowerCase().includes(query) ||
             descriptionText.toLowerCase().includes(query) ||
+            (issue.tags || []).some(t => t.name.toLowerCase().includes(query)) ||
             matchesTicket;
-        return matchesTab && matchesSearch;
+        return matchesTab && matchesTags && matchesSearch;
     });
 
     return (
@@ -126,7 +149,7 @@ export default function ProductIssueListClient({ product, issues, user }: { prod
                         </svg>
                         <input
                             type="text"
-                            placeholder="Search issues by title or description..."
+                            placeholder="Search issues by title, description, tag, or ticket..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full pl-12 pr-4 py-3.5 bg-transparent rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-gray-900 placeholder-gray-400"
@@ -155,6 +178,37 @@ export default function ProductIssueListClient({ product, issues, user }: { prod
                         );
                     })}
                 </div>
+
+                {/* Tag Filter Row */}
+                {availableTags.length > 0 && (
+                    <div className="flex items-center gap-2 mb-6 flex-wrap">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mr-1">Tags</span>
+                        {availableTags.map(tag => {
+                            const active = selectedTagIds.includes(tag.id);
+                            return (
+                                <button
+                                    key={tag.id}
+                                    onClick={() => toggleTagFilter(tag.id)}
+                                    aria-pressed={active}
+                                    className={`px-3 py-1.5 text-xs font-bold rounded-full transition-all duration-150 ${active
+                                        ? `${tagBadgeClasses(tag.color)} ring-2 ring-offset-1 ring-indigo-500`
+                                        : 'bg-white/80 text-gray-500 border border-gray-200/50 hover:bg-white hover:shadow-sm'
+                                        }`}
+                                >
+                                    {tag.name}
+                                </button>
+                            );
+                        })}
+                        {selectedTagIds.length > 0 && (
+                            <button
+                                onClick={() => setSelectedTagIds([])}
+                                className="px-3 py-1.5 text-xs font-semibold rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                            >
+                                Clear
+                            </button>
+                        )}
+                    </div>
+                )}
 
                 {/* Issue Cards - Glassmorphism Style */}
                 <div className="space-y-4">
@@ -186,6 +240,16 @@ export default function ProductIssueListClient({ product, issues, user }: { prod
                                         </h3>
                                         {/* Description */}
                                         <p className="text-gray-500 text-sm mt-1 line-clamp-1">{htmlToText(issue.description)}</p>
+                                        {/* Tags */}
+                                        {issue.tags && issue.tags.length > 0 && (
+                                            <div className="flex flex-wrap gap-1.5 mt-2">
+                                                {issue.tags.map(tag => (
+                                                    <span key={tag.id} className={`px-2 py-0.5 text-[11px] font-semibold rounded-full ${tagBadgeClasses(tag.color)}`}>
+                                                        {tag.name}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="flex gap-2 shrink-0">

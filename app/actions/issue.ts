@@ -7,7 +7,7 @@ import { createNotification, markIssueNotificationsAsRead } from "./notification
 import { sendLineMulticastMessage, createIssueNotification } from "@/lib/line-messaging";
 import { requireUser, requireStaff, requireAdmin, isStaff, sessionUserId } from "@/lib/auth-helpers";
 import { ISSUE_STATUS_VALUES, ISSUE_PRIORITY_VALUES, formatTicketNumber } from "@/lib/constants";
-import { issueCommentSchema, issueCreateSchema, issueDateSchema } from "@/lib/validation";
+import { issueCommentSchema, issueCommentEditSchema, issueCreateSchema, issueDateSchema, tagIdsSchema } from "@/lib/validation";
 
 // Helper to send LINE notifications to product-assigned LINE users
 async function sendLineNotificationForIssue(
@@ -89,6 +89,19 @@ async function logActivity(data: {
 // Display name used in activity descriptions.
 function actorLabel(user: { name?: string | null; email?: string | null }): string {
     return user.name || user.email || 'Unknown';
+}
+
+// Filter a client-supplied list of tag ids down to those that actually exist,
+// preserving no particular order. Returns [] for empty/undefined input.
+async function validExistingTagIds(tagIds?: string[]): Promise<string[]> {
+    if (!tagIds || tagIds.length === 0) return [];
+    const parsed = tagIdsSchema.parse(tagIds);
+    const unique = Array.from(new Set(parsed));
+    const found = await prisma.tag.findMany({
+        where: { id: { in: unique } },
+        select: { id: true },
+    });
+    return found.map(t => t.id);
 }
 
 // True if the product with `productId` has an owner (UserProducts M2M) matching `userId`.
@@ -186,13 +199,14 @@ export async function getIssues(productId?: string) {
         include: {
             user: { select: { name: true, email: true } },
             product: { select: { id: true, name: true } },
+            tags: { select: { id: true, name: true, color: true } },
         },
         orderBy: { createdAt: 'desc' },
     });
 }
 
 
-export async function createIssue(data: { title: string; description: string; productId?: string; imageUrls?: string[]; priority?: string }) {
+export async function createIssue(data: { title: string; description: string; productId?: string; imageUrls?: string[]; priority?: string; tagIds?: string[] }) {
     const user = await requireUser();
 
     if (!user.canReportIssues && user.role !== 'ADMIN') {
@@ -202,6 +216,9 @@ export async function createIssue(data: { title: string; description: string; pr
     // Validate untrusted input (length limits, array bounds, etc.).
     const parsed = issueCreateSchema.parse(data);
     const selfId = sessionUserId(user);
+
+    // Only connect tag ids that actually exist (client input is untrusted).
+    const validTagIds = await validExistingTagIds(parsed.tagIds);
 
     try {
         // 1. Create Issue without images first (to check if basic create works)
@@ -214,6 +231,7 @@ export async function createIssue(data: { title: string; description: string; pr
                 // ticketNumber is assigned by the DB sequence; priority falls
                 // back to the schema default (MEDIUM) when omitted.
                 ...(parsed.priority ? { priority: parsed.priority } : {}),
+                ...(validTagIds.length > 0 ? { tags: { connect: validTagIds.map(id => ({ id })) } } : {}),
             }
         });
 
@@ -354,6 +372,72 @@ export async function updateIssuePriority(id: string, priority: string) {
     return issue;
 }
 
+export async function updateIssueTags(id: string, tagIds: string[]) {
+    const user = await requireStaff();
+
+    const existingIssue = await prisma.issue.findUnique({
+        where: { id },
+        select: {
+            id: true, title: true, productId: true, userId: true,
+            tags: { select: { id: true, name: true } },
+        },
+    });
+    if (!existingIssue) throw new Error("Issue not found");
+
+    // OWNER is scoped to products they own; ADMIN is global.
+    if (user.role !== 'ADMIN' && !(await ownsProduct(sessionUserId(user), existingIssue.productId))) {
+        throw new Error("Unauthorized");
+    }
+
+    // Resolve the requested ids to real tags (name is used in the audit log).
+    const requested = await validExistingTagIds(tagIds);
+    const requestedTags = requested.length > 0
+        ? await prisma.tag.findMany({ where: { id: { in: requested } }, select: { id: true, name: true } })
+        : [];
+
+    // Describe the diff for the activity log; skip the write if nothing changed.
+    const before = new Set(existingIssue.tags.map(t => t.id));
+    const after = new Set(requestedTags.map(t => t.id));
+    const added = requestedTags.filter(t => !before.has(t.id)).map(t => t.name);
+    const removed = existingIssue.tags.filter(t => !after.has(t.id)).map(t => t.name);
+    if (added.length === 0 && removed.length === 0) {
+        return existingIssue;
+    }
+    const parts: string[] = [];
+    if (added.length) parts.push(`added ${added.join(', ')}`);
+    if (removed.length) parts.push(`removed ${removed.join(', ')}`);
+    const changeSummary = parts.join('; ');
+
+    // Atomic: `set` replaces the whole tag list + activity log.
+    const [issue] = await prisma.$transaction([
+        prisma.issue.update({
+            where: { id },
+            data: { tags: { set: requestedTags.map(t => ({ id: t.id })) } },
+        }),
+        prisma.issueActivity.create({
+            data: buildActivity({
+                issueId: id,
+                userId: sessionUserId(user),
+                actorName: actorLabel(user),
+                type: 'TAG_CHANGE',
+                description: `Tags updated: ${changeSummary}`,
+            }),
+        }),
+    ]);
+
+    // Tell the reporter their issue's tags changed (unless they changed them).
+    if (existingIssue.userId !== sessionUserId(user)) {
+        await notifyReporter(existingIssue, {
+            type: "ISSUE_TAG_UPDATE",
+            title: "Tags Updated",
+            message: `The tags on your issue "${existingIssue.title}" were updated: ${changeSummary}.`,
+        });
+    }
+
+    revalidatePath('/community/issues');
+    return issue;
+}
+
 export async function setIssueSchedule(id: string, schedule: { startDate: string | null; dueDate: string | null }) {
     const user = await requireStaff();
 
@@ -431,6 +515,7 @@ export async function getIssueById(id: string) {
         where: { id },
         include: {
             user: { select: { name: true, email: true } },
+            tags: { select: { id: true, name: true, color: true } },
             ...({
                 activities: {
                     include: { user: { select: { name: true, email: true } } },
@@ -891,6 +976,69 @@ export async function getIssueComments(issueId: string) {
     });
     return comments;
 }
+
+export async function updateIssueComment(data: { commentId: string; content: string }) {
+    const user = await requireUser();
+
+    // Validate untrusted input (content length).
+    const parsed = issueCommentEditSchema.parse(data);
+    const self = sessionUserId(user);
+
+    const comment = await prisma.issueComment.findUnique({
+        where: { id: parsed.commentId },
+        select: { id: true, userId: true, issueId: true, type: true },
+    });
+    if (!comment) throw new Error("Comment not found");
+
+    // Only free-form MESSAGE comments are editable. Workflow records
+    // (REJECTION / RESUBMIT / COMPLETE) are the justification tied to a status
+    // decision and must stay immutable for the audit trail.
+    if (comment.type !== 'MESSAGE') {
+        throw new Error("Only messages can be edited");
+    }
+
+    // Only the author may edit their own words (admins can delete, not rewrite).
+    if (comment.userId !== self) {
+        throw new Error("Unauthorized");
+    }
+
+    const updated = await prisma.issueComment.update({
+        where: { id: parsed.commentId },
+        data: { content: parsed.content },
+    });
+
+    revalidatePath('/community/issues');
+    return updated;
+}
+
+export async function deleteIssueComment(commentId: string) {
+    const user = await requireUser();
+    const self = sessionUserId(user);
+
+    const comment = await prisma.issueComment.findUnique({
+        where: { id: commentId },
+        select: { id: true, userId: true, issueId: true, type: true },
+    });
+    if (!comment) throw new Error("Comment not found");
+
+    // Only free-form MESSAGE comments are deletable; workflow records
+    // (REJECTION / RESUBMIT / COMPLETE) are part of the audit trail.
+    if (comment.type !== 'MESSAGE') {
+        throw new Error("Only messages can be deleted");
+    }
+
+    // The author can delete their own comment; an ADMIN can delete any (moderation).
+    if (comment.userId !== self && user.role !== 'ADMIN') {
+        throw new Error("Unauthorized");
+    }
+
+    // Comment images are removed by the ON DELETE CASCADE on IssueCommentImage.
+    await prisma.issueComment.delete({ where: { id: commentId } });
+
+    revalidatePath('/community/issues');
+    return { success: true };
+}
+
 export async function deleteIssue(id: string) {
     await requireAdmin();
 

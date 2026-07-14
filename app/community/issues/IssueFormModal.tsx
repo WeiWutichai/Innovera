@@ -2,14 +2,22 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createIssue } from "@/app/actions/issue";
+import { getTags } from "@/app/actions/tag";
 import { uploadImage } from "@/app/actions/upload";
 import { useRouter } from "next/navigation";
 import RichTextEditor from "@/app/components/RichTextEditor";
 import { sanitizeClientHtml } from "@/lib/sanitize-client";
+import { tagBadgeClasses } from "@/lib/constants";
 
 interface Product {
     id: string;
     name: string;
+}
+
+interface Tag {
+    id: string;
+    name: string;
+    color: string;
 }
 
 const PRIORITY_OPTIONS = [
@@ -50,7 +58,19 @@ export default function IssueFormModal({
     const [previewLightboxIndex, setPreviewLightboxIndex] = useState<number | null>(null);
     const [uploading, setUploading] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [tags, setTags] = useState<Tag[]>([]);
+    const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
     const descriptionTextLength = getHtmlText(description).trim().length;
+
+    useEffect(() => {
+        getTags().then(setTags).catch(() => setTags([]));
+    }, []);
+
+    function toggleTag(tagId: string) {
+        setSelectedTagIds(prev =>
+            prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
+        );
+    }
 
     useEffect(() => {
         previewsRef.current = previews;
@@ -139,7 +159,8 @@ export default function IssueFormModal({
                 description: sanitizedDescription,
                 productId: product.id,
                 imageUrls,
-                priority
+                priority,
+                tagIds: selectedTagIds
             });
 
             // Refresh the page data to show the new issue
@@ -217,6 +238,31 @@ export default function IssueFormModal({
                             ))}
                         </select>
                     </div>
+
+                    {tags.length > 0 && (
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Tags <span className="font-normal text-gray-400">(optional)</span></label>
+                            <div className="flex flex-wrap gap-2">
+                                {tags.map(tag => {
+                                    const selected = selectedTagIds.includes(tag.id);
+                                    return (
+                                        <button
+                                            key={tag.id}
+                                            type="button"
+                                            onClick={() => toggleTag(tag.id)}
+                                            aria-pressed={selected}
+                                            className={`px-3 py-1.5 text-xs font-bold rounded-full transition-all duration-150 ${selected
+                                                ? `${tagBadgeClasses(tag.color)} ring-2 ring-offset-1 ring-[#4B286D]`
+                                                : 'bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100'
+                                                }`}
+                                        >
+                                            {tag.name}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
 
                     <div>
                         <div className="flex justify-between items-center mb-1">
