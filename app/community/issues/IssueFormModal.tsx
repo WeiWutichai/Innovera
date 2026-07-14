@@ -2,12 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createIssue } from "@/app/actions/issue";
-import { getTags } from "@/app/actions/tag";
+import { getTags, createTag } from "@/app/actions/tag";
 import { uploadImage } from "@/app/actions/upload";
 import { useRouter } from "next/navigation";
 import RichTextEditor from "@/app/components/RichTextEditor";
 import { sanitizeClientHtml } from "@/lib/sanitize-client";
-import { tagBadgeClasses } from "@/lib/constants";
+import { tagBadgeClasses, TAG_COLORS } from "@/lib/constants";
+
+const TAG_COLOR_OPTIONS = Object.keys(TAG_COLORS);
 
 interface Product {
     id: string;
@@ -60,6 +62,10 @@ export default function IssueFormModal({
     const [success, setSuccess] = useState(false);
     const [tags, setTags] = useState<Tag[]>([]);
     const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+    const [showNewTag, setShowNewTag] = useState(false);
+    const [newTagName, setNewTagName] = useState("");
+    const [newTagColor, setNewTagColor] = useState("slate");
+    const [creatingTag, setCreatingTag] = useState(false);
     const descriptionTextLength = getHtmlText(description).trim().length;
 
     useEffect(() => {
@@ -70,6 +76,27 @@ export default function IssueFormModal({
         setSelectedTagIds(prev =>
             prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
         );
+    }
+
+    async function handleCreateTag() {
+        const name = newTagName.trim();
+        if (!name) return;
+        setCreatingTag(true);
+        setError("");
+        try {
+            const created = await createTag({ name, color: newTagColor });
+            const fresh = await getTags();
+            setTags(fresh);
+            // Pre-select the new tag so it's attached to the issue on submit.
+            setSelectedTagIds(prev => (prev.includes(created.id) ? prev : [...prev, created.id]));
+            setNewTagName("");
+            setNewTagColor("slate");
+            setShowNewTag(false);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to create tag");
+        } finally {
+            setCreatingTag(false);
+        }
     }
 
     useEffect(() => {
@@ -239,30 +266,78 @@ export default function IssueFormModal({
                         </select>
                     </div>
 
-                    {tags.length > 0 && (
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">Tags <span className="font-normal text-gray-400">(optional)</span></label>
-                            <div className="flex flex-wrap gap-2">
-                                {tags.map(tag => {
-                                    const selected = selectedTagIds.includes(tag.id);
-                                    return (
-                                        <button
-                                            key={tag.id}
-                                            type="button"
-                                            onClick={() => toggleTag(tag.id)}
-                                            aria-pressed={selected}
-                                            className={`px-3 py-1.5 text-xs font-bold rounded-full transition-all duration-150 ${selected
-                                                ? `${tagBadgeClasses(tag.color)} ring-2 ring-offset-1 ring-[#4B286D]`
-                                                : 'bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100'
-                                                }`}
-                                        >
-                                            {tag.name}
-                                        </button>
-                                    );
-                                })}
-                            </div>
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Tags <span className="font-normal text-gray-400">(optional)</span></label>
+                        <div className="flex flex-wrap items-center gap-2">
+                            {tags.map(tag => {
+                                const selected = selectedTagIds.includes(tag.id);
+                                return (
+                                    <button
+                                        key={tag.id}
+                                        type="button"
+                                        onClick={() => toggleTag(tag.id)}
+                                        aria-pressed={selected}
+                                        className={`px-3 py-1.5 text-xs font-bold rounded-full transition-all duration-150 ${selected
+                                            ? `${tagBadgeClasses(tag.color)} ring-2 ring-offset-1 ring-[#4B286D]`
+                                            : 'bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100'
+                                            }`}
+                                    >
+                                        {tag.name}
+                                    </button>
+                                );
+                            })}
+                            {!showNewTag && (
+                                <button
+                                    type="button"
+                                    onClick={() => setShowNewTag(true)}
+                                    className="px-3 py-1.5 text-xs font-bold rounded-full border border-dashed border-gray-300 text-gray-400 hover:border-[#4B286D] hover:text-[#4B286D] transition-all duration-150"
+                                >
+                                    + New Tag
+                                </button>
+                            )}
                         </div>
-                    )}
+
+                        {showNewTag && (
+                            <div className="mt-3 flex flex-wrap items-center gap-3 p-3 bg-gray-50 rounded border border-gray-200">
+                                <input
+                                    type="text"
+                                    value={newTagName}
+                                    onChange={(e) => setNewTagName(e.target.value)}
+                                    maxLength={40}
+                                    placeholder="Tag name"
+                                    className="px-3 py-1.5 bg-white border border-gray-200 rounded text-sm text-black focus:border-[#4B286D] outline-none"
+                                />
+                                <div className="flex items-center gap-1.5">
+                                    {TAG_COLOR_OPTIONS.map(color => (
+                                        <button
+                                            key={color}
+                                            type="button"
+                                            onClick={() => setNewTagColor(color)}
+                                            aria-label={color}
+                                            aria-pressed={newTagColor === color}
+                                            className={`w-6 h-6 rounded-full ${tagBadgeClasses(color)} ${newTagColor === color ? 'ring-2 ring-offset-1 ring-[#4B286D]' : ''}`}
+                                        />
+                                    ))}
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleCreateTag}
+                                    disabled={creatingTag || !newTagName.trim()}
+                                    className="px-4 py-1.5 bg-[#4B286D] text-white text-xs font-bold rounded hover:bg-[#3d1f5a] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {creatingTag ? "Creating..." : "Create"}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => { setShowNewTag(false); setNewTagName(""); setNewTagColor("slate"); }}
+                                    disabled={creatingTag}
+                                    className="px-4 py-1.5 bg-white text-gray-600 text-xs font-bold rounded border border-gray-200 hover:bg-gray-100 transition disabled:opacity-50"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        )}
+                    </div>
 
                     <div>
                         <div className="flex justify-between items-center mb-1">

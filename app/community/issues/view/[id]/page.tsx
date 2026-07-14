@@ -840,7 +840,7 @@ export default function IssueDetailPage() {
                                             <p className="mt-1.5 text-xs font-semibold text-rose-500">Start date must be on or before the due date.</p>
                                         )}
                                     </div>
-                                    {(allTags.length > 0 || isAdmin) && (
+                                    {(allTags.length > 0 || isOwner) && (
                                         <div className="w-full">
                                             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Tags</label>
                                             <div className="flex flex-wrap items-center gap-2">
@@ -861,7 +861,7 @@ export default function IssueDetailPage() {
                                                         </button>
                                                     );
                                                 })}
-                                                {isAdmin && !showNewTag && (
+                                                {isOwner && !showNewTag && (
                                                     <button
                                                         onClick={() => setShowNewTag(true)}
                                                         disabled={isPending}
@@ -879,8 +879,8 @@ export default function IssueDetailPage() {
                                                 </button>
                                             </div>
 
-                                            {/* Admin: create a new tag in the shared catalogue */}
-                                            {isAdmin && showNewTag && (
+                                            {/* Any staff: create a new tag in the shared catalogue */}
+                                            {isOwner && showNewTag && (
                                                 <div className="mt-3 flex flex-wrap items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
                                                     <input
                                                         type="text"

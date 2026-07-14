@@ -15,9 +15,9 @@ export async function getTags() {
     });
 }
 
-// ADMIN-only: add a new tag to the shared catalogue.
+// Any authenticated user can add a new tag to the shared catalogue.
 export async function createTag(data: { name: string; color?: string }) {
-    await requireAdmin();
+    await requireUser();
 
     const parsed = tagCreateSchema.parse(data);
     const name = parsed.name.trim();
