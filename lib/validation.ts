@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ISSUE_COMMENT_TYPES } from "./constants";
+import { ISSUE_COMMENT_TYPES, ISSUE_PRIORITY } from "./constants";
 
 // Demo Request Validation Schema
 export const demoRequestSchema = z.object({
@@ -46,9 +46,18 @@ export const issueCreateSchema = z.object({
     description: z.string().min(1, "Description is required").max(10000),
     productId: z.string().max(100).optional(),
     imageUrls: z.array(z.string().max(500)).max(20).optional(),
+    priority: z.enum(ISSUE_PRIORITY).optional(),
 });
 
 export type IssueCreateInput = z.infer<typeof issueCreateSchema>;
+
+// Issue due date validation. Arrives from <input type="date"> as "YYYY-MM-DD";
+// empty string or null clears the date. Only the picker's exact format is
+// accepted (z.iso.date also bounds the year to 4 digits); the string parses
+// as UTC midnight, which is the canonical form for this date-only value.
+export const issueDueDateSchema = z
+    .union([z.null(), z.literal(""), z.iso.date()])
+    .transform((v) => (v ? new Date(v) : null));
 
 // Issue comment validation.
 export const issueCommentSchema = z.object({

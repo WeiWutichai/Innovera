@@ -6,8 +6,8 @@ import { auth } from "@/auth";
 import { createNotification, markIssueNotificationsAsRead } from "./notification";
 import { sendLineMulticastMessage, createIssueNotification } from "@/lib/line-messaging";
 import { requireUser, requireStaff, requireAdmin, isStaff, sessionUserId } from "@/lib/auth-helpers";
-import { ISSUE_STATUS_VALUES } from "@/lib/constants";
-import { issueCommentSchema, issueCreateSchema } from "@/lib/validation";
+import { ISSUE_STATUS_VALUES, ISSUE_PRIORITY_VALUES, formatTicketNumber } from "@/lib/constants";
+import { issueCommentSchema, issueCreateSchema, issueDueDateSchema } from "@/lib/validation";
 
 // Helper to send LINE notifications to product-assigned LINE users
 async function sendLineNotificationForIssue(
@@ -192,7 +192,7 @@ export async function getIssues(productId?: string) {
 }
 
 
-export async function createIssue(data: { title: string; description: string; productId?: string; imageUrls?: string[] }) {
+export async function createIssue(data: { title: string; description: string; productId?: string; imageUrls?: string[]; priority?: string }) {
     const user = await requireUser();
 
     if (!user.canReportIssues && user.role !== 'ADMIN') {
@@ -211,6 +211,9 @@ export async function createIssue(data: { title: string; description: string; pr
                 description: parsed.description,
                 userId: selfId,
                 productId: parsed.productId,
+                // ticketNumber is assigned by the DB sequence; priority falls
+                // back to the schema default (MEDIUM) when omitted.
+                ...(parsed.priority ? { priority: parsed.priority } : {}),
             }
         });
 
@@ -241,7 +244,7 @@ export async function createIssue(data: { title: string; description: string; pr
         await notifyDevTeam(newIssue, selfId, {
             type: "ISSUE_CREATED",
             title: "New Issue Reported",
-            message: `New issue "${parsed.title}" reported${product?.name ? ` for ${product.name}` : ''}`,
+            message: `New issue ${formatTicketNumber(newIssue.ticketNumber)} "${parsed.title}" reported${product?.name ? ` for ${product.name}` : ''}${parsed.priority ? ` (priority: ${parsed.priority})` : ''}`,
         });
 
         revalidatePath("/community/issues");
@@ -295,6 +298,108 @@ export async function updateIssueStatus(id: string, status: string) {
             type: "ISSUE_STATUS_UPDATE",
             title: "Issue Status Updated",
             message: `Your issue "${issue.title}" status was updated to ${status}.`,
+        });
+    }
+
+    revalidatePath('/community/issues');
+    return issue;
+}
+
+export async function updateIssuePriority(id: string, priority: string) {
+    const user = await requireStaff();
+
+    // Validate the priority against the allowed values.
+    if (!ISSUE_PRIORITY_VALUES.includes(priority)) {
+        throw new Error(`Invalid priority: ${priority}`);
+    }
+
+    const existingIssue = await prisma.issue.findUnique({
+        where: { id },
+        select: { id: true, title: true, productId: true, userId: true, priority: true },
+    });
+    if (!existingIssue) throw new Error("Issue not found");
+
+    // OWNER is scoped to products they own; ADMIN is global.
+    if (user.role !== 'ADMIN' && !(await ownsProduct(sessionUserId(user), existingIssue.productId))) {
+        throw new Error("Unauthorized");
+    }
+
+    // Atomic: priority mutation + activity log.
+    const [issue] = await prisma.$transaction([
+        prisma.issue.update({
+            where: { id },
+            data: { priority },
+        }),
+        prisma.issueActivity.create({
+            data: buildActivity({
+                issueId: id,
+                userId: sessionUserId(user),
+                actorName: actorLabel(user),
+                type: 'PRIORITY_CHANGE',
+                description: `Priority changed from ${existingIssue.priority} to ${priority}`,
+            }),
+        }),
+    ]);
+
+    // Tell the reporter their issue's priority changed (unless they changed it).
+    if (issue.userId !== sessionUserId(user)) {
+        await notifyReporter(issue, {
+            type: "ISSUE_PRIORITY_UPDATE",
+            title: "Issue Priority Updated",
+            message: `Your issue "${issue.title}" priority was changed to ${priority}.`,
+        });
+    }
+
+    revalidatePath('/community/issues');
+    return issue;
+}
+
+export async function setIssueDueDate(id: string, dueDate: string | null) {
+    const user = await requireStaff();
+
+    // "" or null clears the date; anything else must coerce to a valid Date.
+    const parsedDueDate = issueDueDateSchema.parse(dueDate);
+
+    const existingIssue = await prisma.issue.findUnique({
+        where: { id },
+        select: { id: true, title: true, productId: true, userId: true, dueDate: true },
+    });
+    if (!existingIssue) throw new Error("Issue not found");
+
+    // OWNER is scoped to products they own; ADMIN is global.
+    if (user.role !== 'ADMIN' && !(await ownsProduct(sessionUserId(user), existingIssue.productId))) {
+        throw new Error("Unauthorized");
+    }
+
+    const dueDateLabel = parsedDueDate ? parsedDueDate.toISOString().split('T')[0] : null;
+
+    // Atomic: due date mutation + activity log.
+    const [issue] = await prisma.$transaction([
+        prisma.issue.update({
+            where: { id },
+            data: { dueDate: parsedDueDate },
+        }),
+        prisma.issueActivity.create({
+            data: buildActivity({
+                issueId: id,
+                userId: sessionUserId(user),
+                actorName: actorLabel(user),
+                type: 'DUE_DATE_CHANGE',
+                description: dueDateLabel
+                    ? `Due date set to ${dueDateLabel}`
+                    : `Due date removed`,
+            }),
+        }),
+    ]);
+
+    // Tell the reporter a target completion date was set (unless they set it).
+    if (issue.userId !== sessionUserId(user)) {
+        await notifyReporter(issue, {
+            type: "ISSUE_DUE_DATE_UPDATE",
+            title: "Due Date Updated",
+            message: dueDateLabel
+                ? `A target completion date of ${dueDateLabel} was set for your issue "${issue.title}".`
+                : `The target completion date for your issue "${issue.title}" was removed.`,
         });
     }
 

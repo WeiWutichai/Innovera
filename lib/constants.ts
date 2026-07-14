@@ -27,6 +27,34 @@ export const SUPPORT_STATUS = {
 export type SupportStatus = (typeof SUPPORT_STATUS)[keyof typeof SUPPORT_STATUS];
 export const SUPPORT_STATUS_VALUES = Object.values(SUPPORT_STATUS) as string[];
 
+// Issue priorities. Chosen by the reporter at creation; support/admin can
+// adjust afterwards.
+export const ISSUE_PRIORITY = {
+    LOW: "LOW",
+    MEDIUM: "MEDIUM",
+    HIGH: "HIGH",
+    URGENT: "URGENT",
+} as const;
+export type IssuePriority = (typeof ISSUE_PRIORITY)[keyof typeof ISSUE_PRIORITY];
+export const ISSUE_PRIORITY_VALUES = Object.values(ISSUE_PRIORITY) as string[];
+
+// Human-readable ticket id shown everywhere an issue is referenced.
+// ticketNumber is DB-generated (autoincrement); this is display-only.
+export function formatTicketNumber(ticketNumber: number): string {
+    return `ISS-${String(ticketNumber).padStart(4, "0")}`;
+}
+
+// Due dates are date-only values stored as UTC midnight. Always render them
+// with timeZone: "UTC" so every viewer sees the exact date support picked,
+// and compare against the end of the due day in UTC so the overdue flip
+// happens at one deterministic instant regardless of server/client timezone
+// (this also keeps SSR HTML and client hydration in agreement).
+export const DUE_DATE_LOCALE_OPTIONS = { timeZone: "UTC" } as const;
+
+export function isDueDatePast(dueDate: Date | string): boolean {
+    return Date.now() > new Date(dueDate).getTime() + 86_399_999;
+}
+
 // Issue comment types. MESSAGE is a free-form reply either party can post at
 // any time (two-way Q&A), independent of a status transition; the others are
 // tied to specific workflow actions.

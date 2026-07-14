@@ -12,6 +12,13 @@ interface Product {
     name: string;
 }
 
+const PRIORITY_OPTIONS = [
+    { value: 'LOW', label: 'Low' },
+    { value: 'MEDIUM', label: 'Medium' },
+    { value: 'HIGH', label: 'High' },
+    { value: 'URGENT', label: 'Urgent' },
+];
+
 function getHtmlText(html: string) {
     if (typeof document === "undefined") {
         return html.replace(/<[^>]*>/g, "");
@@ -98,6 +105,7 @@ export default function IssueFormModal({
 
         const formData = new FormData(e.currentTarget);
         const title = formData.get('title') as string;
+        const priority = formData.get('priority') as string;
         const sanitizedDescription = sanitizeClientHtml(description);
 
         // Basic validation
@@ -130,7 +138,8 @@ export default function IssueFormModal({
                 title,
                 description: sanitizedDescription,
                 productId: product.id,
-                imageUrls
+                imageUrls,
+                priority
             });
 
             // Refresh the page data to show the new issue
@@ -194,6 +203,19 @@ export default function IssueFormModal({
                             className="w-full border-2 border-gray-100 rounded p-2 focus:border-[#4B286D] outline-none transition text-black"
                             placeholder="Brief summary of the issue"
                         />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Priority</label>
+                        <select
+                            name="priority"
+                            defaultValue="MEDIUM"
+                            className="w-full border-2 border-gray-100 rounded p-2 focus:border-[#4B286D] outline-none transition text-black bg-white"
+                        >
+                            {PRIORITY_OPTIONS.map(option => (
+                                <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
+                        </select>
                     </div>
 
                     <div>

@@ -219,10 +219,13 @@ model Document {
 
 model Issue {
   id            String   @id @default(cuid())
+  ticketNumber  Int      @unique @default(autoincrement()) // Human-readable running number, displayed as ISS-0001
   title         String
   description   String   @db.Text
   status        String   @default("OPEN") // User side: OPEN, PENDING_REVIEW, CLOSED, REJECTED
   supportStatus String   @default("TODO") // Support side: TODO, IN_PROGRESS, COMPLETE, COMPLETED, REJECTED
+  priority      String   @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  dueDate       DateTime? // Target completion date, set by support
   userId        Int
   user          User     @relation(fields: [userId], references: [id])
   productId     String?

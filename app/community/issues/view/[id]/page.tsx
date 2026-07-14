@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState, useTransition, useRef, useMemo } from "react";
-import { getIssueById, acceptIssue, completeIssue, closeIssue, rejectIssue, resubmitIssue, addIssueComment, getIssueComments, deleteIssue } from "@/app/actions/issue";
+import { getIssueById, acceptIssue, completeIssue, closeIssue, rejectIssue, resubmitIssue, addIssueComment, getIssueComments, deleteIssue, updateIssuePriority, setIssueDueDate } from "@/app/actions/issue";
 import { markIssueNotificationsAsRead } from "@/app/actions/notification";
 import { uploadImage } from "@/app/actions/upload";
+import { formatTicketNumber, isDueDatePast, DUE_DATE_LOCALE_OPTIONS } from "@/lib/constants";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -26,10 +27,13 @@ interface IssueComment {
 
 interface IssueDetail {
     id: string;
+    ticketNumber: number;
     title: string;
     description: string;
     status: string;
     supportStatus: string;
+    priority: string;
+    dueDate: Date | string | null;
     userId: number;
     createdAt: Date;
     user: { name: string | null; email: string };
@@ -44,6 +48,16 @@ interface IssueDetail {
         actorName: string | null;
     }[];
 }
+
+const PRIORITY_ORDER = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
+
+// Solid badge colors, matching the live header convention (bg-{color}-500 + white).
+const PRIORITY_SOLID: Record<string, string> = {
+    LOW: 'bg-gray-400',
+    MEDIUM: 'bg-teal-500',
+    HIGH: 'bg-orange-500',
+    URGENT: 'bg-red-600',
+};
 
 export default function IssueDetailPage() {
     const params = useParams();
@@ -69,6 +83,16 @@ export default function IssueDetailPage() {
     const [uploadingComment, setUploadingComment] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Due-date picker (support/admin control), kept in sync with the loaded
+    // issue. The effect keys on the STRING form: dueDate arrives as a fresh
+    // Date object on every refetch, so keying on the object itself would reset
+    // an unsaved picker selection after any unrelated action.
+    const [dueDateInput, setDueDateInput] = useState("");
+    const storedDueDate = issue?.dueDate ? new Date(issue.dueDate).toISOString().split('T')[0] : "";
+    useEffect(() => {
+        setDueDateInput(storedDueDate);
+    }, [storedDueDate]);
 
     // Free-form message composer (two-way Q&A, available at any status)
     const [messageText, setMessageText] = useState("");
@@ -330,6 +354,14 @@ export default function IssueDetailPage() {
 
     if (!issue) return null;
 
+    // Overdue = past the end of the due day (UTC) while the issue still needs
+    // support work. REJECTED is deliberately NOT terminal: a reporter rejecting
+    // the fix puts the issue back into active rework. COMPLETE/COMPLETED mean
+    // the ball is in the reporter's court.
+    const isDone = issue.status === 'CLOSED'
+        || ['COMPLETE', 'COMPLETED'].includes(issue.supportStatus || '');
+    const overdue = !!issue.dueDate && !isDone && isDueDatePast(issue.dueDate);
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-indigo-50/50 py-8">
             <div className="max-w-4xl mx-auto px-4">
@@ -380,6 +412,7 @@ export default function IssueDetailPage() {
 
                         <div className="relative flex justify-between items-start gap-6">
                             <div className="min-w-0 flex-1">
+                                <p className="font-mono text-sm font-bold text-indigo-200 mb-1">{formatTicketNumber(issue.ticketNumber)}</p>
                                 <h1 className="text-3xl font-bold mb-2 text-white drop-shadow-sm">{issue.title}</h1>
                                 {issue.product && (
                                     <p className="text-indigo-200 text-base flex items-center gap-2">
@@ -417,6 +450,28 @@ export default function IssueDetailPage() {
                                         {(issue.supportStatus || 'TODO').replace('_', ' ')}
                                     </span>
                                 </div>
+                                {/* Priority */}
+                                <div className="flex items-center gap-3">
+                                    <span className="text-sm text-indigo-200">Priority:</span>
+                                    <span className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-full shadow-lg ${PRIORITY_SOLID[issue.priority || 'MEDIUM'] || 'bg-gray-500'} text-white`}>
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2z" />
+                                        </svg>
+                                        {issue.priority || 'MEDIUM'}
+                                    </span>
+                                </div>
+                                {/* Due Date */}
+                                {issue.dueDate && (
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-sm text-indigo-200">Due Date:</span>
+                                        <span className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-full shadow-lg text-white ${overdue ? 'bg-red-600' : 'bg-white/20 border border-white/30 backdrop-blur-sm'}`} suppressHydrationWarning>
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            {new Date(issue.dueDate).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', ...DUE_DATE_LOCALE_OPTIONS })}{overdue ? ' — OVERDUE' : ''}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -567,6 +622,59 @@ export default function IssueDetailPage() {
                                             )}
                                         </div>
                                     )}
+                                </div>
+
+                                {/* Priority & Due Date Controls */}
+                                <div className="mt-6 flex flex-wrap gap-x-10 gap-y-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Priority</label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {PRIORITY_ORDER.map(p => {
+                                                const isActive = (issue.priority || 'MEDIUM') === p;
+                                                return (
+                                                    <button
+                                                        key={p}
+                                                        onClick={() => !isActive && handleAction(() => updateIssuePriority(issue.id, p), `Priority changed to ${p}.`)}
+                                                        disabled={isPending || isActive}
+                                                        className={`px-4 py-2 text-xs font-bold rounded-full transition-all duration-200 disabled:cursor-not-allowed ${isActive
+                                                            ? `${PRIORITY_SOLID[p]} text-white shadow-lg scale-105`
+                                                            : 'bg-white text-gray-500 border border-gray-200 hover:border-gray-300 hover:bg-gray-50 disabled:opacity-50'
+                                                            }`}
+                                                    >
+                                                        {p}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Due Date</label>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="date"
+                                                value={dueDateInput}
+                                                onChange={(e) => setDueDateInput(e.target.value)}
+                                                disabled={isPending}
+                                                className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent transition-all duration-200 disabled:opacity-50"
+                                            />
+                                            <button
+                                                onClick={() => handleAction(() => setIssueDueDate(issue.id, dueDateInput || null), dueDateInput ? "Due date updated." : "Due date removed.")}
+                                                disabled={isPending || dueDateInput === storedDueDate}
+                                                className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                            >
+                                                Save
+                                            </button>
+                                            {issue.dueDate && (
+                                                <button
+                                                    onClick={() => handleAction(() => setIssueDueDate(issue.id, null), "Due date removed.")}
+                                                    disabled={isPending}
+                                                    className="px-4 py-2 bg-white text-gray-500 text-xs font-bold rounded-xl border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 disabled:opacity-50"
+                                                >
+                                                    Clear
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -927,7 +1035,9 @@ export default function IssueDetailPage() {
                                                 <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 z-10 shadow-sm ${activity.type === 'CREATED' ? 'bg-gradient-to-br from-emerald-400 to-green-500' :
                                                     activity.type === 'STATUS_CHANGE' ? 'bg-gradient-to-br from-blue-400 to-indigo-500' :
                                                         activity.type === 'COMMENTED' ? 'bg-gradient-to-br from-violet-400 to-purple-500' :
-                                                            'bg-gradient-to-br from-gray-300 to-gray-400'
+                                                            activity.type === 'PRIORITY_CHANGE' ? 'bg-gradient-to-br from-orange-400 to-amber-500' :
+                                                                activity.type === 'DUE_DATE_CHANGE' ? 'bg-gradient-to-br from-teal-400 to-cyan-500' :
+                                                                    'bg-gradient-to-br from-gray-300 to-gray-400'
                                                     }`}>
                                                     {activity.type === 'CREATED' && (
                                                         <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -942,6 +1052,16 @@ export default function IssueDetailPage() {
                                                     {activity.type === 'COMMENTED' && (
                                                         <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                                                        </svg>
+                                                    )}
+                                                    {activity.type === 'PRIORITY_CHANGE' && (
+                                                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2z" />
+                                                        </svg>
+                                                    )}
+                                                    {activity.type === 'DUE_DATE_CHANGE' && (
+                                                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                                         </svg>
                                                     )}
                                                 </div>
@@ -1006,6 +1126,26 @@ export default function IssueDetailPage() {
                                         </p>
                                     </div>
                                 </div>
+                                {issue.dueDate && (
+                                    <div className="flex items-center gap-2 text-gray-500">
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${overdue ? 'bg-gradient-to-br from-rose-100 to-red-100' : 'bg-gradient-to-br from-indigo-100 to-purple-100'}`}>
+                                            <svg className={`w-4 h-4 ${overdue ? 'text-rose-600' : 'text-indigo-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <span className="text-gray-400 text-xs">Due Date</span>
+                                            <p className={`font-medium ${overdue ? 'text-rose-600' : 'text-gray-700'}`} suppressHydrationWarning>
+                                                {new Date(issue.dueDate).toLocaleDateString('th-TH', {
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric',
+                                                    ...DUE_DATE_LOCALE_OPTIONS
+                                                })}{overdue ? ' (overdue)' : ''}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

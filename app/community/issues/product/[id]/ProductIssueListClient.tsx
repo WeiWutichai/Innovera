@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import IssueFormModal from "../../IssueFormModal";
 import { useRouter } from "next/navigation";
+import { formatTicketNumber, isDueDatePast, DUE_DATE_LOCALE_OPTIONS } from "@/lib/constants";
 
 
 interface Product {
@@ -12,10 +13,13 @@ interface Product {
 
 interface Issue {
     id: string;
+    ticketNumber: number;
     title: string;
     description: string;
     status: string;
     supportStatus: string;
+    priority: string;
+    dueDate: Date | string | null;
     createdAt: Date;
 }
 
@@ -42,6 +46,18 @@ function htmlToText(html: string) {
     return element.textContent || '';
 }
 
+// Overdue = past the end of the due day (UTC) while the issue still needs
+// support work. REJECTED is deliberately NOT terminal: a reporter rejecting
+// the fix puts the issue back into active rework, where the overdue flag
+// matters most. COMPLETE/COMPLETED mean the ball is in the reporter's court.
+function isOverdue(issue: Issue): boolean {
+    if (!issue.dueDate) return false;
+    const done = issue.status === 'CLOSED'
+        || ['COMPLETE', 'COMPLETED'].includes(issue.supportStatus || '');
+    if (done) return false;
+    return isDueDatePast(issue.dueDate);
+}
+
 export default function ProductIssueListClient({ product, issues, user }: { product: Product, issues: Issue[], user: CurrentUser | null }) {
     const router = useRouter();
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -63,9 +79,17 @@ export default function ProductIssueListClient({ product, issues, user }: { prod
     const filteredIssues = issues.filter(issue => {
         const matchesTab = activeTab === 'ALL' || issue.status === activeTab || issue.supportStatus === activeTab;
         const descriptionText = htmlToText(issue.description);
+        const query = searchQuery.toLowerCase();
+        // Match on the ticket number only when the query looks like a ticket
+        // reference ("ISS-0042", "iss42", "42") — otherwise short queries like
+        // "iss" or "0" would match every card via the constant prefix/padding.
+        const ticketQuery = query.match(/^(?:iss-?)?(\d+)$/);
+        const matchesTicket = !!ticketQuery
+            && String(issue.ticketNumber).padStart(4, '0').includes(ticketQuery[1]);
         const matchesSearch = searchQuery === '' ||
-            issue.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            descriptionText.toLowerCase().includes(searchQuery.toLowerCase());
+            issue.title.toLowerCase().includes(query) ||
+            descriptionText.toLowerCase().includes(query) ||
+            matchesTicket;
         return matchesTab && matchesSearch;
     });
 
@@ -156,6 +180,7 @@ export default function ProductIssueListClient({ product, issues, user }: { prod
                                 <div className="flex items-start justify-between gap-4 mb-3 pl-4">
                                     <div className="flex-1 min-w-0">
                                         <h3 className="font-bold text-lg text-gray-900 group-hover:text-indigo-700 transition-colors duration-300 truncate">
+                                            <span className="font-mono text-sm font-bold text-indigo-500 mr-2">{formatTicketNumber(issue.ticketNumber)}</span>
                                             {issue.title}
                                         </h3>
                                         {/* Description */}
@@ -163,6 +188,18 @@ export default function ProductIssueListClient({ product, issues, user }: { prod
                                     </div>
 
                                     <div className="flex gap-2 shrink-0">
+                                        {/* Priority Badge */}
+                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full shadow-sm transition-all duration-300 group-hover:scale-105 ${(issue.priority || 'MEDIUM') === 'URGENT' ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-red-500/25' :
+                                            (issue.priority || 'MEDIUM') === 'HIGH' ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-orange-500/25' :
+                                                (issue.priority || 'MEDIUM') === 'LOW' ? 'bg-gradient-to-r from-slate-400 to-gray-400 text-white shadow-gray-400/25' :
+                                                    'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-teal-500/25'
+                                            }`}>
+                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2z" />
+                                            </svg>
+                                            {issue.priority || 'MEDIUM'}
+                                        </span>
+
                                         {/* User Status Badge */}
                                         <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full shadow-sm transition-all duration-300 group-hover:scale-105 ${issue.status === 'OPEN' ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-blue-500/25' :
                                             issue.status === 'PENDING_REVIEW' ? 'bg-gradient-to-r from-purple-500 to-violet-500 text-white shadow-purple-500/25' :
@@ -198,6 +235,16 @@ export default function ProductIssueListClient({ product, issues, user }: { prod
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
                                     Reported on {new Date(issue.createdAt).toLocaleDateString()}
+
+                                    {issue.dueDate && (
+                                        <span className={`inline-flex items-center gap-1 ${isOverdue(issue) ? 'text-rose-500 font-semibold' : ''}`} suppressHydrationWarning>
+                                            <span className="text-gray-300">·</span>
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            Due {new Date(issue.dueDate).toLocaleDateString(undefined, DUE_DATE_LOCALE_OPTIONS)}{isOverdue(issue) ? ' (overdue)' : ''}
+                                        </span>
+                                    )}
 
                                     {/* Arrow indicator on hover */}
                                     <svg className="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
