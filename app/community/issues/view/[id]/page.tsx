@@ -29,6 +29,7 @@ interface IssueComment {
     content: string;
     type: string;
     userId: number;
+    parentId?: string | null;
     createdAt: Date;
     updatedAt?: Date | string | null;
     user: { name: string | null; email: string };
@@ -95,6 +96,11 @@ export default function IssueDetailPage() {
     const [uploadingComment, setUploadingComment] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Threaded replies: which topic's reply box is open + its draft.
+    const [replyingToId, setReplyingToId] = useState<string | null>(null);
+    const [replyText, setReplyText] = useState("");
+    const [sendingReply, setSendingReply] = useState(false);
 
     // Schedule pickers (support/admin control), kept in sync with the loaded
     // issue. The effects key on the STRING form: the dates arrive as fresh
@@ -381,6 +387,29 @@ export default function IssueDetailPage() {
         }
     };
 
+    const handleSendReply = async (parentId: string) => {
+        if (!replyText.trim()) {
+            setError("Please enter a reply");
+            return;
+        }
+        setSendingReply(true);
+        try {
+            await addIssueComment({ issueId: id, content: replyText, type: 'MESSAGE', parentId });
+            setReplyText("");
+            setReplyingToId(null);
+            setActionSuccess("Reply sent");
+            const commentsData = await getIssueComments(id);
+            setComments(commentsData as unknown as IssueComment[]);
+            const data = await getIssueById(id);
+            setIssue(data as unknown as IssueDetail);
+            setTimeout(() => setActionSuccess(""), 3000);
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setSendingReply(false);
+        }
+    };
+
     const startEditingComment = (comment: IssueComment) => {
         setEditingCommentId(comment.id);
         setEditingCommentText(comment.content);
@@ -424,6 +453,168 @@ export default function IssueDetailPage() {
         } finally {
             setDeletingCommentId(null);
         }
+    };
+
+    // Renders a single comment card. `isReply` renders a lighter, smaller card
+    // used for threaded replies nested under a topic.
+    const renderCommentCard = (comment: IssueComment, isReply: boolean, replyCount: number = 0) => {
+        const fromReporter = comment.userId === (issue?.userId ?? -1);
+        const senderName = comment.user?.name || comment.user?.email || (fromReporter ? 'Reporter' : 'Dev Team');
+        const roleLabel = fromReporter ? 'Reporter' : 'Dev Team';
+        const side = fromReporter
+            ? { card: 'from-blue-50 to-indigo-50/50 border-blue-100', accent: 'from-blue-400 to-indigo-500', avatar: 'from-blue-400 to-indigo-500', chip: 'bg-blue-100 text-blue-700' }
+            : { card: 'from-emerald-50 to-green-50/50 border-emerald-100', accent: 'from-emerald-400 to-green-500', avatar: 'from-emerald-400 to-green-500', chip: 'bg-emerald-100 text-emerald-700' };
+        const typeChip =
+            comment.type === 'REJECTION' ? { text: 'Rejected', cls: 'bg-rose-100 text-rose-700' } :
+                comment.type === 'COMPLETE' ? { text: 'Marked complete', cls: 'bg-violet-100 text-violet-700' } :
+                    comment.type === 'RESUBMIT' ? { text: 'Resubmitted', cls: 'bg-orange-100 text-orange-700' } :
+                        null;
+        // Only free-form MESSAGE comments are editable/deletable; workflow
+        // records (rejection/resubmit/complete) stay immutable for the audit trail.
+        const isMessage = comment.type === 'MESSAGE';
+        const canEdit = isMessage && comment.userId === selfUserId;
+        // A non-admin can't delete a topic that still has replies: the DB would
+        // cascade-delete other people's replies, so the server rejects it. Mirror
+        // that guard here (admins may still moderate) so we never offer a Delete
+        // button the server is guaranteed to reject.
+        const canDelete = isMessage && (comment.userId === selfUserId || isAdmin) && (isAdmin || replyCount === 0);
+        const isEditing = editingCommentId === comment.id;
+        const edited = !!comment.updatedAt
+            && new Date(comment.updatedAt).getTime() - new Date(comment.createdAt).getTime() > 2000;
+        return (
+            <div
+                className={`relative ${isReply ? 'p-4 rounded-xl' : 'p-5 rounded-2xl'} transition-all duration-300 hover:shadow-md bg-gradient-to-br border ${side.card}`}
+            >
+                {/* Accent Line */}
+                <div className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-full bg-gradient-to-b ${side.accent}`}></div>
+
+                <div className="pl-4">
+                    <div className="flex justify-between items-start mb-3">
+                        <div className="flex items-center gap-3">
+                            {/* Avatar */}
+                            <div className={`${isReply ? 'w-8 h-8 text-xs' : 'w-10 h-10 text-sm'} rounded-full flex items-center justify-center text-white font-bold bg-gradient-to-br ${side.avatar}`}>
+                                {(comment.user?.name || comment.user?.email || '?')[0].toUpperCase()}
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${side.chip}`}>
+                                        {roleLabel}
+                                    </span>
+                                    {typeChip && (
+                                        <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${typeChip.cls}`}>
+                                            {typeChip.text}
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-sm text-gray-600 mt-1 font-medium">
+                                    {senderName}
+                                </p>
+                            </div>
+                        </div>
+                        <span className="text-xs text-gray-400 bg-white/50 px-2 py-1 rounded-lg" suppressHydrationWarning>
+                            {new Date(comment.createdAt).toLocaleString('th-TH', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: false
+                            })}
+                        </span>
+                    </div>
+                    {isEditing ? (
+                        <div className="space-y-3">
+                            <textarea
+                                value={editingCommentText}
+                                onChange={(e) => setEditingCommentText(e.target.value)}
+                                className="w-full p-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent min-h-[90px] text-gray-900 transition-all duration-200"
+                            />
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={saveEditedComment}
+                                    disabled={savingComment || !editingCommentText.trim()}
+                                    className="px-4 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-bold rounded-lg shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {savingComment ? "Saving..." : "Save"}
+                                </button>
+                                <button
+                                    onClick={cancelEditingComment}
+                                    disabled={savingComment}
+                                    className="px-4 py-1.5 bg-white text-gray-600 text-xs font-bold rounded-lg border border-gray-200 hover:bg-gray-50 transition-all duration-200 disabled:opacity-50"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                            {comment.content}
+                            {edited && <span className="ml-2 text-xs text-gray-400 font-medium">(edited)</span>}
+                        </p>
+                    )}
+
+                    {/* Comment Images */}
+                    {!isEditing && comment.images && comment.images.length > 0 && (
+                        <div className="flex gap-3 mt-4 flex-wrap">
+                            {comment.images.map((img) => (
+                                <img
+                                    key={img.id}
+                                    src={img.url}
+                                    alt="Attachment"
+                                    className="w-24 h-24 object-cover rounded-xl border-2 border-white shadow-sm cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-300"
+                                    onClick={() => window.open(img.url, '_blank')}
+                                />
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Edit / Delete controls */}
+                    {!isEditing && (canEdit || canDelete) && (
+                        <div className="flex items-center gap-3 mt-3">
+                            {canEdit && (
+                                <button
+                                    onClick={() => startEditingComment(comment)}
+                                    className="text-xs font-semibold text-gray-400 hover:text-indigo-600 transition-colors"
+                                >
+                                    Edit
+                                </button>
+                            )}
+                            {canDelete && confirmDeleteCommentId !== comment.id && (
+                                <button
+                                    onClick={() => setConfirmDeleteCommentId(comment.id)}
+                                    className="text-xs font-semibold text-gray-400 hover:text-rose-600 transition-colors"
+                                >
+                                    Delete
+                                </button>
+                            )}
+                            {canDelete && confirmDeleteCommentId === comment.id && (
+                                <span className="inline-flex items-center gap-2">
+                                    <span className="text-xs font-bold text-rose-600">
+                                        {replyCount > 0
+                                            ? `Delete message and ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}?`
+                                            : 'Delete?'}
+                                    </span>
+                                    <button
+                                        onClick={() => { setConfirmDeleteCommentId(null); removeComment(comment.id); }}
+                                        disabled={deletingCommentId === comment.id}
+                                        className="text-xs font-bold text-rose-600 hover:text-rose-700 disabled:opacity-50"
+                                    >
+                                        {deletingCommentId === comment.id ? "Deleting..." : "Yes"}
+                                    </button>
+                                    <button
+                                        onClick={() => setConfirmDeleteCommentId(null)}
+                                        disabled={deletingCommentId === comment.id}
+                                        className="text-xs font-semibold text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                                    >
+                                        No
+                                    </button>
+                                </span>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
     };
 
     const getStatusColor = (status: string) => {
@@ -1179,158 +1370,64 @@ export default function IssueDetailPage() {
                                     </svg>
                                     Conversation History ({comments.length})
                                 </h3>
-                                <div className="space-y-4">
-                                    {comments.map((comment) => {
-                                        // Attribute each message by its author's side, not its type,
-                                        // so free-form replies from either party render correctly.
-                                        const fromReporter = comment.userId === issue.userId;
-                                        const senderName = comment.user?.name || comment.user?.email || (fromReporter ? 'Reporter' : 'Dev Team');
-                                        const roleLabel = fromReporter ? 'Reporter' : 'Dev Team';
-                                        const side = fromReporter
-                                            ? { card: 'from-blue-50 to-indigo-50/50 border-blue-100', accent: 'from-blue-400 to-indigo-500', avatar: 'from-blue-400 to-indigo-500', chip: 'bg-blue-100 text-blue-700' }
-                                            : { card: 'from-emerald-50 to-green-50/50 border-emerald-100', accent: 'from-emerald-400 to-green-500', avatar: 'from-emerald-400 to-green-500', chip: 'bg-emerald-100 text-emerald-700' };
-                                        const typeChip =
-                                            comment.type === 'REJECTION' ? { text: 'Rejected', cls: 'bg-rose-100 text-rose-700' } :
-                                                comment.type === 'COMPLETE' ? { text: 'Marked complete', cls: 'bg-violet-100 text-violet-700' } :
-                                                    comment.type === 'RESUBMIT' ? { text: 'Resubmitted', cls: 'bg-orange-100 text-orange-700' } :
-                                                        null;
-                                        // Only free-form MESSAGE comments are editable/deletable; workflow
-                                        // records (rejection/resubmit/complete) stay immutable for the audit trail.
-                                        const isMessage = comment.type === 'MESSAGE';
-                                        const canEdit = isMessage && comment.userId === selfUserId;
-                                        const canDelete = isMessage && (comment.userId === selfUserId || isAdmin);
-                                        const isEditing = editingCommentId === comment.id;
-                                        const edited = !!comment.updatedAt
-                                            && new Date(comment.updatedAt).getTime() - new Date(comment.createdAt).getTime() > 2000;
+                                <div className="space-y-5">
+                                    {comments.filter(c => !c.parentId).map((topic) => {
+                                        // Replies to this topic, oldest-first for natural reading.
+                                        const topicReplies = comments
+                                            .filter(c => c.parentId === topic.id)
+                                            .slice()
+                                            .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+                                        const canReply = isOwner || isIssueOwner;
                                         return (
-                                            <div
-                                                key={comment.id}
-                                                className={`relative p-5 rounded-2xl transition-all duration-300 hover:shadow-md bg-gradient-to-br border ${side.card}`}
-                                            >
-                                                {/* Accent Line */}
-                                                <div className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-full bg-gradient-to-b ${side.accent}`}></div>
+                                            <div key={topic.id}>
+                                                {renderCommentCard(topic, false, topicReplies.length)}
 
-                                                <div className="pl-4">
-                                                    <div className="flex justify-between items-start mb-3">
-                                                        <div className="flex items-center gap-3">
-                                                            {/* Avatar */}
-                                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm bg-gradient-to-br ${side.avatar}`}>
-                                                                {(comment.user?.name || comment.user?.email || '?')[0].toUpperCase()}
-                                                            </div>
-                                                            <div>
-                                                                <div className="flex items-center gap-2 flex-wrap">
-                                                                    <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${side.chip}`}>
-                                                                        {roleLabel}
-                                                                    </span>
-                                                                    {typeChip && (
-                                                                        <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${typeChip.cls}`}>
-                                                                            {typeChip.text}
-                                                                        </span>
-                                                                    )}
+                                                {(topicReplies.length > 0 || canReply) && (
+                                                    <div className="mt-2 ml-5 pl-4 border-l-2 border-gray-100 space-y-3">
+                                                        {topicReplies.map((reply) => (
+                                                            <div key={reply.id}>{renderCommentCard(reply, true)}</div>
+                                                        ))}
+
+                                                        {canReply && (
+                                                            replyingToId === topic.id ? (
+                                                                <div className="space-y-2">
+                                                                    <textarea
+                                                                        value={replyText}
+                                                                        onChange={(e) => setReplyText(e.target.value)}
+                                                                        placeholder="Write a reply..."
+                                                                        className="w-full p-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent min-h-[70px] text-gray-900 transition-all duration-200"
+                                                                    />
+                                                                    <div className="flex gap-2">
+                                                                        <button
+                                                                            onClick={() => handleSendReply(topic.id)}
+                                                                            disabled={sendingReply || !replyText.trim()}
+                                                                            className="px-4 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-bold rounded-lg shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                        >
+                                                                            {sendingReply ? "Sending..." : "Send Reply"}
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => { setReplyingToId(null); setReplyText(""); }}
+                                                                            disabled={sendingReply}
+                                                                            className="px-4 py-1.5 bg-white text-gray-600 text-xs font-bold rounded-lg border border-gray-200 hover:bg-gray-50 transition-all duration-200 disabled:opacity-50"
+                                                                        >
+                                                                            Cancel
+                                                                        </button>
+                                                                    </div>
                                                                 </div>
-                                                                <p className="text-sm text-gray-600 mt-1 font-medium">
-                                                                    {senderName}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                        <span className="text-xs text-gray-400 bg-white/50 px-2 py-1 rounded-lg" suppressHydrationWarning>
-                                                            {new Date(comment.createdAt).toLocaleString('th-TH', {
-                                                                year: 'numeric',
-                                                                month: '2-digit',
-                                                                day: '2-digit',
-                                                                hour: '2-digit',
-                                                                minute: '2-digit',
-                                                                hour12: false
-                                                            })}
-                                                        </span>
+                                                            ) : (
+                                                                <button
+                                                                    onClick={() => { setReplyingToId(topic.id); setReplyText(""); }}
+                                                                    className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-500 hover:text-indigo-700 transition-colors"
+                                                                >
+                                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a4 4 0 014 4v3M3 10l5-5M3 10l5 5" />
+                                                                    </svg>
+                                                                    Reply
+                                                                </button>
+                                                            )
+                                                        )}
                                                     </div>
-                                                    {isEditing ? (
-                                                        <div className="space-y-3">
-                                                            <textarea
-                                                                value={editingCommentText}
-                                                                onChange={(e) => setEditingCommentText(e.target.value)}
-                                                                className="w-full p-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent min-h-[90px] text-gray-900 transition-all duration-200"
-                                                            />
-                                                            <div className="flex gap-2">
-                                                                <button
-                                                                    onClick={saveEditedComment}
-                                                                    disabled={savingComment || !editingCommentText.trim()}
-                                                                    className="px-4 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-bold rounded-lg shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                >
-                                                                    {savingComment ? "Saving..." : "Save"}
-                                                                </button>
-                                                                <button
-                                                                    onClick={cancelEditingComment}
-                                                                    disabled={savingComment}
-                                                                    className="px-4 py-1.5 bg-white text-gray-600 text-xs font-bold rounded-lg border border-gray-200 hover:bg-gray-50 transition-all duration-200 disabled:opacity-50"
-                                                                >
-                                                                    Cancel
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    ) : (
-                                                        <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-                                                            {comment.content}
-                                                            {edited && <span className="ml-2 text-xs text-gray-400 font-medium">(edited)</span>}
-                                                        </p>
-                                                    )}
-
-                                                    {/* Comment Images */}
-                                                    {!isEditing && comment.images && comment.images.length > 0 && (
-                                                        <div className="flex gap-3 mt-4 flex-wrap">
-                                                            {comment.images.map((img) => (
-                                                                <img
-                                                                    key={img.id}
-                                                                    src={img.url}
-                                                                    alt="Attachment"
-                                                                    className="w-24 h-24 object-cover rounded-xl border-2 border-white shadow-sm cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-300"
-                                                                    onClick={() => window.open(img.url, '_blank')}
-                                                                />
-                                                            ))}
-                                                        </div>
-                                                    )}
-
-                                                    {/* Edit / Delete controls */}
-                                                    {!isEditing && (canEdit || canDelete) && (
-                                                        <div className="flex items-center gap-3 mt-3">
-                                                            {canEdit && (
-                                                                <button
-                                                                    onClick={() => startEditingComment(comment)}
-                                                                    className="text-xs font-semibold text-gray-400 hover:text-indigo-600 transition-colors"
-                                                                >
-                                                                    Edit
-                                                                </button>
-                                                            )}
-                                                            {canDelete && confirmDeleteCommentId !== comment.id && (
-                                                                <button
-                                                                    onClick={() => setConfirmDeleteCommentId(comment.id)}
-                                                                    className="text-xs font-semibold text-gray-400 hover:text-rose-600 transition-colors"
-                                                                >
-                                                                    Delete
-                                                                </button>
-                                                            )}
-                                                            {canDelete && confirmDeleteCommentId === comment.id && (
-                                                                <span className="inline-flex items-center gap-2">
-                                                                    <span className="text-xs font-bold text-rose-600">Delete?</span>
-                                                                    <button
-                                                                        onClick={() => { setConfirmDeleteCommentId(null); removeComment(comment.id); }}
-                                                                        disabled={deletingCommentId === comment.id}
-                                                                        className="text-xs font-bold text-rose-600 hover:text-rose-700 disabled:opacity-50"
-                                                                    >
-                                                                        {deletingCommentId === comment.id ? "Deleting..." : "Yes"}
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => setConfirmDeleteCommentId(null)}
-                                                                        disabled={deletingCommentId === comment.id}
-                                                                        className="text-xs font-semibold text-gray-400 hover:text-gray-600 disabled:opacity-50"
-                                                                    >
-                                                                        No
-                                                                    </button>
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                )}
                                             </div>
                                         );
                                     })}

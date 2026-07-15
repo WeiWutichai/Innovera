@@ -866,6 +866,7 @@ export async function addIssueComment(data: {
     content: string;
     type: 'REJECTION' | 'RESUBMIT' | 'COMPLETE' | 'MESSAGE';
     imageUrls?: string[];
+    parentId?: string;
 }) {
     const user = await requireUser();
 
@@ -889,12 +890,27 @@ export async function addIssueComment(data: {
         throw new Error("Unauthorized");
     }
 
+    // Threaded reply: the parent must belong to this same issue. Keep threads at
+    // two levels — a reply to a reply attaches to the original topic (its root).
+    let parentId: string | null = null;
+    if (parsed.parentId) {
+        const parent = await prisma.issueComment.findUnique({
+            where: { id: parsed.parentId },
+            select: { id: true, issueId: true, parentId: true },
+        });
+        if (!parent || parent.issueId !== parsed.issueId) {
+            throw new Error("Parent comment not found");
+        }
+        parentId = parent.parentId ?? parent.id;
+    }
+
     const comment = await prisma.issueComment.create({
         data: {
             content: parsed.content,
             type: parsed.type,
             issueId: parsed.issueId,
             userId: self,
+            parentId,
         }
     });
 
@@ -904,7 +920,7 @@ export async function addIssueComment(data: {
         });
     }
 
-    const activityVerb = parsed.type === 'MESSAGE' ? 'Sent a message' : `Added a ${parsed.type.toLowerCase()} comment`;
+    const activityVerb = parentId ? 'Replied' : (parsed.type === 'MESSAGE' ? 'Sent a message' : `Added a ${parsed.type.toLowerCase()} comment`);
     await logActivity({
         issueId: parsed.issueId,
         userId: self,
@@ -1017,7 +1033,7 @@ export async function deleteIssueComment(commentId: string) {
 
     const comment = await prisma.issueComment.findUnique({
         where: { id: commentId },
-        select: { id: true, userId: true, issueId: true, type: true },
+        select: { id: true, userId: true, issueId: true, type: true, _count: { select: { replies: true } } },
     });
     if (!comment) throw new Error("Comment not found");
 
@@ -1032,7 +1048,15 @@ export async function deleteIssueComment(commentId: string) {
         throw new Error("Unauthorized");
     }
 
-    // Comment images are removed by the ON DELETE CASCADE on IssueCommentImage.
+    // Deleting a topic cascade-deletes its replies (DB FK). Guard non-admins from
+    // wiping a thread that holds other people's replies; admins may still moderate.
+    // The UI mirrors this by hiding Delete on a replied-to topic for non-admins,
+    // so this throw is a defense-in-depth backstop (e.g. a reply raced the view).
+    if (comment._count.replies > 0 && user.role !== 'ADMIN') {
+        throw new Error("A message with replies can't be deleted");
+    }
+
+    // Comment images + any replies are removed by ON DELETE CASCADE.
     await prisma.issueComment.delete({ where: { id: commentId } });
 
     revalidatePath('/community/issues');

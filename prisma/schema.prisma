@@ -270,11 +270,15 @@ model IssueComment {
   userId    Int
   user      User                @relation("IssueComments", fields: [userId], references: [id])
   images    IssueCommentImage[]
+  parentId  String?             // Threaded replies: null = top-level topic, else replies to that comment
+  parent    IssueComment?       @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   IssueComment[]      @relation("CommentReplies")
   createdAt DateTime            @default(now())
   updatedAt DateTime            @updatedAt @default(now())
 
   @@index([issueId])
   @@index([userId])
+  @@index([parentId])
 }
 
 model IssueCommentImage {

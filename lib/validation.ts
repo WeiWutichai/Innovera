@@ -78,6 +78,7 @@ export const issueCommentSchema = z.object({
     content: z.string().min(1, "Comment is required").max(10000),
     type: z.enum(ISSUE_COMMENT_TYPES),
     imageUrls: z.array(z.string().max(500)).max(20).optional(),
+    parentId: z.string().min(1).max(100).optional(), // threaded reply target
 });
 
 export type IssueCommentInput = z.infer<typeof issueCommentSchema>;
